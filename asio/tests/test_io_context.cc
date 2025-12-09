@@ -33,19 +33,23 @@ void test_timer(asio::IOContext& ioc)
 		asio::use_service<asio::details::TimerService>(ioc);
 
 	getCurrentTime("timer start");
-	int timer_id = timer_service.registerTimer([](){
+	int timer_id = -1;
+	timer_service.registerTimer(timer_id, [](int){
 		getCurrentTime("timer execute");
 	}, {3, 0} );
 
-	int timer_id2 = timer_service.registerTimer([](){
+	int timer_id2 = -1;
+	timer_service.registerTimer(timer_id2, [](int){
 		getCurrentTime("timer2 execute");
 	}, {5, 0} );
 
-	int timer_id3 = timer_service.registerTimer([](){
+	int timer_id3 = -1;
+	timer_service.registerTimer(timer_id3, [](int){
 		getCurrentTime("timer3 execute");
 	}, {10, 0} );
 
-	timer_service.registerTimer([&ioc](){
+	int timer_id4 = -1;
+	timer_service.registerTimer(timer_id4, [&ioc](int){
 		ioc.quit();
 	}, {12, 0});
 
@@ -77,7 +81,8 @@ void test_bridge(asio::IOContext& ioc)
 	
 	asio::details::TimerService& timer_service = 
 		asio::use_service<asio::details::TimerService>(ioc);
-	timer_service.registerTimer([&ioc](){
+	int timer_id = -1;
+	timer_service.registerTimer(timer_id, [&ioc](int){
 		ioc.quit();
 	}, {5, 0});
 

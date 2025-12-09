@@ -10,11 +10,7 @@ void BridgeService::batchNoLock(Iterator beg, Iterator end)
 	}
 
 	uint64_t u = 1;
-	if ( ::write(channel_.fd(), &u, sizeof(u)) != sizeof(u) ) {
-		if ( errno != EAGAIN ) {
-			throw LcyAsioException("eventfd write");
-		}
-	}
+	::write(event_fd_, &u, sizeof(u));
 }
 
 template <typename Iterator>

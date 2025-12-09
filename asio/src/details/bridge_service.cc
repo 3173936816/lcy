@@ -21,76 +21,73 @@ static int create_eventfd()
 
 static void destroy_eventfd(int fd)
 {
-	if ( fd != -1 && ::close(fd) ) {
-		throw LcyAsioException("eventfd close");
+	if ( fd != -1 ) {
+		::close(fd);
 	}
 }
 
 static void write_eventfd(int fd)
 {
 	uint64_t u = 1;
-	if ( ::write(fd, &u, sizeof(u)) != sizeof(u) ) {
-		if ( errno != EAGAIN ) {
-			throw LcyAsioException("eventfd write");
-		}
-	}
+	::write(fd, &u, sizeof(u));
 }
 
 static void clear_eventfd(int fd)
 {
 	uint64_t u = 0;
-	if ( ::read(fd, &u, sizeof(u)) != sizeof(u) ) {
-		if ( errno != EAGAIN ) {
-			throw LcyAsioException("eventfd read");
-		}
-	}
+	::read(fd, &u, sizeof(u));
 }
 
 ///////////////////////////////////////////////
 
 BridgeService::BridgeService(ReactorService& reactor) :
-	channel_(create_eventfd(), reactor)
+	event_fd_(create_eventfd()),
+	reactor_(reactor)
 {
-	channel_.registerReadCallback(std::bind(		// FIXME : Check return value
-		std::bind(&BridgeService::execute, this)));
+	reactor_.registerReadOperation(event_fd_, std::bind(
+		&BridgeService::execute, this, std::placeholders::_1));
 }
 
 BridgeService::~BridgeService()
 {
-	channel_.cancelReading();			// FIXME : Check return value
-	destroy_eventfd(channel_.fd());
+	reactor_.removeAllOperations(event_fd_);
+	destroy_eventfd(event_fd_);
 }
 
-void BridgeService::pushNoLock(task_callback_type task_cb)
+void BridgeService::pushNoLock(task_op_type task_op)
 {
-	task_list_.emplace_back(std::move(task_cb));
-	write_eventfd(channel_.fd());
+	task_list_.emplace_back(std::move(task_op));
+	write_eventfd(event_fd_);
 }
 
-void BridgeService::push(task_callback_type task_cb)
+void BridgeService::push(task_op_type task_op)
 {
 	std::lock_guard<std::mutex> locker(mutex_);
-	pushNoLock(std::move(task_cb));
+	pushNoLock(std::move(task_op));
 }
 
 ReactorService& BridgeService::reactor()
 {
-	return channel_.reactor();
+	return reactor_;
 }
 
-void BridgeService::execute()
+void BridgeService::execute(errcode_type ec)
 {
-	std::lock_guard<std::mutex> locker(mutex_);
-	
-	clear_eventfd(channel_.fd());
+	if ( !ec ) {
+		std::lock_guard<std::mutex> locker(mutex_);
+		
+		clear_eventfd(event_fd_);
 
-	try {
-		for ( auto& task_cb : task_list_ ) {
-			task_cb();
+		for ( auto& task_op : task_list_ ) {
+			task_op();
 		}
 		task_list_.clear();
-	} catch(...) {	// Nothing to do
-		throw;
+
+	} else {
+		/*
+ 		*notify:
+		*	This function never fails
+ 		*/
 	}
 }
 

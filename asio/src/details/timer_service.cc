@@ -1,6 +1,5 @@
 #include "asio/src/details/timer_service.h"
 #include "asio/src/details/reactor_service.h"
-#include "asio/src/details/channel.h"
 #include "asio/src/exception.h"
 
 #include <set>
@@ -28,8 +27,8 @@ static int create_timerfd()
 
 static void destroy_timerfd(int fd)
 {
-	if ( fd != -1 && ::close(fd) ) {
-		throw LcyAsioException("timefd close");
+	if ( fd != -1 ) {
+		::close(fd);
 	}
 }
 
@@ -42,9 +41,7 @@ static time_t change_to_ms(const struct timespec& timeout)
 time_t now_ms()
 {
 	struct timespec tim;
-	if ( ::clock_gettime(CLOCK_MONOTONIC, &tim) ) {
-		throw LcyAsioException("clock_gettime");
-	}
+	::clock_gettime(CLOCK_MONOTONIC, &tim);
 
 	return change_to_ms(tim);
 }
@@ -68,25 +65,21 @@ static void update_timerfd(int fd, time_t absolute_time)
 		}
 	}
 
-	if ( ::timerfd_settime(fd, 0, &itim, nullptr) ) {
-		throw LcyAsioException("timefd_settime");
-	}
+	::timerfd_settime(fd, 0, &itim, nullptr);
 }
 
 static void clear_timerfd(int fd)
 {
 	uint64_t u = 0;
-	if ( ::read(fd, &u, sizeof(u)) != sizeof(u) ) {
-		if ( errno != EAGAIN ) {
-			throw LcyAsioException("timefd read");
-		}
-	}
+	::read(fd, &u, sizeof(u));
 }
 
 ///////////////////////////////////////////////////////////
 
 class TimerIdAllocator {
 public:
+	typedef TimerService::timer_id_type timer_id_type;
+
 	TimerIdAllocator();
 	~TimerIdAllocator();
 
@@ -94,7 +87,7 @@ public:
 
 private:
 	std::mutex mutex_;
-	int alloc_id_;
+	timer_id_type alloc_id_;
 };
 
 //////////////////////////////////////////////////////////
@@ -108,7 +101,7 @@ TimerIdAllocator::~TimerIdAllocator()
 {
 }
 
-int TimerIdAllocator::alloc()
+TimerIdAllocator::timer_id_type TimerIdAllocator::alloc()
 {
 	std::lock_guard<std::mutex> locker(mutex_);
 
@@ -125,31 +118,33 @@ static TimerIdAllocator s_timerid_allocator;
 
 class Timer {
 public:
-	typedef TimerService::timer_callback_type timer_callback_type;
+	typedef TimerService::timer_id_type timer_id_type;
+	typedef TimerService::timer_op_type timer_op_type;
 
-	Timer(int timer_id,
-		  timer_callback_type timer_cb,
+	Timer(timer_id_type timer_id,
+		  timer_op_type timer_op,
 		  const struct timespec& timeout);
 	~Timer();
 
-	int timerId() const;
+	timer_id_type timerId() const;
 	time_t absoluteTime() const;
-	timer_callback_type timerCallback() const;
+	void doTimerOperation() const;
+	void cancelTimerOperation() const;
 
 private:
-	int timer_id_;
+	timer_id_type timer_id_;
 	time_t absolute_time_;		// millisecond
-	timer_callback_type timer_cb_;
+	timer_op_type timer_op_;
 };
 
 //////////////////////////////////////////////////////////
 
-Timer::Timer(int timer_id,
-	  		 timer_callback_type timer_cb,
+Timer::Timer(timer_id_type timer_id,
+	  		 timer_op_type timer_op,
 	  		 const struct timespec& timeout) :
 	timer_id_(timer_id),
 	absolute_time_(now_ms() + change_to_ms(timeout)),
-	timer_cb_(std::move(timer_cb))
+	timer_op_(std::move(timer_op))
 {
 }
 
@@ -167,9 +162,14 @@ time_t Timer::absoluteTime() const
 	return absolute_time_;
 }
 
-Timer::timer_callback_type Timer::timerCallback() const
+void Timer::doTimerOperation() const
 {
-	return timer_cb_;
+	timer_op_(err::SUCCESS);
+}
+
+void Timer::cancelTimerOperation() const
+{
+	timer_op_(err::EOPCANCELED);
 }
 
 //////////////////////////////////////////////////////////
@@ -179,10 +179,11 @@ public:
 	Impl(ReactorService& reactor);
 	~Impl();
 
-	int registerTimer(timer_callback_type timer_cb, 
-					  const struct timespec& timeout);
-	int cancelTimer(int timer_id);
-	void expireTimerExecute();
+	void registerTimer(timer_id_type& timer_id,
+					   timer_op_type timer_op, 
+					   const struct timespec& timeout);
+	void cancelTimer(int timer_id);
+	void expireTimerExecute(errcode_type ec);
 	
 	ReactorService& reactor();
 
@@ -193,16 +194,18 @@ private:
 	};
 
 private:
+	typedef int timerfd_type;
 	typedef std::multiset<
 				Timer*,
 				TimerComparator
 			> timer_mset_type;
 	typedef std::unordered_map<
-				int, 
+				timer_id_type,
 				timer_mset_type::iterator
 			> id_timer_umap_type;
 
-	Channel channel_;
+	timerfd_type timerfd_;
+	ReactorService& reactor_;
 	timer_mset_type timer_mset_;
 	id_timer_umap_type id_timer_umap_;
 };
@@ -218,110 +221,111 @@ bool TimerService::Impl::TimerComparator::operator()(const Timer* lhs,
 ////////////////////////////////////////////////////////
 
 TimerService::Impl::Impl(ReactorService& reactor) :
-	channel_(create_timerfd(), reactor)
+	timerfd_(create_timerfd()),
+	reactor_(reactor)
 {
-	channel_.registerReadCallback(std::bind(		// FIXME : Check return value
-		&TimerService::Impl::expireTimerExecute, this));
+	reactor_.registerReadOperation(timerfd_, std::bind(
+		&TimerService::Impl::expireTimerExecute, this, std::placeholders::_1));
 }
 
 TimerService::Impl::~Impl()
 {
-	channel_.cancelReading();		// FIXME : Check return value
-	destroy_timerfd(channel_.fd());
+	reactor_.removeAllOperations(timerfd_);
+	destroy_timerfd(timerfd_);
 	
 	for ( auto timer : timer_mset_ ) {
 		delete timer;
 	}
 }
 
-int TimerService::Impl::registerTimer(timer_callback_type timer_cb, 
-				  					  const struct timespec& timeout)
+void TimerService::Impl::registerTimer(timer_id_type& timer_id,
+									   timer_op_type timer_op, 
+				  					   const struct timespec& timeout)
 {
-	int timer_id = s_timerid_allocator.alloc();
-
 	auto iter = id_timer_umap_.find(timer_id);	
 	if ( iter != id_timer_umap_.end() ) {
-		return -1;
+		timer_op(err::EOPEXISTS);
+		return;
 	}
 
-	Timer* timer = new Timer(timer_id, std::move(timer_cb), timeout);
+	timer_id = s_timerid_allocator.alloc();
+
+	Timer* timer = new Timer(timer_id, std::move(timer_op), timeout);
 	auto iter2 = timer_mset_.insert(timer);
 	id_timer_umap_[timer_id] = iter2;
 
 	if ( iter2 == timer_mset_.begin() ) {
-		update_timerfd(channel_.fd(), timer->absoluteTime());
+		update_timerfd(timerfd_, timer->absoluteTime());
 	}
-
-	return timer_id;
 }
 
-int TimerService::Impl::cancelTimer(int timer_id)
+void TimerService::Impl::cancelTimer(int timer_id)
 {
 	auto iter = id_timer_umap_.find(timer_id);	
 	if ( iter == id_timer_umap_.end() ) {
-		return -1;
+		return;
 	}
 
-	bool need_update = (iter->second == timer_mset_.begin());
-	
-	delete *(iter->second);
+	bool need_update = (iter->second == timer_mset_.begin());	
+
+	const Timer* tmp_timer_op = *(iter->second);	// Save the pointer of the timer
 
 	auto next_iter = timer_mset_.erase(iter->second);
 	id_timer_umap_.erase(iter);
 
 	if ( need_update ) {
 		if ( next_iter == timer_mset_.end() )
-			update_timerfd(channel_.fd(), 0);
+			update_timerfd(timerfd_, 0);
 		else
-			update_timerfd(channel_.fd(), (*next_iter)->absoluteTime());
+			update_timerfd(timerfd_, (*next_iter)->absoluteTime());
 	}
 
-	return 0;
+	tmp_timer_op->cancelTimerOperation();
+	delete tmp_timer_op;		// delete the pointer of the timer
 }
 
-void TimerService::Impl::expireTimerExecute()
+void TimerService::Impl::expireTimerExecute(errcode_type ec)
 {
-	clear_timerfd(channel_.fd());
-
-	time_t now = now_ms();
-	std::vector<Timer*> expire_timers;
-
-	auto iter = timer_mset_.begin();
-	for ( ; iter != timer_mset_.end(); ++iter ) {
-		if ( (*iter)->absoluteTime() > now )
-			break;
-
-		expire_timers.push_back(*iter);
-		id_timer_umap_.erase((*iter)->timerId());
-	}
+	if ( !ec ) {
+		clear_timerfd(timerfd_);
 	
-	auto next_iter = timer_mset_.erase(timer_mset_.begin(), iter);
-	if ( next_iter == timer_mset_.end() )
-		update_timerfd(channel_.fd(), 0);
-	else
-		update_timerfd(channel_.fd(), (*next_iter)->absoluteTime());
-
-	try {
-		for ( auto timer : expire_timers ) {
-			(timer->timerCallback())();
+		time_t now = now_ms();
+		std::vector<Timer*> expire_timers;
+	
+		auto iter = timer_mset_.begin();
+		for ( ; iter != timer_mset_.end(); ++iter ) {
+			if ( (*iter)->absoluteTime() > now )
+				break;
+	
+			expire_timers.push_back(*iter);
+			id_timer_umap_.erase((*iter)->timerId());
 		}
+		
+		auto next_iter = timer_mset_.erase(timer_mset_.begin(), iter);
+		if ( next_iter == timer_mset_.end() )
+			update_timerfd(timerfd_, 0);
+		else
+			update_timerfd(timerfd_, (*next_iter)->absoluteTime());
+	
 		for ( auto timer : expire_timers ) {
+			timer->doTimerOperation();
 			delete timer;
 		}
-	} catch (...) {
-		for ( auto timer : expire_timers ) {
-			delete timer;
-		}
-		throw;
+	} else {
+		 /*
+ 		 *notify :
+ 		 * 	This function never fails
+ 		 */ 
 	}
 }
 
 ReactorService& TimerService::Impl::reactor()
 {
-	return channel_.reactor();
+	return reactor_;
 }
 
 //////////////////////////////////////////////////////////
+
 TimerService::TimerService(ReactorService& reactor) :
 	pImpl_(new Impl(reactor))
 {
@@ -331,15 +335,16 @@ TimerService::~TimerService()
 {
 }
 
-int TimerService::registerTimer(timer_callback_type timer_cb, 
-				  				const struct timespec& timeout)
+void TimerService::registerTimer(timer_id_type& timer_id,
+								 timer_op_type timer_op, 
+				  				 const struct timespec& timeout)
 {
-	return pImpl_->registerTimer(std::move(timer_cb), timeout);
+	pImpl_->registerTimer(timer_id, std::move(timer_op), timeout);
 }
 
-int TimerService::cancelTimer(int timer_id)
+void TimerService::cancelTimer(int timer_id)
 {
-	return pImpl_->cancelTimer(timer_id);
+	pImpl_->cancelTimer(timer_id);
 }
 
 ReactorService& TimerService::reactor()

@@ -1,5 +1,4 @@
 #include "asio/src/details/reactor_service.h"
-#include "asio/src/details/channel.h"
 #include "asio/src/exception.h"
 
 #include <sys/epoll.h>
@@ -31,8 +30,8 @@ static int create_epollfd()
 
 static void destroy_epollfd(int fd)
 {
-	if ( fd != -1 && ::close(fd) ) {
-		throw LcyAsioException("epollfd close");
+	if ( fd != -1 ) {
+		::close(fd);
 	}
 }
 
@@ -60,7 +59,7 @@ static int epoll_remove(int epollfd, int fd)
 	::memset(&epevent, 0x00, sizeof(epevent));
 	
 	if ( ::epoll_ctl(epollfd, EPOLL_CTL_DEL, fd, &epevent) ) {
-		if ( errno != ENOENT )
+		if ( errno != ENOENT || errno != EBADF )	// Errors can be ignored
 			return errno;
 	}
 	
@@ -87,16 +86,175 @@ static int epoll_modify(int epollfd, int fd, int events, void* udata)
 
 ////////////////////////////////////////////////////////////
 
+class ReactorService::OperationInfo {
+public:
+	typedef ReactorService::operation_type operation_type;
+
+	OperationInfo();
+	~OperationInfo();
+
+	void setReadOperation(operation_type read_op);
+	void removeReadOperation();
+	void cancelReadOperation();
+	void doReadOperation();
+	
+	void setWriteOperation(operation_type write_op);
+	void removeWriteOperation();
+	void cancelWriteOperation();
+	void doWriteOperation();
+
+	void removeAllOperations();
+	void cancelAllOperations();
+
+	bool hasReadOperation() const;
+	bool hasWriteOperation() const;
+	bool hasOperation() const;
+
+private:
+	operation_type read_op_;
+	operation_type write_op_;
+};
+
+///////////////////////////////////////////////////////////
+
+ReactorService::OperationInfo::OperationInfo()
+{
+}
+
+ReactorService::OperationInfo::~OperationInfo()
+{
+}
+
+void ReactorService::OperationInfo::setReadOperation(operation_type read_op)
+{
+	read_op_ = std::move(read_op);
+}
+
+void ReactorService::OperationInfo::removeReadOperation()
+{
+	read_op_ = {};
+}
+
+void ReactorService::OperationInfo::cancelReadOperation()
+{
+	// if ( !hasReadOperation() ) return;
+ /* 
+ * notify :
+ *	The reason for saving the callback first and then using tmp to execute it is to 
+ *	prevent the user from re-registering it within the callback and being affected 
+ *	or overwritten by subsequent operations.
+ *
+ * ***************************
+ *	callback(err::EOPCANCELED);
+ *	callback = {};
+ *	**************************
+ *
+ *	This operation will overwrite the function re-registered by the user.
+ */
+	operation_type tmp_operation;
+	std::swap(tmp_operation, read_op_);
+
+	tmp_operation(err::EOPCANCELED);
+}
+
+void ReactorService::OperationInfo::doReadOperation()
+{
+//	if ( hasReadOperation() ) {
+		read_op_(err::SUCCESS);
+//	}
+}
+
+void ReactorService::OperationInfo::setWriteOperation(operation_type write_op)
+{
+	write_op_ = std::move(write_op);
+}
+
+void ReactorService::OperationInfo::removeWriteOperation()
+{
+	write_op_ = {};
+}
+
+void ReactorService::OperationInfo::cancelWriteOperation()
+{
+	// if ( !hasWriteOperstion() ) return;
+/* 
+ * notify :
+ *	The reason for saving the callback first and then using tmp to execute it is to 
+ *	prevent the user from re-registering it within the callback and being affected 
+ *	or overwritten by subsequent operations.
+ *
+ * ***************************
+ *	callback(err::EOPCANCELED);
+ *	callback = {};
+ *	**************************
+ *
+ *	This operation will overwrite the function re-registered by the user.
+ */
+	operation_type tmp_operation;
+	std::swap(tmp_operation, write_op_);
+
+	tmp_operation(err::EOPCANCELED);
+}
+
+void ReactorService::OperationInfo::doWriteOperation()
+{
+//	if ( hasWriteOperation() ) {
+		write_op_(err::SUCCESS);
+//	}
+}
+
+void ReactorService::OperationInfo::removeAllOperations()
+{
+	removeReadOperation();
+	removeWriteOperation();
+}
+
+void ReactorService::OperationInfo::cancelAllOperations()
+{
+//		cancelReadOperation();
+//		cancelWriteOperation();
+
+	if ( hasReadOperation() )
+		cancelReadOperation();
+	if ( hasWriteOperation() )
+		cancelWriteOperation();
+}
+
+bool ReactorService::OperationInfo::hasReadOperation() const
+{
+	return read_op_ != nullptr;
+}
+
+bool ReactorService::OperationInfo::hasWriteOperation() const
+{
+	return write_op_ != nullptr;
+}
+
+bool ReactorService::OperationInfo::hasOperation() const
+{
+	return hasReadOperation() || hasWriteOperation();
+}
+
+////////////////////////////////////////////////////////////
+
 ReactorService::ReactorService() :
 	quit_(true),
-	epoll_fd_(-1)
+	epoll_fd_(create_epollfd())
 {
-	epoll_fd_ = create_epollfd();
 	event_array_.resize(128);
 }
 
 ReactorService::~ReactorService()
 {
+	for ( auto& kv : fd_opinfo_umap_ ) {
+		OperationInfo* opinfo = kv.second;
+		if ( opinfo->hasOperation() ) {
+			epoll_remove(epoll_fd_, kv.first);		// FIXME : check return value
+			opinfo->cancelAllOperations();
+		}
+		delete opinfo;
+	}
+	
 	destroy_epollfd(epoll_fd_);
 }
 
@@ -105,7 +263,7 @@ void ReactorService::quit()
 	quit_ = true;
 }
 
-void ReactorService::loop_wait()
+bool ReactorService::loop_wait()
 {
 	quit_ = false;
 
@@ -113,56 +271,208 @@ void ReactorService::loop_wait()
 		int nevents = ::epoll_wait(epoll_fd_, 
 			&event_array_[0], event_array_.size(), -1);
 		if ( nevents < 0 ) {
-			if ( errno == EINTR )
-				continue;
-			else
-				throw LcyAsioException("epoll_wait");
+			if ( errno == EINTR ) continue;
+			else return false;
 		}
 		
 		for ( int i = 0; i < nevents; ++i ) {
 			
-			Channel* channel = (Channel*)event_array_[i].data.ptr;
+			OperationInfo* opinfo = (OperationInfo*)event_array_[i].data.ptr;
 			int events = event_array_[i].events;
-
+	
 			if ( events & (EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP) ) {
-				(channel->readCallback())();
+				opinfo->doReadOperation();
 			}
 		
 			if ( events & (EPOLLOUT | EPOLLERR | EPOLLHUP) ) {
-				(channel->writeCallback())();
+				opinfo->doWriteOperation();
 			}
 		}
-		
-		if ( nevents >= event_array_.size() )
+
+		if ( nevents >= event_array_.size() ) {
 			event_array_.resize(nevents * 2);
+		}
 	}
+
+	return true;
 }
 
-int ReactorService::registerChannel(Channel& channel)
+void ReactorService::registerReadOperation(file_descriptor_type fd, operation_type op)
 {
-	int events = 0;
-	if ( channel.readCallback() )
-		events |= (EPOLLIN | EPOLLPRI);
-	if ( channel.writeCallback() )
+	OperationInfo* opinfo = nullptr;
+	if ( fd_opinfo_umap_[fd] ) {
+		opinfo = fd_opinfo_umap_[fd];
+	} else {
+		opinfo = new OperationInfo();
+		fd_opinfo_umap_[fd] = opinfo;
+	}
+
+	if ( opinfo->hasReadOperation() ) {
+		op(err::EOPEXISTS);
+		return;
+	}
+
+	int events = EPOLLIN | EPOLLPRI;
+
+	int errcode = err::SUCCESS;
+	if ( opinfo->hasWriteOperation() ) {
 		events |= EPOLLOUT;
+		errcode = epoll_modify(epoll_fd_, fd, events, opinfo);
+	} else {
+		errcode = epoll_register(epoll_fd_, fd, events, opinfo);
+	}
 
-	return epoll_register(epoll_fd_, channel.fd(), events, &channel);
+	if ( errcode ) {
+		op(errcode);
+		return;
+	}
+	
+	opinfo->setReadOperation(std::move(op));
 }
 
-int ReactorService::removeChannel(Channel& channel)
+void ReactorService::removeReadOperation(file_descriptor_type fd)
 {
-	return epoll_remove(epoll_fd_, channel.fd());
-}
+	auto kv_iter = fd_opinfo_umap_.find(fd);
+	if ( kv_iter == fd_opinfo_umap_.end() || 
+		 !kv_iter->second->hasReadOperation() ) {
+		return;
+	}
 
-int ReactorService::modifyChannel(Channel& channel)
-{
 	int events = 0;
-	if ( channel.readCallback() )
-		events |= (EPOLLIN | EPOLLPRI);
-	if ( channel.writeCallback() )
-		events |= EPOLLOUT;
 
-	return epoll_modify(epoll_fd_, channel.fd(), events, &channel);
+	int errcode = err::SUCCESS;
+	if ( kv_iter->second->hasWriteOperation() ) {
+		events |= EPOLLOUT;
+		errcode = epoll_modify(epoll_fd_, fd, events, kv_iter->second);
+	} else {
+		errcode = epoll_remove(epoll_fd_, fd);
+	}		// FIXME : check errcode
+
+	kv_iter->second->removeReadOperation();
+}
+
+void ReactorService::cancelReadOperation(file_descriptor_type fd)
+{
+	auto kv_iter = fd_opinfo_umap_.find(fd);
+	if ( kv_iter == fd_opinfo_umap_.end() || 
+		 !kv_iter->second->hasReadOperation() ) {
+		return;
+	}
+
+	int events = 0;
+
+	int errcode = err::SUCCESS;
+	if ( kv_iter->second->hasWriteOperation() ) {
+		events |= EPOLLOUT;
+		errcode = epoll_modify(epoll_fd_, fd, events, kv_iter->second);
+	} else {
+		errcode = epoll_remove(epoll_fd_, fd);
+	}		// FIXME : check errcode
+
+	kv_iter->second->cancelReadOperation();
+}
+
+void ReactorService::registerWriteOperation(file_descriptor_type fd, operation_type op)
+{
+	OperationInfo* opinfo = nullptr;
+	if ( fd_opinfo_umap_[fd] ) {
+		opinfo = fd_opinfo_umap_[fd];
+	} else {
+		opinfo = new OperationInfo();
+		fd_opinfo_umap_[fd] = opinfo;
+	}
+
+	if ( opinfo->hasWriteOperation() ) {
+		op(err::EOPEXISTS);
+		return;
+	}
+	
+	int events = EPOLLOUT;
+
+	int errcode = err::SUCCESS;
+	if ( opinfo->hasReadOperation() ) {
+		events |= EPOLLIN | EPOLLPRI;
+		errcode = epoll_modify(epoll_fd_, fd, events, opinfo);
+	} else {
+		errcode = epoll_register(epoll_fd_, fd, events, opinfo);
+	}
+
+	if ( errcode ) {
+		op(errcode);
+		return;
+	}
+	
+	opinfo->setWriteOperation(std::move(op));
+}
+
+void ReactorService::removeWriteOperation(file_descriptor_type fd)
+{
+	auto kv_iter = fd_opinfo_umap_.find(fd);
+	if ( kv_iter == fd_opinfo_umap_.end() || 
+		 !kv_iter->second->hasWriteOperation() ) {
+		return;
+	}
+
+	int events = 0;
+
+	int errcode = err::SUCCESS;
+	if ( kv_iter->second->hasReadOperation() ) {
+		events |= EPOLLIN | EPOLLPRI;
+		errcode = epoll_modify(epoll_fd_, fd, events, kv_iter->second);
+	} else {
+		errcode = epoll_remove(epoll_fd_, fd);
+	}		// FIXME : check errcode
+
+	kv_iter->second->removeWriteOperation();
+}
+
+void ReactorService::cancelWriteOperation(file_descriptor_type fd)
+{
+	auto kv_iter = fd_opinfo_umap_.find(fd);
+	if ( kv_iter == fd_opinfo_umap_.end() || 
+		 !kv_iter->second->hasWriteOperation() ) {
+		return;
+	}
+
+	int events = 0;
+
+	int errcode = err::SUCCESS;
+	if ( kv_iter->second->hasReadOperation() ) {
+		events |= EPOLLIN | EPOLLPRI;
+		errcode = epoll_modify(epoll_fd_, fd, events, kv_iter->second);
+	} else {
+		errcode = epoll_remove(epoll_fd_, fd);
+	}		// FIXME : check errcode
+
+	kv_iter->second->cancelWriteOperation();
+}
+
+void ReactorService::removeAllOperations(file_descriptor_type fd)
+{
+	auto kv_iter = fd_opinfo_umap_.find(fd);
+	if ( kv_iter == fd_opinfo_umap_.end() ) {
+		return;
+	}
+
+	int errcode = err::SUCCESS;
+	if ( kv_iter->second->hasOperation() ) {
+		errcode = epoll_remove(epoll_fd_, fd);
+		kv_iter->second->removeAllOperations();
+	}	// FIXME : check errcode
+}
+
+void ReactorService::cancelAllOperations(file_descriptor_type fd)
+{
+	auto kv_iter = fd_opinfo_umap_.find(fd);
+	if ( kv_iter == fd_opinfo_umap_.end() ) {
+		return;
+	}
+
+	int errcode = err::SUCCESS;
+	if ( kv_iter->second->hasOperation() ) {
+		errcode = epoll_remove(epoll_fd_, fd);
+		kv_iter->second->cancelAllOperations();
+	}	// FIXME : check errcode
 }
 
 }	// namespace details

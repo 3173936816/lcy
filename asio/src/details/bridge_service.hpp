@@ -2,8 +2,8 @@
 #define __LCY_ASIO_DETAILS_BRIDGE_SERVICE_HPP__
 
 #include "asio/src/details/service.hpp"
-#include "asio/src/details/channel.h"
 #include "asio/src/exception.h"
+#include "asio/src/errinfo.h"
 
 #include <list>
 #include <mutex>
@@ -20,18 +20,18 @@ class BridgeService :
 	public Service
 {
 public:
-	typedef std::function<void ()> task_callback_type;
+	typedef std::function<void ()> task_op_type;
 
 	BridgeService(ReactorService& reactor);
 	~BridgeService();
 
 	template <typename Iterator>
 	void batchNoLock(Iterator beg, Iterator end);
-	void pushNoLock(task_callback_type task_cb);
+	void pushNoLock(task_op_type task_op);
 
 	template <typename Iterator>
 	void batch(Iterator beg, Iterator end);
-	void push(task_callback_type task_cb);
+	void push(task_op_type task_op);
 
 	ReactorService& reactor();
 
@@ -39,14 +39,16 @@ private:
 	BridgeService(const BridgeService&);
 	BridgeService& operator=(const BridgeService&);
 
-	void execute();
+	void execute(errcode_type ec);
 
 private:
+	typedef int eventfd_type;
 	typedef std::mutex mutex_type;
-	typedef std::list<task_callback_type> task_list_type;
+	typedef std::list<task_op_type> task_list_type;
 
 	mutex_type mutex_;
-	Channel channel_;
+	eventfd_type event_fd_;
+	ReactorService& reactor_;
 	task_list_type task_list_;
 };
 

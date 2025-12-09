@@ -15,16 +15,14 @@ add_library(lcy_asio SHARED
 	src/dynamic_buffer.h
 	src/dynamic_buffer.cc
 
-	src/ip/tcp.h
-    src/ip/udp.h
-    src/ip/endpoint.h
-    src/ip/endpoint.cc
+#	 src/ip/tcp.h
+#    src/ip/udp.h
+#    src/ip/endpoint.h
+#    src/ip/endpoint.cc
 
-    
     src/details/bridge_service.cc
+    src/details/bridge_service.ipp
     src/details/bridge_service.hpp
-    src/details/channel.cc
-    src/details/channel.h
     src/details/reactor_service.cc
     src/details/reactor_service.h
     src/details/timer_service.cc
@@ -32,12 +30,12 @@ add_library(lcy_asio SHARED
     src/details/service.hpp
 	
     src/ip/details/endpoint_data.h
-    src/ip/details/tcp_socket.h
-    src/ip/details/tcp_socket.cc
-    src/ip/details/udp_socket.h
-    src/ip/details/udp_socket.cc
-    src/ip/details/acceptor.h
-    src/ip/details/acceptor.cc
+#    src/ip/details/tcp_socket.h
+#    src/ip/details/tcp_socket.cc
+#    src/ip/details/udp_socket.h
+#    src/ip/details/udp_socket.cc
+#    src/ip/details/acceptor.h
+#    src/ip/details/acceptor.cc
 )
 
 # 如果有 .ipp 文件，确保它们被正确包含

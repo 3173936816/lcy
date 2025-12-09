@@ -26,11 +26,19 @@ void getCurrentTime(const std::string& str) {
               << std::endl;
 }
 
+int i = 0;
+
 void timer_cb(lcy::asio::SteadyTimer& timer, int errcode, time_t timeout)
 {
-	std::cout << "timeout : " << timeout << std::endl;
+	if ( !errcode ) {
+		std::cout << "timeout : " << timeout << std::endl;
+		getCurrentTime("execute");
 
-	getCurrentTime("execute");
+		timer.async_wait(std::bind(timer_cb, std::ref(timer), std::placeholders::_1, std::placeholders::_2));
+
+	} else {
+		std::cout << lcy::asio::errinfo(errcode) << std::endl;
+	}
 }
 
 int main() {
@@ -39,7 +47,6 @@ int main() {
 
 	getCurrentTime("start");
 	timer.async_wait(std::bind(timer_cb, std::ref(timer), std::placeholders::_1, std::placeholders::_2));
-	//timer.async_wait(std::bind(timer_cb, std::ref(timer), std::placeholders::_1, std::placeholders::_2));
 
 	ioc.loop_wait();
 	

@@ -32,24 +32,35 @@ int main() {
 	asio::details::ReactorService reactor;
 	asio::details::TimerService timer_service(reactor);
 
-	int timer_id2 = 0;
+	int timer_id2 = -1;
 
 	getCurrentTime("timer start");
-	int timer_id = timer_service.registerTimer([&timer_id2, &timer_service](){
+	int timer_id = -1;
+	timer_service.registerTimer(timer_id, [&timer_id2, &timer_service](int errcode){
 		getCurrentTime("timer execute");
 
 		timer_service.cancelTimer(timer_id2);
 	}, {3, 0} );
 
-	timer_id2 = timer_service.registerTimer([](){
-		getCurrentTime("timer2 execute");
+	timer_service.registerTimer(timer_id2, [](int errcode){
+		if ( !errcode ) {
+			getCurrentTime("timer2 execute");
+		} else {
+			std::cout << "timer2 " << lcy::asio::errinfo(errcode) << std::endl;
+		}
 	}, {5, 0} );
 
-	int timer_id3 = timer_service.registerTimer([](){
-		getCurrentTime("timer3 execute");
+	int timer_id3 = -1;
+	timer_service.registerTimer(timer_id, [](int errcode){
+		if ( !errcode ) {
+			getCurrentTime("timer3 execute");
+		} else {
+			std::cout << "timer3 " << lcy::asio::errinfo(errcode) << std::endl;
+		}
 	}, {10, 0} );
 
-	timer_service.registerTimer([&reactor](){
+	int timer_id4 = -1;
+	timer_service.registerTimer(timer_id4, [&reactor](int errcode){
 		reactor.quit();
 	}, {7, 0});
 

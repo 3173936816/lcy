@@ -12,10 +12,11 @@ IOContext::~IOContext()
 {
 	uintptr_t reactor_id = (uintptr_t)&details::ServiceId<details::ReactorService>::id;
 
-	/*	@@Explanation :
-	 *	First unregister the other services, 
-	 *	and finally unregister the reactor to ensure the correctness of the state.
-	*/
+ /*
+ * Notify:
+ *	First unregister the other services, 
+ *	and finally unregister the reactor to ensure the correctness of the state.
+ */
 
 	for ( auto& id_service : id_service_umap_ ) {
 		if ( id_service.first != reactor_id )
@@ -30,20 +31,20 @@ void IOContext::quit()
 	use_service<details::ReactorService>(*this).quit();
 }
 
-void IOContext::loop_wait()
+bool IOContext::loop_wait()
 {
-	use_service<details::ReactorService>(*this).loop_wait();
+	return use_service<details::ReactorService>(*this).loop_wait();
 }
 
-void post(IOContext& ioc, task_callback_type task_cb)
+void post(IOContext& ioc, task_op_type task_op)
 {
 	if ( ioc.thread_id_ == std::this_thread::get_id() ) {
-		task_cb();
+		task_op();
 		return;
 	}
 	
 	details::BridgeService& bridge_service = use_service<details::BridgeService>(ioc);
-	bridge_service.push(std::move(task_cb));
+	bridge_service.push(std::move(task_op));
 }
 
 }	// namespace asio

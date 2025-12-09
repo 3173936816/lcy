@@ -1,12 +1,12 @@
 #ifndef __LCY_ASIO_DETAILS_TIMER_SERVICE_H__
 #define __LCY_ASIO_DETAILS_TIMER_SERVICE_H__
 
-#include "asio/src/details/service.hpp"
-#include "asio/src/details/channel.h"
-
 #include <time.h>
 #include <memory>
 #include <functional>
+
+#include "asio/src/errinfo.h"
+#include "asio/src/details/service.hpp"
 
 namespace lcy {
 namespace asio {
@@ -18,14 +18,16 @@ class TimerService :
 	public Service
 {
 public:
-	typedef std::function<void ()> timer_callback_type;
+	typedef int timer_id_type;
+	typedef std::function<void (errcode_type)> timer_op_type;
 
 	TimerService(ReactorService& reactor);
 	~TimerService();
 
-	int registerTimer(timer_callback_type timer_cb, 
-					  const struct timespec& timeout);
-	int cancelTimer(int timer_id);
+	void registerTimer(timer_id_type& timer_id,
+					   timer_op_type timer_op, 
+					   const struct timespec& timeout);
+	void cancelTimer(int timer_id);
 	
 	ReactorService& reactor();
 

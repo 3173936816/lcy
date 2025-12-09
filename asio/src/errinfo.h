@@ -6,10 +6,11 @@
 namespace lcy {
 namespace asio {
 
-#define LCY_ASIO_ERRINFO_MAP(XX)                        				\
-    XX ( 0, 		SUCCESS, 	"Success" )								\
-    XX ( -1001, 	ESYSTEM, 	"Internal system error" )				\
-    XX ( -1002, 	EREGEVENT, 	"Event register error" )				\
+#define LCY_ASIO_ERRINFO_MAP(XX)                        						\
+    XX ( 0, 		SUCCESS, 			"Success" )								\
+    XX ( -1001, 	ESYSTEM, 			"Internal system error" )				\
+    XX ( -1002, 	EOPCANCELED, 		"Operation canceled" )					\
+    XX ( -1003, 	EOPEXISTS, 			"Operation already exists" )			\
 
 
 enum err : 

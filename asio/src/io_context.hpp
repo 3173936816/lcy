@@ -20,8 +20,8 @@ public:
 	template <typename service>
 	friend service& use_service(IOContext& ioc);
 
-	typedef std::function<void ()> task_callback_type;
-	friend void post(IOContext& ioc, task_callback_type task_cb);
+	typedef std::function<void ()> task_op_type;
+	friend void post(IOContext& ioc, task_op_type task_op);
 
 	template <typename Iterator>
 	friend void batch(IOContext& ioc, Iterator beg, Iterator end);
@@ -30,7 +30,7 @@ public:
 	~IOContext();
 
 	void quit();
-	void loop_wait();
+	bool loop_wait();
 
 private:
 	IOContext(const IOContext&);
@@ -52,8 +52,8 @@ private:
 template <typename service>
 service& use_service(IOContext& ioc);
 
-typedef std::function<void ()> task_callback_type;
-void post(IOContext& ioc, task_callback_type task_cb);
+typedef std::function<void ()> task_op_type;
+void post(IOContext& ioc, task_op_type task_op);
 
 template <typename Iterator>
 void batch(IOContext& ioc, Iterator beg, Iterator end);

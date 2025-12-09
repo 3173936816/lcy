@@ -10,7 +10,7 @@ include_directories(${CMAKE_SOURCE_DIR})
 
 # 编译选项
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_compile_options(-g -O0 -Wall -Wextra)
+	add_compile_options(-g -O0 -Wall -Wextra -Wno-error=terminate)
 else()
     add_compile_options(-g -O2 -DNDEBUG)
 endif()

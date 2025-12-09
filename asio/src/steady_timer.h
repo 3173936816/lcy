@@ -4,6 +4,8 @@
 #include <time.h>
 #include <functional>
 
+#include "asio/src/errinfo.h"
+
 namespace lcy {
 namespace asio {
 namespace details {
@@ -15,13 +17,15 @@ class IOContext;
 class SteadyTimer {
 public:
 	typedef time_t timeout_type;
-	typedef std::function<void (int, timeout_type)> timer_callback_type;
+	typedef std::function<void (errcode_type, timeout_type)> timer_op_type;
 
 	SteadyTimer(IOContext& ioc, timeout_type timeout);
 	~SteadyTimer();
 
 	void cancel();
-	void async_wait(timer_callback_type timer_cb);
+	void async_wait(timer_op_type timer_op);
+
+	IOContext& context();
 
 private:
 	SteadyTimer(const SteadyTimer&);
@@ -30,6 +34,7 @@ private:
 private:
 	typedef int timer_id_type;
 	
+	IOContext& ioc_;
 	timeout_type timeout_;
 	timer_id_type timer_id_;
 	details::TimerService& timer_service_;
