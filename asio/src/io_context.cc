@@ -31,7 +31,7 @@ void IOContext::quit()
 	use_service<details::ReactorService>(*this).quit();
 }
 
-bool IOContext::loop_wait()
+errcode_type IOContext::loop_wait()
 {
 	return use_service<details::ReactorService>(*this).loop_wait();
 }

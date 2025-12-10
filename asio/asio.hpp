@@ -13,7 +13,7 @@
 #include "src/steady_timer.h"
 #include "src/signal_set.h"
 #include "src/ip/endpoint.h"
-//#include "src/ip/tcp.h"
+#include "src/ip/tcp.h"
 //#include "src/ip/udp.h"
 
 #endif	// __LCYASIO_HPP__

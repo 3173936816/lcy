@@ -22,10 +22,10 @@ add_executable(test_steady_timer test_steady_timer.cc)
 target_link_libraries(test_steady_timer lcy_asio pthread)
 add_test(NAME test_steady_timer COMMAND test_steady_timer)
 
-#add_executable(test_tcp_socket test_tcp_socket.cc)
-#target_link_libraries(test_tcp_socket lcy_asio pthread)
-#add_test(NAME test_tcp_socket COMMAND test_tcp_socket)
-#
+add_executable(test_tcp_socket test_tcp_socket.cc)
+target_link_libraries(test_tcp_socket lcy_asio pthread)
+add_test(NAME test_tcp_socket COMMAND test_tcp_socket)
+
 #add_executable(test_udp_socket test_udp_socket.cc)
 #target_link_libraries(test_udp_socket lcy_asio pthread)
 #add_test(NAME test_udp_socket COMMAND test_udp_socket)
@@ -41,7 +41,7 @@ set_target_properties(
     test_timer_service
     test_signal_set
     test_steady_timer
-#    test_tcp_socket
+    test_tcp_socket
 #    test_udp_socket
 #    test_acceptor
     PROPERTIES

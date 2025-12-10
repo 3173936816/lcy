@@ -11,7 +11,17 @@ static void timer_op_wrap(SteadyTimer::timeout_type start,
 						  errcode_type ec,
 						  SteadyTimer::timer_op_type timer_op)
 {
-	timer_op(ec, details::now_ms() - start);
+	if ( !ec ) {
+		timer_op(ec, details::now_ms() - start);
+	} else {
+		/*
+		*notify:
+		*  This error was notified by the reactor ( mybe EOPEXISTS, EOPCANCELED )
+		*  We just need to notify the caller.
+		*/ 
+
+		timer_op(ec, 0);
+	}
 }
 
 ////////////////////////////////////////////////////////////
@@ -42,7 +52,8 @@ void SteadyTimer::async_wait(timer_op_type timer_op)
 	t.tv_nsec = (timeout_ % 1000) * 1000000;
 
 	timer_service_.registerTimer(timer_id_, std::bind(
-		timer_op_wrap, details::now_ms(), std::placeholders::_1, std::move(timer_op)), t);	
+		timer_op_wrap, details::now_ms(), std::placeholders::_1, 
+			std::move(timer_op)), t);	
 }
 
 IOContext& SteadyTimer::context()

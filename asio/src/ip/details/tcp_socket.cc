@@ -33,34 +33,44 @@ static int destroy_tcp_socket(int fd)
 	return 0;
 }
 
-////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
 
-static void read_cb_wrap(asio::details::Channel& channel,
+static void read_op_wrap(errcode_type ec,
+						 int sockfd,
+						 asio::details::ReactorService& reactor,
 						 MutableBuffer mbuf, 
-						 TCPSocket::read_callback_type read_cb)
+						 TCPSocket::read_op_type read_op)
 {
-	channel.cancelReading();		// FIXME : check return value
+	if ( !ec ) {
+		reactor.removeReadOperation(sockfd);
 
-	ssize_t nread = ::recv(channel.fd(), 
-						   mbuf.data(), 
-						   mbuf.length(), 
-						   MSG_NOSIGNAL);
+		ssize_t nread = ::recv(sockfd, 
+							   mbuf.data(), 
+							   mbuf.length(), 
+							   MSG_NOSIGNAL);
 
-	if ( nread < 0 ) {
-		read_cb(errno, nread);			// error : errcode, -1
-	}
-	else {
-		read_cb(err::SUCCESS, nread);		// success : 0, nread    peer close : 0, 0
+		if ( nread < 0 )
+			read_op(errno, 0);	// error : errcode, 0
+		else 
+			read_op(ec, nread); // success : 0, nread    peer close : 0, 0
+	} else {
+		 /*
+ 		 *notify:
+ 		 *	This error was notified by the reactor ( mybe EOPEXISTS, EOPCANCELED )
+ 		 *	We just need to notify the caller.
+ 		 */	
+
+		read_op(ec, 0);
 	}
 }
 
 /*
 * example : 
 *
-* void read_cb(int errcode, ssize_t nbytes) {
+* void read_op(int errcode, size_t nbytes) {
 *	if ( !errcode ) {
 *		if ( nbytes == 0 ) {
-*			socket.close();
+*			socket.shutdown();
 *			return;
 *		}
 *	
@@ -71,43 +81,53 @@ static void read_cb_wrap(asio::details::Channel& channel,
 *
 */
 
-static void write_cb_wrap(asio::details::Channel& channel, 
+static void write_op_wrap(errcode_type ec,
+						  int sockfd,
+						  asio::details::ReactorService& reactor,
 						  ConstBuffer cbuf,
 						  size_t send_bytes,
-						  TCPSocket::write_callback_type write_cb)
+						  TCPSocket::write_op_type write_op)
 {
-	channel.cancelWriting();		// FIXME : check return value
+	if ( !ec ) { 
+		reactor.removeWriteOperation(sockfd);
 
-	ssize_t nwrite = ::send(channel.fd(), 
-							cbuf.data(), 
-							cbuf.length(), 
-							MSG_NOSIGNAL);
+		ssize_t nwrite = ::send(sockfd,
+								cbuf.data(), 
+								cbuf.length(), 
+								MSG_NOSIGNAL);
 
-	if ( nwrite == -1 ) {
-		write_cb(errno, send_bytes);
-		return;
-	}
-
-	send_bytes += nwrite;
-
-	if ( nwrite != cbuf.length() ) {
-		if( channel.registerWriteCallback(std::bind(
-				write_cb_wrap, std::ref(channel), 
-					cbuf + nwrite, send_bytes, write_cb)) ) {	// write_cb can not be moved
-			write_cb(err::EREGEVENT, send_bytes);				// this needs to be used
+		if ( nwrite < 0 ) {
+			write_op(errno, send_bytes);
+			return;
 		}
-		return;
-	}
 
-	write_cb(err::SUCCESS, send_bytes);
+		send_bytes += nwrite;
+
+		if ( nwrite != cbuf.length() ) {
+			reactor.registerWriteOperation(sockfd, std::bind(
+				write_op_wrap, std::placeholders::_1, sockfd,
+					std::ref(reactor), cbuf + nwrite, send_bytes, std::move(write_op)));
+			return;
+		}
+
+		write_op(ec, send_bytes);
+	} else {
+	    /*
+ 		 *notify:
+ 		 *	This error was notified by the reactor ( mybe EOPEXISTS, EOPCANCELED )
+ 		 *	We just need to notify the caller.
+ 		 */	
+	
+		write_op(ec, send_bytes);
+	}
 }
 
 /*
 * example : 
 *
-* void write_cb(int errcode) {
+* void write_op(int errcode, size_t nbytes) {
 *	if ( !errcode ) {
-*		printf("all data send successful");
+*		printf("%ld bytes data send successful", nbytes);
 *	} else {
 *		printf(errinfo(errcode));
 *	}
@@ -115,26 +135,37 @@ static void write_cb_wrap(asio::details::Channel& channel,
 *
 */
 
-static void accept_cb_wrap(asio::details::Channel& channel,
-						   asio::details::Channel& accept_channel,
-						   TCPSocket::accept_callback_type accept_cb)
+static void accept_op_wrap(errcode_type ec,
+						   int sockfd,
+						   int& accept_sockfd,
+						   asio::details::ReactorService& reactor,
+						   TCPSocket::accept_op_type accept_op)
 {
-	channel.cancelReading();	// FIXME : check return value
+	if ( !ec ) {
+		reactor.removeReadOperation(sockfd);
 
-	int sockfd = ::accept(channel.fd(), nullptr, nullptr);
-	if ( sockfd == -1 ) {
-		accept_cb(errno);
-		return;
+		accept_sockfd = ::accept(sockfd, nullptr, nullptr);
+		if ( accept_sockfd == -1 ) {
+			accept_op(errno);
+			return;
+		}
+
+		accept_op(ec);
+	} else {
+ 		/*
+ 		 *notify:
+ 		 *	This error was notified by the reactor ( mybe EOPEXISTS, EOPCANCELED )
+ 		 *	We just need to notify the caller.
+ 		 */	
+
+		accept_op(ec);
 	}
-
-	accept_channel.setFd(sockfd);
-	accept_cb(err::SUCCESS);
 }
 
 /*
 * example : 
 *
-* void accept_cb(int errcode) {
+* void accept_op(int errcode) {
 *	if ( !errcode ) {
 *		printf("accept ok");
 *	} else {
@@ -144,25 +175,34 @@ static void accept_cb_wrap(asio::details::Channel& channel,
 *
 */
 
-static void connect_cb_wrap(asio::details::Channel& channel,
-							TCPSocket::connect_callback_type connect_cb)
+static void connect_op_wrap(errcode_type ec,
+							int sockfd,
+							asio::details::ReactorService& reactor,
+							TCPSocket::connect_op_type connect_op)
 {
-	channel.cancelWriting();	// FIXME : check return value
+	if ( !ec ) {
+		reactor.removeWriteOperation(sockfd);
 
-	int errcode = 0;
-	socklen_t len = sizeof(int);
-	if ( ::getsockopt(channel.fd(), 
-			SOL_SOCKET, SO_ERROR, &errcode, &len) ) {
-		throw LcyAsioException("connect_cb_wrap");
+		int errcode = 0;
+		socklen_t len = sizeof(int);
+		::getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &errcode, &len);
+		
+		connect_op(errcode);
+	} else {
+		/*
+ 		 *notify:
+ 		 *	This error was notified by the reactor ( mybe EOPEXISTS, EOPCANCELED )
+ 		 *	We just need to notify the caller.
+ 		 */	
+
+		connect_op(ec);
 	}
-	
-	connect_cb(errcode);
 }
 
 /*
 * example : 
 *
-* void connect_cb(int errcode) {
+* void connect_op(int errcode) {
 *	if ( !errcode ) {
 *		printf("connect ok");
 *	} else {
@@ -175,7 +215,9 @@ static void connect_cb_wrap(asio::details::Channel& channel,
 ////////////////////////////////////////////////////
 
 TCPSocket::TCPSocket(IOContext& ioc) :
-	channel_(use_service<asio::details::ReactorService>(ioc))
+	ioc_(ioc),
+	sockfd_(-1),
+	reactor_(use_service<asio::details::ReactorService>(ioc))
 {
 }
 
@@ -184,161 +226,153 @@ TCPSocket::~TCPSocket()
 	shutdown();
 }
 
-void TCPSocket::async_read(MutableBuffer mbuf, read_callback_type read_cb)
+void TCPSocket::async_read(MutableBuffer mbuf, read_op_type read_op)
 {
-	if( channel_.registerReadCallback(std::bind(
-			read_cb_wrap, std::ref(channel_), mbuf, read_cb)) ) {	// read_cb can not be moved
-		read_cb(err::EREGEVENT, 0);                                 // this needs to be used
-	}	
+	reactor_.registerReadOperation(sockfd_, std::bind(
+		read_op_wrap, std::placeholders::_1, sockfd_, 
+			std::ref(reactor_), mbuf, std::move(read_op)));
 }
 
-void TCPSocket::async_write(ConstBuffer cbuf, write_callback_type write_cb)
+void TCPSocket::async_write(ConstBuffer cbuf, write_op_type write_op)
 {
-	if( channel_.registerWriteCallback(std::bind(
-			write_cb_wrap, std::ref(channel_), cbuf, 0, write_cb)) ) {	// write_cb can not be move
-		write_cb(err::EREGEVENT, 0);                                    // this needs to be used
-	}	
+	reactor_.registerWriteOperation(sockfd_, std::bind(
+		write_op_wrap, std::placeholders::_1, sockfd_, 
+			std::ref(reactor_), cbuf, 0, std::move(write_op)));
 }
 
-void TCPSocket::async_accept(TCPSocket& tcp_socket, accept_callback_type accept_cb)
+void TCPSocket::async_accept(TCPSocket& tcp_socket, accept_op_type accept_op)
 {
-	if( channel_.registerReadCallback(std::bind(
-			accept_cb_wrap, std::ref(channel_), 
-				std::ref(tcp_socket.channel_), accept_cb)) ) {	// accept_cb can not be mo
-		accept_cb(err::EREGEVENT);                              // this needs to be used
-	}	
+	reactor_.registerReadOperation(sockfd_, std::bind(
+		accept_op_wrap, std::placeholders::_1, sockfd_, 
+			std::ref(tcp_socket.sockfd_), std::ref(reactor_), std::move(accept_op)));
 }
 
-void TCPSocket::async_connect(const EndPoint& endpoint, connect_callback_type connect_cb)
+void TCPSocket::async_connect(const EndPoint& endpoint, connect_op_type connect_op)
 {
 	socklen_t len = endpoint.length(); 
 	struct sockaddr* addr = (struct sockaddr*)endpoint.native();
 
-	int ret = ::connect(channel_.fd(), addr, len);
+	int ret = ::connect(sockfd_, addr, len);
 	if ( ret == 0 ) {		// Succeed immediately
-		connect_cb(err::SUCCESS);
+		connect_op(err::SUCCESS);
 		return;
 	}
 	
 	if ( ret == -1 && errno != EINPROGRESS ) {		// An error occurred
-		connect_cb(errno);
+		connect_op(errno);
 		return;
 	}
 
-	if( channel_.registerWriteCallback(std::bind(	// EINPROGRESS
-			connect_cb_wrap, std::ref(channel_), connect_cb)) ) {	// connect_cb can not be move
-		connect_cb(err::EREGEVENT);                                 // this needs to be used
-	}	
+	reactor_.registerWriteOperation(sockfd_, std::bind(		// EINPROGRESS
+		connect_op_wrap, std::placeholders::_1, sockfd_, 
+			std::ref(reactor_), std::move(connect_op)));
 }
 
 void TCPSocket::cancel()
 {
-	channel_.cancelAll();		// FIXME : check return value
+	reactor_.cancelAllOperations(sockfd_);
 }
 
-int TCPSocket::open(const TCP& tcp)
+errcode_type TCPSocket::open(const TCP& tcp)
 {
-	if ( channel_.fd() != -1 )
+	if ( sockfd_ != -1 )
 		shutdown();
 
-	int sockfd = create_tcp_socket(tcp.family());
-	if ( sockfd == -1 )
+	sockfd_ = create_tcp_socket(tcp.family());
+	if ( sockfd_ == -1 )
 		return errno;
-	channel_.setFd(sockfd);
-
 	return 0;
 }
 
-int TCPSocket::bind(const EndPoint& endpoint)
+errcode_type TCPSocket::bind(const EndPoint& endpoint)
 {
 	socklen_t len = endpoint.length();
 	struct sockaddr* addr = (struct sockaddr*)endpoint.native();
 
-	if ( ::bind(channel_.fd(), addr, len) )
+	if ( ::bind(sockfd_, addr, len) )
 		return errno;
-
 	return 0;
 }
 
-int TCPSocket::listen(int backlog)
+errcode_type TCPSocket::listen(int backlog)
 {
-	if ( ::listen(channel_.fd(), backlog) )
+	if ( ::listen(sockfd_, backlog) )
 		return errno;
 	return 0;
 }
 
-int TCPSocket::setDelay()
+errcode_type TCPSocket::setDelay()
 {
 	int flag = 1;
-	if ( ::setsockopt(channel_.fd(), IPPROTO_TCP, 
+	if ( ::setsockopt(sockfd_, IPPROTO_TCP, 
 			TCP_NODELAY, &flag, sizeof(int)) )
 		return errno;
 	return 0;
 }
 
-int TCPSocket::setReuseAddr()
+errcode_type TCPSocket::setReuseAddr()
 {
 	int flag = 1;
-	if ( ::setsockopt(channel_.fd(), SOL_SOCKET, 
+	if ( ::setsockopt(sockfd_, SOL_SOCKET, 
 			SO_REUSEADDR, &flag, sizeof(int)) )
 		return errno;
 	return 0;
 }
 
-int TCPSocket::setKeepAlive()
+errcode_type TCPSocket::setKeepAlive()
 {
 	int flag = 1;
-	if ( ::setsockopt(channel_.fd(), SOL_SOCKET,
+	if ( ::setsockopt(sockfd_, SOL_SOCKET,
 			SO_KEEPALIVE, &flag, sizeof(int)) )
 		return errno;
 	return 0;
 }
 
-int TCPSocket::shutdown()
+errcode_type TCPSocket::shutdown()
 {
-	channel_.cancelAll();	// FIXME : check return value
+	reactor_.cancelAllOperations(sockfd_);
 
-	int ret = destroy_tcp_socket(channel_.fd());
+	int ret = destroy_tcp_socket(sockfd_);
 	if ( ret )
 		return errno;
-	channel_.setFd(-1);
+	sockfd_ = -1;
 	return 0;
 }
 
-int TCPSocket::shutdownRead()
+errcode_type TCPSocket::shutdownRead()
 {
-	channel_.cancelReading();	// FIXME : check return value
+	reactor_.cancelReadOperation(sockfd_);
 
-	if ( ::shutdown(channel_.fd(), SHUT_RD) )
+	if ( ::shutdown(sockfd_, SHUT_RD) )
 		return errno;
 	return 0;
 }
 
-int TCPSocket::shutdownWrite()
+errcode_type TCPSocket::shutdownWrite()
 {
-	channel_.cancelWriting();	// FIXME : check return value
+	reactor_.cancelWriteOperation(sockfd_);
 
-	if ( ::shutdown(channel_.fd(), SHUT_WR) )
+	if ( ::shutdown(sockfd_, SHUT_WR) )
 		return errno;
 	return 0;
 }
 
-int TCPSocket::peerAddr(EndPoint& endpoint)
+errcode_type TCPSocket::peerAddr(EndPoint& endpoint)
 {
 	socklen_t len = endpoint.bufferLen();
 	struct sockaddr* addr = (struct sockaddr*)endpoint.native();
 
-	if ( ::getpeername(channel_.fd(), addr, &len) )
+	if ( ::getpeername(sockfd_, addr, &len) )
 		return errno;
 	return 0;
 }
 
-int TCPSocket::localAddr(EndPoint& endpoint)
+errcode_type TCPSocket::localAddr(EndPoint& endpoint)
 {
 	socklen_t len = endpoint.bufferLen();
 	struct sockaddr* addr = (struct sockaddr*)endpoint.native();
 
-	if ( ::getsockname(channel_.fd(), addr, &len) )
+	if ( ::getsockname(sockfd_, addr, &len) )
 		return errno;
 	return 0;
 }
@@ -349,7 +383,7 @@ std::string TCPSocket::tcpInfo()
 	socklen_t len = sizeof(struct tcp_info);
 	::memset(&tcpi, 0x00, len);
 	
-	::getsockopt(channel_.fd(), SOL_TCP, TCP_INFO, &tcpi, &len);
+	::getsockopt(sockfd_, SOL_TCP, TCP_INFO, &tcpi, &len);
 	
 	char buff[1024] = { 0 };
 	::snprintf(buff, sizeof(buff), "unrecovered=%u "
@@ -369,6 +403,11 @@ std::string TCPSocket::tcpInfo()
                tcpi.tcpi_snd_cwnd,
                tcpi.tcpi_total_retrans);
 	return std::string(buff);
+}
+
+IOContext& TCPSocket::context()
+{
+	return ioc_;
 }
 
 }	// namespace details

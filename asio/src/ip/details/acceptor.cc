@@ -31,11 +31,12 @@ Acceptor::Acceptor(IOContext& ioc, const EndPoint& endpoint) :
 
 Acceptor::~Acceptor()
 {
+	cancel();
 }
 
-void Acceptor::async_accept(TCPSocket& socket, accept_callback_type accept_cb)
+void Acceptor::async_accept(TCPSocket& socket, accept_op_type accept_op)
 {
-	acceptor_.async_accept(socket, std::move(accept_cb));
+	acceptor_.async_accept(socket, std::move(accept_op));
 }
 
 void Acceptor::cancel()

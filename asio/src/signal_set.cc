@@ -66,10 +66,20 @@ static void signal_op_wrap(int signal_fd,
 						   errcode_type ec,
 						   SignalSet::signal_op_type signal_op)
 {
-	struct signalfd_siginfo info;
-	::read(signal_fd, &info, sizeof(info));
+	if ( !ec ) {
+		struct signalfd_siginfo info;
+		::read(signal_fd, &info, sizeof(info));
 
-	signal_op(ec, info.ssi_signo);
+		signal_op(ec, info.ssi_signo);
+	} else {
+		/*
+		*notify:
+		*  This error was notified by the reactor ( mybe EOPEXISTS, EOPCANCELED )
+		*  We just need to notify the caller.
+		*/ 
+
+		signal_op(ec, -1);
+	}
 }
 
 ///////////////////////////////////////////////////////////////

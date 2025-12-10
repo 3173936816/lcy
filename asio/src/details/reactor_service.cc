@@ -263,7 +263,7 @@ void ReactorService::quit()
 	quit_ = true;
 }
 
-bool ReactorService::loop_wait()
+errcode_type ReactorService::loop_wait()
 {
 	quit_ = false;
 
@@ -272,7 +272,7 @@ bool ReactorService::loop_wait()
 			&event_array_[0], event_array_.size(), -1);
 		if ( nevents < 0 ) {
 			if ( errno == EINTR ) continue;
-			else return false;
+			else return errno;
 		}
 		
 		for ( int i = 0; i < nevents; ++i ) {
@@ -294,7 +294,7 @@ bool ReactorService::loop_wait()
 		}
 	}
 
-	return true;
+	return 0;
 }
 
 void ReactorService::registerReadOperation(file_descriptor_type fd, operation_type op)

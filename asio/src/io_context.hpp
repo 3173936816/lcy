@@ -6,6 +6,7 @@
 #include <functional>
 #include <unordered_map>
 
+#include "asio/src/errinfo.h"
 #include "asio/src/exception.h"
 #include "asio/src/details/service.hpp"
 #include "asio/src/details/reactor_service.h"
@@ -30,7 +31,7 @@ public:
 	~IOContext();
 
 	void quit();
-	bool loop_wait();
+	errcode_type loop_wait();
 
 private:
 	IOContext(const IOContext&);

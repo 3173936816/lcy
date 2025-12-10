@@ -24,7 +24,7 @@ public:
 	~ReactorService();
 
 	void quit();
-	bool loop_wait();
+	errcode_type loop_wait();
 
 	void registerReadOperation(file_descriptor_type fd, operation_type op);
 	void removeReadOperation(file_descriptor_type fd);

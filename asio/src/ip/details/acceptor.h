@@ -3,6 +3,7 @@
 
 #include <functional>
 
+#include "asio/src/errinfo.h"
 #include "asio/src/io_context.hpp"
 #include "asio/src/ip/endpoint.h"
 #include "asio/src/ip/details/tcp_socket.h"
@@ -14,12 +15,12 @@ namespace details {
 
 class Acceptor {
 public:
-	typedef std::function<void (int)> accept_callback_type;
+	typedef std::function<void (int)> accept_op_type;
 
 	Acceptor(IOContext& ioc, const EndPoint& endpoint);
 	~Acceptor();
 
-	void async_accept(TCPSocket& socket, accept_callback_type accept_cb);
+	void async_accept(TCPSocket& socket, accept_op_type accept_op);
 	void cancel();
 
 private:
