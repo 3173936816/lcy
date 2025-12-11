@@ -10,7 +10,8 @@ std::string VersionToString(version_type v)
 		return "HTTP/1.0";
 	else if ( v == version::HTTP_1_1 )
 		return "HTTP/1.1";
-	return "";
+//	return "";
+	return "HTTP/1.1";				// Default version 1.1
 }
 
 version_type StringToVersion(const std::string& v_str)
@@ -19,7 +20,8 @@ version_type StringToVersion(const std::string& v_str)
 		return version::HTTP_1_0;
 	else if ( v_str == "HTTP/1.1" )
 		return version::HTTP_1_1;
-	return version::HTTP_ERR;
+//	return version::HTTP_ERR;
+	return version::HTTP_1_1;		// Default version 1.1
 }
 
 //////////////////////////////////////////////////
@@ -49,14 +51,14 @@ bool Message::isResponse() const
 	return type_ == proto_type::RESPONSE;
 }
 
-std::string Message::body() const
+const std::string& Message::body() const
 {
 	return body_;
 }
 
-void Message::setBody(const std::string& body)
+void Message::setBody(std::string body)
 {
-	body_ = body;
+	body_ = std::move(body);
 }
 
 version_type Message::version() const
@@ -74,12 +76,13 @@ Message::header_map_type& Message::getHeadersRef()
 	return headers_;
 }
 
-std::string Message::getHeader(const std::string& key) const
+const std::string& Message::getHeader(const std::string& key,
+							   		  const std::string& def) const
 {
 	auto kv_iter = headers_.find(key);
 	if ( kv_iter != headers_.end() )
 		return kv_iter->second;
-	return "";
+	return def;
 }
 
 void Message::removeHeader(const std::string& key)
@@ -87,9 +90,9 @@ void Message::removeHeader(const std::string& key)
 	headers_.erase(key);
 }
 
-void Message::setHeader(const std::string& key, const std::string& value)
+void Message::setHeader(std::string key, std::string value)
 {
-	headers_[key] = value;
+	headers_[std::move(key)] = std::move(value);
 }
 
 }   // namespace http

@@ -41,16 +41,17 @@ public:
 	bool isRequest() const;
 	bool isResponse() const;
 
-	std::string body() const;
-	void setBody(const std::string& body);	
+	const std::string& body() const;
+	void setBody(std::string body);	
 
 	version_type version() const;
 	void setVersion(version_type v);
 
 	header_map_type& getHeadersRef();
-	std::string getHeader(const std::string& key) const;
+	const std::string& getHeader(const std::string& key, 
+						  		 const std::string& def = "") const;
 	void removeHeader(const std::string& key);
-	void setHeader(const std::string& key, const std::string& value);
+	void setHeader(std::string key, std::string value);
 
     virtual std::string dump() = 0;
 

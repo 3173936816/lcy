@@ -23,7 +23,7 @@ public:
     Servlet();
     ~Servlet();
 
-    void setFunction(const std::string& url, function_type func);
+    void setFunction(std::string url, function_type func);
     void removeFunction(const std::string& url);
     function_type getFunction(const std::string& url) const;
 

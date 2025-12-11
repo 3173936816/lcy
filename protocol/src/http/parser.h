@@ -1,16 +1,17 @@
-#ifndef __LIBSERVER_HTTP_PARSER_H__
-#define __LIBSERVER_HTTP_PARSER_H__
+#ifndef __LCY_PROTOCOL_HTTP_PARSER_H__
+#define __LCY_PROTOCOL_HTTP_PARSER_H__
 
 #include <memory>
 
-namespace libserver {
+namespace lcy {
+namespace protocol {
 namespace http {
 
-class HttpMessage;
-class HttpRequest;
-class HttpResponse;
+class Message;
+class Request;
+class Response;
 
-class HttpParser {
+class Parser {
 public:
     enum RetCode {
         READY,              // http protocol is ready
@@ -18,21 +19,24 @@ public:
         ERROR               // an error occurred
     };
 
-    HttpParser();
-    ~HttpParser();
+    Parser();
+    ~Parser();
 
     void reset();
-    RetCode parse(DynamicBuffer* buffer);
-    std::shared_ptr<HttpMessage> get();
+	size_t nparse() const;
+    RetCode parse(const void* data, size_t len, Message& msg);
 
 private:
-    CORNERSTONES_NONCOPYABLE(HttpParser)
-   
+	Parser(const Parser&);
+	Parser& operator=(const Parser&);
+
+private:
     class Impl;
     std::unique_ptr<Impl> pImpl_;
 };
 
 }   // namespace http
-}   // namespace libserver
+}	// namespace protocol
+}   // namespace lcy
 
-#endif  // __LIBSERVER_HTTP_PARSER_H__
+#endif  // __LCY_PROTOCOL_HTTP_PARSER_H__

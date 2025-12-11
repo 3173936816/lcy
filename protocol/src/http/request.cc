@@ -46,14 +46,14 @@ void Request::setMethod(method_type method)
 	method_ = method;
 }
 
-std::string Request::url() const
+const std::string& Request::url() const
 {
 	return url_;
 }
 
-void Request::setUrl(const std::string& url)
+void Request::setUrl(std::string url)
 {
-	url_ = url;
+	url_ = std::move(url);
 }
 
 std::string Request::dump()

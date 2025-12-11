@@ -80,8 +80,8 @@ public:
 	method_type method() const;
 	void setMethod(method_type method);
 	
-	std::string url() const;
-	void setUrl(const std::string& url);
+	const std::string& url() const;
+	void setUrl(std::string url);
 
     std::string dump() override;
 

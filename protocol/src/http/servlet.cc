@@ -14,9 +14,9 @@ Servlet::~Servlet()
 {
 }
 
-void Servlet::setFunction(const std::string& url, function_type func)
+void Servlet::setFunction(std::string url, function_type func)
 {
-	url_func_umap_[url] = std::move(func);
+	url_func_umap_[std::move(url)] = std::move(func);
 }
 
 void Servlet::removeFunction(const std::string& url)

@@ -27,10 +27,10 @@ public:
 	void async_read(EndPoint& endpoint, 
 					MutableBuffer mbuf, 
 					read_op_type read_op);
-	void async_write(const EndPoint& endpoint, 
+	void async_write(const EndPoint& endpoint,
 					 ConstBuffer cbuf, 
 					 write_op_type write_op);
-	void cancel();	
+	void cancel();
 
 	errcode_type open(const UDP& udp);
 	errcode_type bind(const EndPoint& endpoint);
