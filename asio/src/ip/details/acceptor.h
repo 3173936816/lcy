@@ -15,7 +15,7 @@ namespace details {
 
 class Acceptor {
 public:
-	typedef std::function<void (int)> accept_op_type;
+	typedef std::function<void (errcode_type)> accept_op_type;
 
 	Acceptor(IOContext& ioc, const EndPoint& endpoint);
 	~Acceptor();

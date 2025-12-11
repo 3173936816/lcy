@@ -1,4 +1,5 @@
 #include "asio/src/ip/details/udp_socket.h"
+#include "asio/src/ip/udp.h"
 #include "asio/src/exception.h"
 #include "asio/src/errinfo.h"
 
@@ -34,69 +35,92 @@ static int destroy_udp_socket(int fd)
 
 ////////////////////////////////////////////////////
 
-static void read_cb_wrap(asio::details::Channel& channel,
+static void read_op_wrap(errcode_type ec,
+						 int sockfd,
+						 asio::details::ReactorService& reactor,
 						 EndPoint& endpoint,
 						 MutableBuffer mbuf,
-						 UDPSocket::read_callback_type read_cb)
+						 UDPSocket::read_op_type read_op)
 {
-	channel.cancelReading();		// FIXME : check return value
+	if ( !ec ) {
+		reactor.removeReadOperation(sockfd);
 
-	socklen_t len = sizeof(struct sockaddr_in6);
-	struct sockaddr* addr = (struct sockaddr*)endpoint.native();
+		socklen_t len = sizeof(struct sockaddr_in6);
+		struct sockaddr* addr = (struct sockaddr*)endpoint.native();
 
-	ssize_t nread = ::recvfrom(channel.fd(), 
-							   mbuf.data(), 
-							   mbuf.length(),
-							   MSG_NOSIGNAL,
-							   addr, &len);
+		ssize_t nread = ::recvfrom(sockfd,
+								   mbuf.data(), 
+								   mbuf.length(),
+								   MSG_NOSIGNAL,
+								   addr, &len);
 
-	if ( nread < 0 ) {
-		read_cb(errno, nread);		// error : errcode, -1
+		if ( nread < 0 )
+			read_op(errno, 0);	// error : errcode, 0
+		else 
+			read_op(ec, nread); // success : 0, nread
 	} else {
-		read_cb(err::SUCCESS, nread);		// success : 0, nread    peer close : 0, 0
+		/*
+ 		 *notify:
+ 		 *	This error was notified by the reactor ( mybe EOPEXISTS, EOPCANCELED )
+ 		 *	We just need to notify the caller.
+ 		 */	
+
+		read_op(ec, 0);
 	}
 }
 
-static void write_cb_wrap(asio::details::Channel& channel,
+static void write_op_wrap(errcode_type ec,
+						  int sockfd,
+						  asio::details::ReactorService& reactor,
 						  EndPoint endpoint,
 						  ConstBuffer cbuf,
 						  size_t send_bytes,
-						  UDPSocket::write_callback_type write_cb)
+						  UDPSocket::write_op_type write_op)
 {
-	channel.cancelWriting();		// FIXME : check return value
+	if ( !ec ) {
+		reactor.removeWriteOperation(sockfd);
 
-	socklen_t len = endpoint.length();
-	struct sockaddr* addr = (struct sockaddr*)endpoint.native();
+		socklen_t len = endpoint.length();
+		struct sockaddr* addr = (struct sockaddr*)endpoint.native();
 
-	ssize_t nwrite = ::sendto(channel.fd(), 
-							  cbuf.data(),
-							  cbuf.length(),
-							  MSG_NOSIGNAL,
-							  addr, len);
-	
-	if ( nwrite == -1 ) {
-		write_cb(errno, send_bytes);
-		return;
-	}
-
-	send_bytes += nwrite;
-
-	if ( nwrite != cbuf.length() ) {
-		if( channel.registerWriteCallback(std::bind(
-				write_cb_wrap, std::ref(channel), endpoint,
-					cbuf + nwrite, send_bytes, write_cb)) ) { // write_cb can not be moved
-			write_cb(err::EREGEVENT, send_bytes);			  // this needs to be used
+		ssize_t nwrite = ::sendto(sockfd, 
+								  cbuf.data(),
+								  cbuf.length(),
+								  MSG_NOSIGNAL,
+								  addr, len);
+		
+		if ( nwrite == -1 ) {
+			write_op(errno, send_bytes);
+			return;
 		}
-		return;
-	}
 
-	write_cb(err::SUCCESS, send_bytes);
+		send_bytes += nwrite;
+
+		if ( nwrite != cbuf.length() ) {
+			reactor.registerWriteOperation(sockfd, std::bind(
+				write_op_wrap, std::placeholders::_1, sockfd, std::ref(reactor), 
+					endpoint, cbuf + nwrite, send_bytes, std::move(write_op)));
+			return;
+		}
+
+		write_op(ec, send_bytes);
+	} else {
+	    /*
+ 		 *notify:
+ 		 *	This error was notified by the reactor ( mybe EOPEXISTS, EOPCANCELED )
+ 		 *	We just need to notify the caller.
+ 		 */	
+	
+		write_op(ec, send_bytes);
+	}
 }
 
 ////////////////////////////////////////////////////
 
 UDPSocket::UDPSocket(IOContext& ioc) :
-	channel_(use_service<asio::details::ReactorService>(ioc))
+	ioc_(ioc),
+	sockfd_(-1),
+	reactor_(use_service<asio::details::ReactorService>(ioc))
 {
 }
 
@@ -107,89 +131,82 @@ UDPSocket::~UDPSocket()
 
 void UDPSocket::async_read(EndPoint& endpoint, 
 			    		   MutableBuffer mbuf, 
-						   read_callback_type read_cb)
+						   read_op_type read_op)
 {
-	if ( channel_.registerReadCallback(std::bind(
-			read_cb_wrap, std::ref(channel_), 
-				std::ref(endpoint), mbuf, read_cb)) ) {		// read_cb can not be moved
-		read_cb(err::EREGEVENT, 0);                         // this needs to be used
-	}
+	reactor_.registerReadOperation(sockfd_, std::bind(
+		read_op_wrap, std::placeholders::_1, sockfd_, 
+			std::ref(reactor_), std::ref(endpoint), mbuf, std::move(read_op)));
 }
 
 void UDPSocket::async_write(const EndPoint& endpoint, 
-		     				ConstBuffer cbuf, 
-				 			write_callback_type write_cb)
+		     				ConstBuffer cbuf,
+				 			write_op_type write_op)
 {
-	if ( channel_.registerWriteCallback(std::bind(
-			write_cb_wrap, std::ref(channel_), 
-				endpoint, cbuf, 0, write_cb)) ) {			// write_cb can not be moved
-		write_cb(err::EREGEVENT, 0);                        // this needs to be used
-	}
+	reactor_.registerWriteOperation(sockfd_, std::bind(
+		write_op_wrap, std::placeholders::_1, sockfd_, 
+			std::ref(reactor_), endpoint, cbuf, 0, std::move(write_op)));
 }
 
 void UDPSocket::cancel()
 {
-	channel_.cancelAll();	// FIXME : check return value
+	reactor_.cancelAllOperations(sockfd_);
 }
 
-int UDPSocket::open(UDP udp)
+errcode_type UDPSocket::open(const UDP& udp)
 {
-	if ( channel_.fd() != -1 )
+	if ( sockfd_ != -1 )
 		shutdown();
 
-	int sockfd = create_udp_socket(udp.family());
-	if ( sockfd == -1 )
+	sockfd_ = create_udp_socket(udp.family());
+	if ( sockfd_ == -1 )
 		return errno;
-	channel_.setFd(sockfd);
-
 	return 0;
 }
 
-int UDPSocket::bind(const EndPoint& endpoint)
+errcode_type UDPSocket::bind(const EndPoint& endpoint)
 {
 	socklen_t len = endpoint.length();
 	struct sockaddr* addr = (struct sockaddr*)endpoint.native();
 
-	if ( ::bind(channel_.fd(), addr, len) )
+	if ( ::bind(sockfd_, addr, len) )
 		return errno;
-
 	return 0;
 }
 
-int UDPSocket::setReuseAddr()
+errcode_type UDPSocket::setReuseAddr()
 {
 	int flag = 1;
-	if ( ::setsockopt(channel_.fd(), SOL_SOCKET, 
+	if ( ::setsockopt(sockfd_, SOL_SOCKET, 
 			SO_REUSEADDR, &flag, sizeof(int)) )
 		return errno;
 	return 0;
 }
 
-int UDPSocket::shutdown()
+errcode_type UDPSocket::shutdown()
 {
-	channel_.cancelAll();	// FIXME : check return value
+	reactor_.cancelAllOperations(sockfd_);
 
-	int ret = destroy_udp_socket(channel_.fd());
+	int ret = destroy_udp_socket(sockfd_);
 	if ( ret )
 		return errno;
-	channel_.setFd(-1);
+	sockfd_ = -1;
 	return 0;
 }
 
-int UDPSocket::shutdownRead()
+errcode_type UDPSocket::shutdownRead()
 {
-	channel_.cancelReading();	// FIXME : check return value
+	reactor_.cancelReadOperation(sockfd_);
 
-	if ( ::shutdown(channel_.fd(), SHUT_RD) )
+	if ( ::shutdown(sockfd_, SHUT_RD) )
 		return errno;
 	return 0;
 }
 
-int UDPSocket::shutdownWrite()
+errcode_type UDPSocket::shutdownWrite()
 {
-	channel_.cancelWriting();	// FIXME : check return value
+	reactor_.cancelWriteOperation(sockfd_);
 
-	if ( ::shutdown(channel_.fd(), SHUT_WR) )
+	if ( ::shutdown(sockfd_, SHUT_WR) )
 		return errno;
 	return 0;
 }
@@ -200,8 +217,8 @@ std::string UDPSocket::udpInfo()
     int sndbuf, rcvbuf;
     socklen_t len = sizeof(int);
     
-    ::getsockopt(channel_.fd(), SOL_SOCKET, SO_SNDBUF, &sndbuf, &len);
-    ::getsockopt(channel_.fd(), SOL_SOCKET, SO_RCVBUF, &rcvbuf, &len);
+    ::getsockopt(sockfd_, SOL_SOCKET, SO_SNDBUF, &sndbuf, &len);
+    ::getsockopt(sockfd_, SOL_SOCKET, SO_RCVBUF, &rcvbuf, &len);
     
     ::snprintf(buff, sizeof(buff), "sndbuf=%d rcvbuf=%d", sndbuf, rcvbuf);
     return std::string(buff);

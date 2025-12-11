@@ -5,10 +5,9 @@
 #include <netinet/in.h>
 #include <netinet/udp.h>
 
+#include "asio/src/errinfo.h"
 #include "asio/src/buffer.h"
 #include "asio/src/io_context.hpp" 
-#include "asio/src/details/channel.h" 
-#include "asio/src/ip/udp.h"
 #include "asio/src/ip/endpoint.h"
 
 namespace lcy {
@@ -19,28 +18,28 @@ namespace details {
 
 class UDPSocket {
 public:
-	typedef std::function<void (int, size_t)> read_callback_type;
-	typedef std::function<void (int, size_t)> write_callback_type;
+	typedef std::function<void (int, size_t)> read_op_type;
+	typedef std::function<void (int, size_t)> write_op_type;
 
 	UDPSocket(IOContext& ioc);
 	~UDPSocket();
 
 	void async_read(EndPoint& endpoint, 
 					MutableBuffer mbuf, 
-					read_callback_type read_cb);
+					read_op_type read_op);
 	void async_write(const EndPoint& endpoint, 
 					 ConstBuffer cbuf, 
-					 write_callback_type write_cb);
+					 write_op_type write_op);
 	void cancel();	
 
-	int open(UDP udp);
-	int bind(const EndPoint& endpoint);
+	errcode_type open(const UDP& udp);
+	errcode_type bind(const EndPoint& endpoint);
 
-	int setReuseAddr();
+	errcode_type setReuseAddr();
 
-	int shutdown();
-	int shutdownRead();
-	int shutdownWrite();
+	errcode_type shutdown();
+	errcode_type shutdownRead();
+	errcode_type shutdownWrite();
 
 	std::string udpInfo();
 
@@ -49,7 +48,11 @@ private:
 	UDPSocket& operator=(const UDPSocket&);
 
 private:
-	asio::details::Channel channel_;
+	typedef int sockfd_type;
+
+	IOContext& ioc_;
+	sockfd_type sockfd_;
+	asio::details::ReactorService& reactor_;
 };
 
 }	// namespace details

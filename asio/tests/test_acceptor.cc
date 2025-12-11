@@ -26,13 +26,17 @@ void server()
 			});
 
 		} else {
-			std::cout << lcy::asio::errinfo(errcode) << std::endl;
+			std::cout << "acceptor: " << lcy::asio::errinfo(errcode) << std::endl;
 		}
 	});
 
 	lcy::asio::SignalSet sig(ioc, SIGINT);
 	sig.async_wait([&ioc](int errcode, int signal){
-		ioc.quit();
+		if ( !errcode ) {
+			ioc.quit();
+		} else {
+			std::cout << "sig: " << lcy::asio::errinfo(errcode) << std::endl;
+		}
 	});
 
 	ioc.loop_wait();

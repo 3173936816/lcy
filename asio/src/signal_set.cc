@@ -62,11 +62,14 @@ static void signal_unblock(int signum)
 
 ///////////////////////////////////////////////////////////////
 
-static void signal_op_wrap(int signal_fd,
-						   errcode_type ec,
+static void signal_op_wrap(errcode_type ec,
+						   int signal_fd,
+						   details::ReactorService& reactor,
 						   SignalSet::signal_op_type signal_op)
 {
 	if ( !ec ) {
+		reactor.removeReadOperation(signal_fd);
+
 		struct signalfd_siginfo info;
 		::read(signal_fd, &info, sizeof(info));
 
@@ -102,7 +105,8 @@ SignalSet::~SignalSet()
 void SignalSet::async_wait(signal_op_type signal_op)
 {	
 	reactor_.registerReadOperation(signal_fd_, std::bind(
-			signal_op_wrap, signal_fd_, std::placeholders::_1, std::move(signal_op)));
+			signal_op_wrap, std::placeholders::_1, signal_fd_, 
+				std::ref(reactor_),  std::move(signal_op)));
 	
 	update_signalfd(signal_fd_, signum_);
 	signal_block(signum_);
