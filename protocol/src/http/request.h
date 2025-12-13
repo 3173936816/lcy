@@ -80,14 +80,14 @@ public:
 	method_type method() const;
 	void setMethod(method_type method);
 	
-	const std::string& url() const;
-	void setUrl(std::string url);
+	const std::string& uri() const;
+	void setUri(std::string uri);
 
     std::string dump() override;
 
 private:
     method_type method_;
-    std::string url_;
+    std::string uri_;
 };
 
 }   // namespace http

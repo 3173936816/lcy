@@ -6,7 +6,7 @@ int main() {
 	lcy::protocol::http::Request request;
 	request.setVersion(lcy::protocol::http::version::HTTP_1_1);
 	request.setMethod(lcy::protocol::http::method::GET);
-	request.setUrl("/");
+	request.setUri("/");
 	
 	request.setHeader("Host", "example.com");
     request.setHeader("User-Agent", "MyHttpClient/1.0");

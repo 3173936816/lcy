@@ -11,11 +11,15 @@ add_executable(test_http_response test_http_response.cc)
 target_link_libraries(test_http_response lcy_protocol pthread)
 add_test(NAME test_http_response COMMAND test_http_response)
 
+add_executable(test_http_parser test_http_parser.cc)
+target_link_libraries(test_http_parser lcy_protocol pthread)
+add_test(NAME test_http_parser COMMAND test_http_parser)
 
 # 设置输出目录
 set_target_properties(
 	test_http_request
 	test_http_response
+	test_http_parser
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin
 )

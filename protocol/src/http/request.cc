@@ -46,21 +46,21 @@ void Request::setMethod(method_type method)
 	method_ = method;
 }
 
-const std::string& Request::url() const
+const std::string& Request::uri() const
 {
-	return url_;
+	return uri_;
 }
 
-void Request::setUrl(std::string url)
+void Request::setUri(std::string uri)
 {
-	url_ = std::move(url);
+	uri_ = std::move(uri);
 }
 
 std::string Request::dump()
 {
 	std::ostringstream oss;
 	oss << MethodToString(method_) << " "
-		<< url_ << " "
+		<< uri_ << " "
 		<< VersionToString(version()) 
 		<< "\r\n";
 

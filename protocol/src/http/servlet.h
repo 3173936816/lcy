@@ -23,9 +23,9 @@ public:
     Servlet();
     ~Servlet();
 
-    void setFunction(std::string url, function_type func);
-    void removeFunction(const std::string& url);
-    function_type getFunction(const std::string& url) const;
+    void setFunction(std::string uri, function_type func);
+    void removeFunction(const std::string& uri);
+    function_type getFunction(const std::string& uri) const;
 
 private:
 	typedef std::unordered_map<

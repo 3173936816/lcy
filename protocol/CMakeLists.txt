@@ -6,6 +6,8 @@ add_library(lcy_protocol SHARED
 	src/http/request.h
 	src/http/response.cc
 	src/http/response.h
+	src/http/parser.cc
+	src/http/parser.h
 	src/http/servlet.cc
 	src/http/servlet.h
 )
