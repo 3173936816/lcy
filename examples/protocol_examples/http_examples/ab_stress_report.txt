@@ -1,0 +1,61 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//	The following test is a simple test result of ab.
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+lcy@192-168-21-144:~/MyProjects/lcy/asio/src$ ab -n 2000000 -c 1000 -s 10 http://0.0.0.0:9950/
+This is ApacheBench, Version 2.3 <$Revision: 1430300 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 0.0.0.0 (be patient)
+Completed 200000 requests
+Completed 400000 requests
+Completed 600000 requests
+Completed 800000 requests
+Completed 1000000 requests
+Completed 1200000 requests
+Completed 1400000 requests
+Completed 1600000 requests
+Completed 1800000 requests
+Completed 2000000 requests
+Finished 2000000 requests
+
+
+Server Software:        
+Server Hostname:        0.0.0.0
+Server Port:            9950
+
+Document Path:          /
+Document Length:        0 bytes
+
+Concurrency Level:      1000
+Time taken for tests:   172.147 seconds
+Complete requests:      2000000
+Failed requests:        0
+Write errors:           0
+Total transferred:      38000000 bytes
+HTML transferred:       0 bytes
+Requests per second:    11617.96 [#/sec] (mean)
+Time per request:       86.074 [ms] (mean)
+Time per request:       0.086 [ms] (mean, across all concurrent requests)
+Transfer rate:          215.57 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0   42  15.6     44    1047
+Processing:     5   44  11.8     45      89
+Waiting:        0   31  10.6     31      70
+Total:         31   86  19.4     95    1101
+
+Percentage of the requests served within a certain time (ms)
+  50%     95
+  66%     98
+  75%     99
+  80%     99
+  90%    101
+  95%    102
+  98%    103
+  99%    105
+ 100%   1101 (longest request)
