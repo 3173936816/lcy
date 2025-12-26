@@ -3,16 +3,17 @@
 
 #include <memory>
 
-#include "lcy/rpc/controller.h"
+#include "lcy/rpc/src/controller.h"
 
 namespace lcy {
 namespace rpc {
 
+class Controller;
+
 template <class request_type, class response_type> 
 class Context {
 public:
-	template<typename... Args>
-    friend std::shared_ptr<Context> std::make_shared(Args&&... args);
+	friend std::shared_ptr<Context<request_type, response_type> > NewContext();
 
 	~Context();
 
