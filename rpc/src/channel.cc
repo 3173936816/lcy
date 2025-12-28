@@ -1,67 +1,77 @@
 #include "lcy/rpc/src/channel.h"
-#include "lcy/rpc/src/proto/rpc.pb.h"
+#include "lcy/rpc/src/rpc.pb.h"
+
+#include "lcy/rpc/src/closure.h"
 
 namespace lcy {
 namespace rpc {
+
+struct MthhodInfo {
+	::google::protobuf::RpcController* controller_;
+	::google::protobuf::Message* request_;
+	::google::protobuf::Message* response_;
+	std::shared_ptr<::google::protobuf::Closure> done_;
+	std::string serlized_data_;
+};
+
+///////////////////////////////////////////////////////////
 
 Channel::Channel(lcy::asio::IOContext& ioc,
 				 const std::string& ip,
 				 uint16_t port) :
 	id_allocator_(0),
-	rpc_socket_(ioc)
+	conn_(ioc),
+	timer_(ioc, 5)
 {
+	conn_.async_connect(ip, prot, std::bind(
+			&Channel::onConnected, this, std::placeholders::_1));
 }
 
 Channel::~Channel()
 {
-	rpc_socket_.shutdown();
+	conn_.shutdown();
+
+	for ( auto kv : id_methods_ ) {
+		delete kv.second;
+	}
 }
 
- /*
- *example :
- *
- * Service_Stub stub(new Channel(...));
- *
- * auto rpc_context = lcy::rpc::NewContext();
- * 	// Set your request
- * auto closure = lcy::rpc::NewClosure([rpc_context](){
- * 		if ( !rpc_context->controller()->IsFailed() ) {
- *			process(rpc_context->request());
- * 		} else {
- *			printf("%s", rpc_context->controller()->ErrorText().c_str());
- * 		}
- * });
- * 
- *
- * stub.userMethod(rpc_context->controller(), rpc_context->request(), rpc_context->response(), closure.get());
- *
- */
-
 void Channel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
-                		 ::google::protobuf::RpcController* controller,
-						 const ::google::protobuf::Message* request,
-                    	 ::google::protobuf::Message* response,
-						 ::google::protobuf::Closure* done)
+    		    		 ::google::protobuf::RpcController* controller,
+			    		 const ::google::protobuf::Message* request,
+    		    		 ::google::protobuf::Message* response,
+			    		 ::google::protobuf::Closure* done)
 {
-	const ::google::protobuf::ServiceDescriptor* service = method->service();
+}
 
-	lcy::rpc::Request rpc_request;
-	rpc_request.set_id(id_allocator_++);
-	rpc_request.set_service_name(service->name());
-	rpc_request.set_service_method(method->name());
-	if ( request->SerializeToString(rpc_request_.mutable_arguments()) ) {
-		controller->SetFailed("request serialize failed");
-		done->run();
-		return;
+void Channel::onConnected(lcy::asio::errcode_type ec)
+{
+	if ( !ec ) {
+
+	} else {
+		startConnectTimer();
 	}
+}
 
-	std::shared_ptr<std::string> data = std::make_shared<std::string>();
-	if ( rpc_request->SerializeToString(data.get() ) {
-		controller->SetFailed("rpc request serialize failed");
-		done->run();
-		return;
-	}
+void Channel::onMessage(lcy::asio::errcode_type ec, 
+			   			size_t nbytes,
+			   			lcy::asio::DynamicBuffer& buf)
+{
+}
 
+void Channel::onSendCompletedOp(lcy::asio::errcode_type ec, size_t nbytes)
+{
+}
+
+void Channel::onTimer(lcy::asio::errcode_type ec, time_t timeout)
+{
+	
+}
+
+void Channel::startTimer();
+{
+	timer_.async_wait(std::bind(&Channel::onTimer,
+			this, std::placeholder::_1, std::placeholder::_2));
 }
 
 }	// namespace rpc

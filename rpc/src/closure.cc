@@ -19,7 +19,7 @@ void Closure::Run()
 
 std::shared_ptr<Closure> NewClosure(closure_op_type closure_op)
 {
-	return std::make_shared<Closure>(std::move(closure_op));
+	return std::shared_ptr<Closure>(new Closure(std::move(closure_op)));
 }
 
 }	// namespace rpc

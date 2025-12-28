@@ -4,7 +4,7 @@ namespace lcy {
 namespace rpc {
 
 Controller::Controller() :
-	failed_(true),
+	failed_(false),
 	errmsg_()
 {
 }
@@ -15,7 +15,7 @@ Controller::~Controller()
 
 void Controller::Reset()
 {
-	failed_ = true;
+	failed_ = false;
 	errmsg_ = {};
 }
 
@@ -31,6 +31,7 @@ std::string Controller::ErrorText() const
 
 void Controller::SetFailed(const std::string& reason)
 {
+	failed_ = true;
 	errmsg_ = reason;
 }
 

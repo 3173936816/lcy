@@ -23,3 +23,4 @@ endif()
 # 添加子目录
 add_subdirectory(asio)
 add_subdirectory(protocol)
+add_subdirectory(rpc)
