@@ -48,7 +48,7 @@ struct TableStruct_rpc_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[2]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[3]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -57,6 +57,9 @@ struct TableStruct_rpc_2eproto {
 extern const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_rpc_2eproto;
 namespace lcy {
 namespace rpc {
+class Message;
+class MessageDefaultTypeInternal;
+extern MessageDefaultTypeInternal _Message_default_instance_;
 class Request;
 class RequestDefaultTypeInternal;
 extern RequestDefaultTypeInternal _Request_default_instance_;
@@ -66,12 +69,38 @@ extern ResponseDefaultTypeInternal _Response_default_instance_;
 }  // namespace rpc
 }  // namespace lcy
 PROTOBUF_NAMESPACE_OPEN
+template<> ::lcy::rpc::Message* Arena::CreateMaybeMessage<::lcy::rpc::Message>(Arena*);
 template<> ::lcy::rpc::Request* Arena::CreateMaybeMessage<::lcy::rpc::Request>(Arena*);
 template<> ::lcy::rpc::Response* Arena::CreateMaybeMessage<::lcy::rpc::Response>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
 namespace lcy {
 namespace rpc {
 
+enum type : int {
+  request = 0,
+  response = 1,
+  type_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
+  type_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
+};
+bool type_IsValid(int value);
+constexpr type type_MIN = request;
+constexpr type type_MAX = response;
+constexpr int type_ARRAYSIZE = type_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* type_descriptor();
+template<typename T>
+inline const std::string& type_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, type>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function type_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    type_descriptor(), enum_t_value);
+}
+inline bool type_Parse(
+    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, type* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<type>(
+    type_descriptor(), name, value);
+}
 enum err : int {
   SUCCESS = 0,
   NO_SERVICE = 1,
@@ -215,12 +244,11 @@ class Request PROTOBUF_FINAL :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kServiceNameFieldNumber = 2,
-    kServiceMethodFieldNumber = 3,
-    kArgumentsFieldNumber = 4,
-    kIdFieldNumber = 1,
+    kServiceNameFieldNumber = 1,
+    kServiceMethodFieldNumber = 2,
+    kArgumentsFieldNumber = 3,
   };
-  // string service_name = 2;
+  // string service_name = 1;
   void clear_service_name();
   const std::string& service_name() const;
   void set_service_name(const std::string& value);
@@ -236,7 +264,7 @@ class Request PROTOBUF_FINAL :
   std::string* _internal_mutable_service_name();
   public:
 
-  // string service_method = 3;
+  // string service_method = 2;
   void clear_service_method();
   const std::string& service_method() const;
   void set_service_method(const std::string& value);
@@ -252,7 +280,7 @@ class Request PROTOBUF_FINAL :
   std::string* _internal_mutable_service_method();
   public:
 
-  // bytes arguments = 4;
+  // bytes arguments = 3;
   void clear_arguments();
   const std::string& arguments() const;
   void set_arguments(const std::string& value);
@@ -268,15 +296,6 @@ class Request PROTOBUF_FINAL :
   std::string* _internal_mutable_arguments();
   public:
 
-  // uint64 id = 1;
-  void clear_id();
-  ::PROTOBUF_NAMESPACE_ID::uint64 id() const;
-  void set_id(::PROTOBUF_NAMESPACE_ID::uint64 value);
-  private:
-  ::PROTOBUF_NAMESPACE_ID::uint64 _internal_id() const;
-  void _internal_set_id(::PROTOBUF_NAMESPACE_ID::uint64 value);
-  public:
-
   // @@protoc_insertion_point(class_scope:lcy.rpc.Request)
  private:
   class _Internal;
@@ -287,7 +306,6 @@ class Request PROTOBUF_FINAL :
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr service_name_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr service_method_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr arguments_;
-  ::PROTOBUF_NAMESPACE_ID::uint64 id_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_rpc_2eproto;
 };
@@ -406,11 +424,10 @@ class Response PROTOBUF_FINAL :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kArgumentsFieldNumber = 3,
-    kIdFieldNumber = 1,
-    kErrcodeFieldNumber = 2,
+    kArgumentsFieldNumber = 2,
+    kErrcodeFieldNumber = 1,
   };
-  // bytes arguments = 3;
+  // bytes arguments = 2;
   void clear_arguments();
   const std::string& arguments() const;
   void set_arguments(const std::string& value);
@@ -426,16 +443,7 @@ class Response PROTOBUF_FINAL :
   std::string* _internal_mutable_arguments();
   public:
 
-  // uint64 id = 1;
-  void clear_id();
-  ::PROTOBUF_NAMESPACE_ID::uint64 id() const;
-  void set_id(::PROTOBUF_NAMESPACE_ID::uint64 value);
-  private:
-  ::PROTOBUF_NAMESPACE_ID::uint64 _internal_id() const;
-  void _internal_set_id(::PROTOBUF_NAMESPACE_ID::uint64 value);
-  public:
-
-  // .lcy.rpc.err errcode = 2;
+  // .lcy.rpc.err errcode = 1;
   void clear_errcode();
   ::lcy::rpc::err errcode() const;
   void set_errcode(::lcy::rpc::err value);
@@ -452,8 +460,195 @@ class Response PROTOBUF_FINAL :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr arguments_;
-  ::PROTOBUF_NAMESPACE_ID::uint64 id_;
   int errcode_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_rpc_2eproto;
+};
+// -------------------------------------------------------------------
+
+class Message PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:lcy.rpc.Message) */ {
+ public:
+  inline Message() : Message(nullptr) {}
+  virtual ~Message();
+
+  Message(const Message& from);
+  Message(Message&& from) noexcept
+    : Message() {
+    *this = ::std::move(from);
+  }
+
+  inline Message& operator=(const Message& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline Message& operator=(Message&& from) noexcept {
+    if (GetArena() == from.GetArena()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const Message& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const Message* internal_default_instance() {
+    return reinterpret_cast<const Message*>(
+               &_Message_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    2;
+
+  friend void swap(Message& a, Message& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(Message* other) {
+    if (other == this) return;
+    if (GetArena() == other->GetArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(Message* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline Message* New() const final {
+    return CreateMaybeMessage<Message>(nullptr);
+  }
+
+  Message* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<Message>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const Message& from);
+  void MergeFrom(const Message& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(Message* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "lcy.rpc.Message";
+  }
+  protected:
+  explicit Message(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_rpc_2eproto);
+    return ::descriptor_table_rpc_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kRequestFieldNumber = 3,
+    kResponseFieldNumber = 4,
+    kIdFieldNumber = 1,
+    kTpFieldNumber = 2,
+  };
+  // .lcy.rpc.Request request = 3;
+  bool has_request() const;
+  private:
+  bool _internal_has_request() const;
+  public:
+  void clear_request();
+  const ::lcy::rpc::Request& request() const;
+  ::lcy::rpc::Request* release_request();
+  ::lcy::rpc::Request* mutable_request();
+  void set_allocated_request(::lcy::rpc::Request* request);
+  private:
+  const ::lcy::rpc::Request& _internal_request() const;
+  ::lcy::rpc::Request* _internal_mutable_request();
+  public:
+  void unsafe_arena_set_allocated_request(
+      ::lcy::rpc::Request* request);
+  ::lcy::rpc::Request* unsafe_arena_release_request();
+
+  // .lcy.rpc.Response response = 4;
+  bool has_response() const;
+  private:
+  bool _internal_has_response() const;
+  public:
+  void clear_response();
+  const ::lcy::rpc::Response& response() const;
+  ::lcy::rpc::Response* release_response();
+  ::lcy::rpc::Response* mutable_response();
+  void set_allocated_response(::lcy::rpc::Response* response);
+  private:
+  const ::lcy::rpc::Response& _internal_response() const;
+  ::lcy::rpc::Response* _internal_mutable_response();
+  public:
+  void unsafe_arena_set_allocated_response(
+      ::lcy::rpc::Response* response);
+  ::lcy::rpc::Response* unsafe_arena_release_response();
+
+  // uint64 id = 1;
+  void clear_id();
+  ::PROTOBUF_NAMESPACE_ID::uint64 id() const;
+  void set_id(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::uint64 _internal_id() const;
+  void _internal_set_id(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  public:
+
+  // .lcy.rpc.type tp = 2;
+  void clear_tp();
+  ::lcy::rpc::type tp() const;
+  void set_tp(::lcy::rpc::type value);
+  private:
+  ::lcy::rpc::type _internal_tp() const;
+  void _internal_set_tp(::lcy::rpc::type value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:lcy.rpc.Message)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::lcy::rpc::Request* request_;
+  ::lcy::rpc::Response* response_;
+  ::PROTOBUF_NAMESPACE_ID::uint64 id_;
+  int tp_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_rpc_2eproto;
 };
@@ -468,27 +663,7 @@ class Response PROTOBUF_FINAL :
 #endif  // __GNUC__
 // Request
 
-// uint64 id = 1;
-inline void Request::clear_id() {
-  id_ = PROTOBUF_ULONGLONG(0);
-}
-inline ::PROTOBUF_NAMESPACE_ID::uint64 Request::_internal_id() const {
-  return id_;
-}
-inline ::PROTOBUF_NAMESPACE_ID::uint64 Request::id() const {
-  // @@protoc_insertion_point(field_get:lcy.rpc.Request.id)
-  return _internal_id();
-}
-inline void Request::_internal_set_id(::PROTOBUF_NAMESPACE_ID::uint64 value) {
-  
-  id_ = value;
-}
-inline void Request::set_id(::PROTOBUF_NAMESPACE_ID::uint64 value) {
-  _internal_set_id(value);
-  // @@protoc_insertion_point(field_set:lcy.rpc.Request.id)
-}
-
-// string service_name = 2;
+// string service_name = 1;
 inline void Request::clear_service_name() {
   service_name_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
@@ -550,7 +725,7 @@ inline void Request::set_allocated_service_name(std::string* service_name) {
   // @@protoc_insertion_point(field_set_allocated:lcy.rpc.Request.service_name)
 }
 
-// string service_method = 3;
+// string service_method = 2;
 inline void Request::clear_service_method() {
   service_method_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
@@ -612,7 +787,7 @@ inline void Request::set_allocated_service_method(std::string* service_method) {
   // @@protoc_insertion_point(field_set_allocated:lcy.rpc.Request.service_method)
 }
 
-// bytes arguments = 4;
+// bytes arguments = 3;
 inline void Request::clear_arguments() {
   arguments_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
@@ -678,27 +853,7 @@ inline void Request::set_allocated_arguments(std::string* arguments) {
 
 // Response
 
-// uint64 id = 1;
-inline void Response::clear_id() {
-  id_ = PROTOBUF_ULONGLONG(0);
-}
-inline ::PROTOBUF_NAMESPACE_ID::uint64 Response::_internal_id() const {
-  return id_;
-}
-inline ::PROTOBUF_NAMESPACE_ID::uint64 Response::id() const {
-  // @@protoc_insertion_point(field_get:lcy.rpc.Response.id)
-  return _internal_id();
-}
-inline void Response::_internal_set_id(::PROTOBUF_NAMESPACE_ID::uint64 value) {
-  
-  id_ = value;
-}
-inline void Response::set_id(::PROTOBUF_NAMESPACE_ID::uint64 value) {
-  _internal_set_id(value);
-  // @@protoc_insertion_point(field_set:lcy.rpc.Response.id)
-}
-
-// .lcy.rpc.err errcode = 2;
+// .lcy.rpc.err errcode = 1;
 inline void Response::clear_errcode() {
   errcode_ = 0;
 }
@@ -718,7 +873,7 @@ inline void Response::set_errcode(::lcy::rpc::err value) {
   // @@protoc_insertion_point(field_set:lcy.rpc.Response.errcode)
 }
 
-// bytes arguments = 3;
+// bytes arguments = 2;
 inline void Response::clear_arguments() {
   arguments_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
@@ -780,9 +935,221 @@ inline void Response::set_allocated_arguments(std::string* arguments) {
   // @@protoc_insertion_point(field_set_allocated:lcy.rpc.Response.arguments)
 }
 
+// -------------------------------------------------------------------
+
+// Message
+
+// uint64 id = 1;
+inline void Message::clear_id() {
+  id_ = PROTOBUF_ULONGLONG(0);
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 Message::_internal_id() const {
+  return id_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 Message::id() const {
+  // @@protoc_insertion_point(field_get:lcy.rpc.Message.id)
+  return _internal_id();
+}
+inline void Message::_internal_set_id(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  
+  id_ = value;
+}
+inline void Message::set_id(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  _internal_set_id(value);
+  // @@protoc_insertion_point(field_set:lcy.rpc.Message.id)
+}
+
+// .lcy.rpc.type tp = 2;
+inline void Message::clear_tp() {
+  tp_ = 0;
+}
+inline ::lcy::rpc::type Message::_internal_tp() const {
+  return static_cast< ::lcy::rpc::type >(tp_);
+}
+inline ::lcy::rpc::type Message::tp() const {
+  // @@protoc_insertion_point(field_get:lcy.rpc.Message.tp)
+  return _internal_tp();
+}
+inline void Message::_internal_set_tp(::lcy::rpc::type value) {
+  
+  tp_ = value;
+}
+inline void Message::set_tp(::lcy::rpc::type value) {
+  _internal_set_tp(value);
+  // @@protoc_insertion_point(field_set:lcy.rpc.Message.tp)
+}
+
+// .lcy.rpc.Request request = 3;
+inline bool Message::_internal_has_request() const {
+  return this != internal_default_instance() && request_ != nullptr;
+}
+inline bool Message::has_request() const {
+  return _internal_has_request();
+}
+inline void Message::clear_request() {
+  if (GetArena() == nullptr && request_ != nullptr) {
+    delete request_;
+  }
+  request_ = nullptr;
+}
+inline const ::lcy::rpc::Request& Message::_internal_request() const {
+  const ::lcy::rpc::Request* p = request_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::lcy::rpc::Request*>(
+      &::lcy::rpc::_Request_default_instance_);
+}
+inline const ::lcy::rpc::Request& Message::request() const {
+  // @@protoc_insertion_point(field_get:lcy.rpc.Message.request)
+  return _internal_request();
+}
+inline void Message::unsafe_arena_set_allocated_request(
+    ::lcy::rpc::Request* request) {
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(request_);
+  }
+  request_ = request;
+  if (request) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:lcy.rpc.Message.request)
+}
+inline ::lcy::rpc::Request* Message::release_request() {
+  
+  ::lcy::rpc::Request* temp = request_;
+  request_ = nullptr;
+  if (GetArena() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+  return temp;
+}
+inline ::lcy::rpc::Request* Message::unsafe_arena_release_request() {
+  // @@protoc_insertion_point(field_release:lcy.rpc.Message.request)
+  
+  ::lcy::rpc::Request* temp = request_;
+  request_ = nullptr;
+  return temp;
+}
+inline ::lcy::rpc::Request* Message::_internal_mutable_request() {
+  
+  if (request_ == nullptr) {
+    auto* p = CreateMaybeMessage<::lcy::rpc::Request>(GetArena());
+    request_ = p;
+  }
+  return request_;
+}
+inline ::lcy::rpc::Request* Message::mutable_request() {
+  // @@protoc_insertion_point(field_mutable:lcy.rpc.Message.request)
+  return _internal_mutable_request();
+}
+inline void Message::set_allocated_request(::lcy::rpc::Request* request) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
+  if (message_arena == nullptr) {
+    delete request_;
+  }
+  if (request) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      ::PROTOBUF_NAMESPACE_ID::Arena::GetArena(request);
+    if (message_arena != submessage_arena) {
+      request = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, request, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  request_ = request;
+  // @@protoc_insertion_point(field_set_allocated:lcy.rpc.Message.request)
+}
+
+// .lcy.rpc.Response response = 4;
+inline bool Message::_internal_has_response() const {
+  return this != internal_default_instance() && response_ != nullptr;
+}
+inline bool Message::has_response() const {
+  return _internal_has_response();
+}
+inline void Message::clear_response() {
+  if (GetArena() == nullptr && response_ != nullptr) {
+    delete response_;
+  }
+  response_ = nullptr;
+}
+inline const ::lcy::rpc::Response& Message::_internal_response() const {
+  const ::lcy::rpc::Response* p = response_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::lcy::rpc::Response*>(
+      &::lcy::rpc::_Response_default_instance_);
+}
+inline const ::lcy::rpc::Response& Message::response() const {
+  // @@protoc_insertion_point(field_get:lcy.rpc.Message.response)
+  return _internal_response();
+}
+inline void Message::unsafe_arena_set_allocated_response(
+    ::lcy::rpc::Response* response) {
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(response_);
+  }
+  response_ = response;
+  if (response) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:lcy.rpc.Message.response)
+}
+inline ::lcy::rpc::Response* Message::release_response() {
+  
+  ::lcy::rpc::Response* temp = response_;
+  response_ = nullptr;
+  if (GetArena() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+  return temp;
+}
+inline ::lcy::rpc::Response* Message::unsafe_arena_release_response() {
+  // @@protoc_insertion_point(field_release:lcy.rpc.Message.response)
+  
+  ::lcy::rpc::Response* temp = response_;
+  response_ = nullptr;
+  return temp;
+}
+inline ::lcy::rpc::Response* Message::_internal_mutable_response() {
+  
+  if (response_ == nullptr) {
+    auto* p = CreateMaybeMessage<::lcy::rpc::Response>(GetArena());
+    response_ = p;
+  }
+  return response_;
+}
+inline ::lcy::rpc::Response* Message::mutable_response() {
+  // @@protoc_insertion_point(field_mutable:lcy.rpc.Message.response)
+  return _internal_mutable_response();
+}
+inline void Message::set_allocated_response(::lcy::rpc::Response* response) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
+  if (message_arena == nullptr) {
+    delete response_;
+  }
+  if (response) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      ::PROTOBUF_NAMESPACE_ID::Arena::GetArena(response);
+    if (message_arena != submessage_arena) {
+      response = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, response, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  response_ = response;
+  // @@protoc_insertion_point(field_set_allocated:lcy.rpc.Message.response)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 
@@ -793,6 +1160,11 @@ inline void Response::set_allocated_arguments(std::string* arguments) {
 
 PROTOBUF_NAMESPACE_OPEN
 
+template <> struct is_proto_enum< ::lcy::rpc::type> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::lcy::rpc::type>() {
+  return ::lcy::rpc::type_descriptor();
+}
 template <> struct is_proto_enum< ::lcy::rpc::err> : ::std::true_type {};
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::lcy::rpc::err>() {

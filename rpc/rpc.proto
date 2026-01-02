@@ -4,6 +4,11 @@ option cc_generic_services = true;
 
 package lcy.rpc;
 
+enum type {
+	request = 0;
+	response = 1;
+};
+
 enum err {
 	SUCCESS = 0;
 	NO_SERVICE = 1;
@@ -13,14 +18,19 @@ enum err {
 };
 
 message Request {
-	uint64 id = 1;
-	string service_name = 2;
-	string service_method = 3;
-	bytes arguments = 4;
+	string service_name = 1;
+	string service_method = 2;
+	bytes arguments = 3;
 };
 
 message Response {
+	err errcode = 1;
+	bytes arguments = 2;
+};
+
+message Message {
 	uint64 id = 1;
-	err errcode = 2;
-	bytes arguments = 3;
+	type tp = 2;
+	Request request = 3;
+	Response response = 4;
 };

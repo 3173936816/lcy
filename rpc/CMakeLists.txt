@@ -1,11 +1,7 @@
 add_library(lcy_rpc SHARED
-	src/closure.cc
- 	src/controller.cc
-# 	src/channel.cc
-
-	src/details/client_connection.cc
- 
  	src/rpc.pb.cc
+	src/details/connection.cc
+	src/details/server.cc
 )
 
 target_include_directories(lcy_rpc PUBLIC
@@ -16,7 +12,7 @@ target_include_directories(lcy_rpc PUBLIC
 target_link_libraries(lcy_rpc PUBLIC lcy_asio protobuf)
 
 # 添加测试子目录
-#add_subdirectory(tests)
+add_subdirectory(tests)
 
 # ========== 添加安装选项 ==========
 
