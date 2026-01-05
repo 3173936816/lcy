@@ -14,7 +14,7 @@ enum err {
 	NO_SERVICE = 1;
 	NO_METHOD = 2;
 	INVALID_REQUEST = 3;
-  	TIMEOUT = 4;
+	NOT_SUPPORT = 4;
 };
 
 message Request {

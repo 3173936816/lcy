@@ -106,13 +106,13 @@ enum err : int {
   NO_SERVICE = 1,
   NO_METHOD = 2,
   INVALID_REQUEST = 3,
-  TIMEOUT = 4,
+  NOT_SUPPORT = 4,
   err_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   err_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool err_IsValid(int value);
 constexpr err err_MIN = SUCCESS;
-constexpr err err_MAX = TIMEOUT;
+constexpr err err_MAX = NOT_SUPPORT;
 constexpr int err_ARRAYSIZE = err_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* err_descriptor();

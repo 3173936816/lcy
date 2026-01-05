@@ -3,6 +3,8 @@
 #include <string.h>
 #include <arpa/inet.h>
 
+#include <iostream>
+
 namespace lcy {
 namespace rpc {
 namespace details {
@@ -27,8 +29,9 @@ void Connection::start_recv()
 	read_buf_.reserve(4096);	
 	auto cbuf = lcy::asio::buffer(read_buf_.writeBegin(), read_buf_.availableBytes());
 
+	auto self = shared_from_this();
 	socket_.async_read(cbuf, std::bind(&Connection::onRecvMessage,
-			this, std::placeholders::_1, std::placeholders::_2));
+			this, self, std::placeholders::_1, std::placeholders::_2));
 }
 
 void Connection::send(std::string data)
@@ -44,8 +47,16 @@ void Connection::send(std::string data)
 void Connection::connect(const std::string& ip, uint16_t port)
 {
 	lcy::asio::ip::Endpoint endpoint(ip, port);
+	if ( endpoint.isV4() ) {
+		socket_.open(lcy::asio::ip::TCP::v4());
+	}
+	if ( endpoint.isV6() ) {
+		socket_.open(lcy::asio::ip::TCP::v6());
+	}
+
+	auto self = shared_from_this();
 	socket_.async_connect(endpoint, std::bind(&Connection::onConnect,
-			this, std::placeholders::_1));
+			this, self, std::placeholders::_1));
 }
 
 void Connection::setConnectOp(connect_op_type connect_op)
@@ -68,30 +79,39 @@ lcy::asio::ip::TCP::Socket& Connection::get_socket()
 	return socket_;
 }
 
-void Connection::onRecvMessage(lcy::asio::errcode_type ec, size_t nbytes)
+void Connection::onRecvMessage(ConnPtr conn, lcy::asio::errcode_type ec, size_t nbytes)
 {
-	if ( read_buf_.dataBytes() < sizeof(uint32_t) ) {
+	if ( !ec ) {
+		if ( nbytes == 0 ) {
+			conn->shutdown();
+			return;
+		}
+
+		read_buf_.write(nbytes);
+
+		while ( true ) {
+			if ( read_buf_.dataBytes() < sizeof(uint32_t) ) {
+				break;
+			}
+
+			uint32_t len = 0;
+			::memcpy(&len, read_buf_.readBegin(), sizeof(uint32_t));
+			len = ntohl(len);
+
+			if ( read_buf_.dataBytes() < len + sizeof(uint32_t) ) {
+				break;
+			}
+
+			std::string data = std::string(read_buf_.readBegin() + sizeof(uint32_t), len);
+			read_buf_.read(len + sizeof(uint32_t));
+
+			if ( message_op_ ) {
+				message_op_(*this, data);
+			}
+		}
+
 		start_recv();
-		return;
 	}
-
-	uint32_t len = 0;
-	::memcpy(&len, read_buf_.readBegin(), sizeof(uint32_t));
-	len = ntohl(len);
-
-	if ( read_buf_.dataBytes() < len + sizeof(uint32_t) ) {
-		start_recv();
-		return;
-	}
-
-	std::string data = std::string(read_buf_.readBegin() + sizeof(uint32_t), len);
-	read_buf_.read(len + sizeof(uint32_t));
-
-	if ( message_op_ ) {
-		message_op_(data);
-	}
-
-	start_recv();
 }
 
 void Connection::start_deque_send()
@@ -99,11 +119,12 @@ void Connection::start_deque_send()
 	const std::string& data = send_buf_deque_.front();
 	auto cbuf = lcy::asio::buffer(data);
 
+	auto self = shared_from_this();
 	socket_.async_write(cbuf, std::bind(&Connection::onSendCompleted,
-			this, std::placeholders::_1, std::placeholders::_2));
+			this, self, std::placeholders::_1, std::placeholders::_2));
 }
 
-void Connection::onSendCompleted(lcy::asio::errcode_type ec, size_t nbytes)
+void Connection::onSendCompleted(ConnPtr conn, lcy::asio::errcode_type ec, size_t nbytes)
 {
 	send_buf_deque_.pop_front();
 	
@@ -112,7 +133,7 @@ void Connection::onSendCompleted(lcy::asio::errcode_type ec, size_t nbytes)
 	}
 }
 
-void Connection::onConnect(lcy::asio::errcode_type ec)
+void Connection::onConnect(ConnPtr conn, lcy::asio::errcode_type ec)
 {
 	if ( connect_op_ ) {
 		connect_op_(ec);

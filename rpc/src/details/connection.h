@@ -15,7 +15,7 @@ class Connection :
 	public std::enable_shared_from_this<Connection>
 {
 public:
-	typedef std::function<void (const std::string&)> message_op_type;
+	typedef std::function<void (Connection&, const std::string&)> message_op_type;
 	typedef std::function<void (lcy::asio::errcode_type)> connect_op_type;
 
 	Connection(lcy::asio::IOContext& ioc);
@@ -33,10 +33,12 @@ public:
 	lcy::asio::ip::TCP::Socket& get_socket();
 
 private:
-	void onRecvMessage(lcy::asio::errcode_type ec, size_t nbytes);
+	typedef std::shared_ptr<Connection> ConnPtr;
+
+	void onRecvMessage(ConnPtr conn, lcy::asio::errcode_type ec, size_t nbytes);
 	void start_deque_send();
-	void onSendCompleted(lcy::asio::errcode_type ec, size_t nbytes);
-	void onConnect(lcy::asio::errcode_type ec);
+	void onSendCompleted(ConnPtr conn, lcy::asio::errcode_type ec, size_t nbytes);
+	void onConnect(ConnPtr conn, lcy::asio::errcode_type ec);
 	
 private:
 	lcy::asio::ip::TCP::Socket socket_;

@@ -1,7 +1,9 @@
 add_library(lcy_rpc SHARED
- 	src/rpc.pb.cc
 	src/details/connection.cc
 	src/details/server.cc
+
+ 	src/rpc.pb.cc
+	src/server.cc
 )
 
 target_include_directories(lcy_rpc PUBLIC

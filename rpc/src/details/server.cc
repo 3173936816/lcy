@@ -3,6 +3,8 @@
 
 #include <thread>
 
+#include <iostream>
+
 namespace lcy {
 namespace rpc {
 namespace details {
@@ -15,14 +17,26 @@ Server::Server(lcy::asio::IOContext& ioc, uint32_t threadCount) :
 
 Server::~Server()
 {
+	stop();
+}
+
+void Server::start(const lcy::asio::ip::Endpoint& addr)
+{
+	acceptor_.setup(addr);
+
+	io_thread_pool_.start();
+	start_accept();
+}
+
+void Server::stop()
+{
 	acceptor_.cancel();
 	io_thread_pool_.stop();
 }
 
-void Server::start()
+void Server::setConnectOp(connect_op_type connect_op)
 {
-	io_thread_pool_.start();
-	start_accept();
+	connect_op_ = std::move(connect_op);
 }
 
 void Server::start_accept()

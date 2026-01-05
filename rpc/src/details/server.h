@@ -19,7 +19,8 @@ public:
 		   uint32_t threadCount);
 	~Server();
 
-	void start();
+	void start(const lcy::asio::ip::Endpoint& addr);
+	void stop();
 	void setConnectOp(connect_op_type connect_op);
 
 private:
