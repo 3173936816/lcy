@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option cc_generic_services = true;
+
+enum RetCode {
+	ERROR = 0;
+	SUCCESS = 1;
+};
+
+message LoginRequest {
+	string name = 1;
+	string pwd = 2;
+};
+
+message LoginResponse {
+	RetCode retcode = 1;
+};
+
+service LoginService {
+	rpc Login(LoginRequest) returns (LoginResponse);
+};

@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option cc_generic_services = true;
+
+package lcy.rpc;
+
+enum type {
+	request = 0;
+	response = 1;
+};
+
+enum err {
+	SUCCESS = 0;
+	NO_SERVICE = 1;
+	NO_METHOD = 2;
+	INVALID_REQUEST = 3;
+	NOT_SUPPORT = 4;
+};
+
+message Request {
+	string service_name = 1;
+	string service_method = 2;
+	bytes arguments = 3;
+};
+
+message Response {
+	err errcode = 1;
+	bytes arguments = 2;
+};
+
+message Message {
+	uint64 id = 1;
+	type tp = 2;
+	Request request = 3;
+	Response response = 4;
+};
