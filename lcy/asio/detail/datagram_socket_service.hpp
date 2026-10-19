@@ -140,6 +140,11 @@ public:
 			impl.data_, reactor::event_type::write,
 				operation(std::move(send_to_op)));
 	}
+
+	void cleanup() override
+	{
+		// nothing to do
+	}
 };
 
 }	// namespace detail

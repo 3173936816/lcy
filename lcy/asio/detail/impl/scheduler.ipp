@@ -172,12 +172,12 @@ void scheduler::submit_private_op_queue(std::list<operation> op_list)
 
 void scheduler::cleanup()
 {
-	std::lock_guard<conditionally_mutex> locker(reactor_mutex_);
+	std::lock_guard<conditionally_mutex> reactor_locker(reactor_mutex_);
 	if ( reactor_ ) {
 		reactor_->cleanup();
 	}
 
-	std::lock_guard<conditionally_mutex> locker(op_queue_mutex_);
+	std::lock_guard<conditionally_mutex> op_queue_locker(op_queue_mutex_);
 	op_queue_.clear();
 }
 

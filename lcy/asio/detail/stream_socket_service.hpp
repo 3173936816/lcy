@@ -125,6 +125,11 @@ public:
 	{
 		async_send(impl, buffer_view, std::move(func));
 	}
+
+	void cleanup() override
+	{
+		// nothing to do
+	}
 };
 	
 }	// namespace detail
