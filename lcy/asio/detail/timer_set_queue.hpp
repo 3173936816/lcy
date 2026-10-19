@@ -18,12 +18,14 @@ class timer_set_queue :
 	private noncopyable
 {
 public:
-	timer_set_base::internal_timer* alloc()
+	typedef timer_set_base::internal_timer internal_timer;
+
+	internal_timer* alloc()
 	{
 		return timer_datas_.alloc();
 	}
 
-	void free(timer_set_base::internal_timer* t)
+	void free(internal_timer* t)
 	{
 		timer_datas_.free(t);
 	}
@@ -67,9 +69,23 @@ public:
 		}
 	}
 
+	void get_all_timer_ops(std::list<operation>& op_list)
+	{
+		for ( auto ts : timer_sets_ ) {
+			ts->cleanup_timers();
+		}
+
+		std::list<internal_timer*> timer_list;
+		timer_datas_.get_live_objects(timer_list);
+
+		for ( auto t : timer_list ) {
+			op_list.push_back(std::move(t->timer_op_));
+		}
+	}
+
 private:
 	std::list<timer_set_base*> timer_sets_;
-	object_pool<timer_set_base::internal_timer> timer_datas_;
+	object_pool<internal_timer> timer_datas_;
 };
 
 }	// namespace detail

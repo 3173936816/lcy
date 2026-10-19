@@ -54,6 +54,9 @@ public:
 
 	inline reactor& get_reactor();
 
+	inline void cleanup();
+	inline void abandon_operations(std::list<operation>& op_list);
+
 	const std::size_t concurrency_hint_;
 private:
 	inline void init_reactor();

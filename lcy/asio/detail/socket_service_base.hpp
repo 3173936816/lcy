@@ -372,6 +372,11 @@ public:
 				operation(std::move(send_op)));
 	}
 
+	void cleanup() override
+	{
+		// nothing to do
+	}
+
 protected:
 	template <typename Function, typename ...Args>
 	void post_func_to_scheduler(Function func,

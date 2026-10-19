@@ -98,6 +98,19 @@ public:
 		}
 	}
 
+	void get_all_signal_set_ops(std::list<operation>& op_list)
+	{
+		signal_sets_.clear();
+		signal_set_index_.clear();
+
+		std::list<internal_signal_set*> signal_set_list;
+		signal_set_datas_.get_live_objects(signal_set_list);
+
+		for ( auto s : signal_set_list ) {
+			op_list.push_back(std::move(s->signal_op_));
+		}
+	}
+
 private:
 	std::list<internal_signal_set*> signal_sets_;
 	std::unordered_map<

@@ -88,6 +88,9 @@ public:
 		uint64_t sigmask, operation signal_op);
 	inline void cancel_signal_set(internal_signal_set* s);
 
+
+	inline void cleanup();
+
 private:
 	inline int create_epollfd();
 	inline int create_eventfd();

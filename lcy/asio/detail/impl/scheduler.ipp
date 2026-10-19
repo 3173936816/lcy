@@ -170,6 +170,22 @@ void scheduler::submit_private_op_queue(std::list<operation> op_list)
 	condvar_.notify_one();
 }
 
+void scheduler::cleanup()
+{
+	std::lock_guard<conditionally_mutex> locker(reactor_mutex_);
+	if ( reactor_ ) {
+		reactor_->cleanup();
+	}
+
+	std::lock_guard<conditionally_mutex> locker(op_queue_mutex_);
+	op_queue_.clear();
+}
+
+void scheduler::abandon_operations(std::list<operation>& op_list)
+{
+	std::list<operation> abandon_list = std::move(op_list);
+}
+
 }	// namespace detail
 }	// namespace asio
 }	// namespace lcy

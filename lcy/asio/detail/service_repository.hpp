@@ -24,8 +24,9 @@ public:
 
 	~service_repository()
 	{
-		for ( auto service : services_ ) {
-			delete service;
+		for ( auto iter = services_.rbegin();
+				iter != services_.rend(); ++iter ) {
+			delete *iter;
 		}
 	}
 
@@ -44,6 +45,14 @@ public:
 		services_.push_back(new_service);
 
 		return *new_service;
+	}
+
+	void cleanup_services()
+	{
+		for ( auto iter = services_.rbegin();
+				iter != services_.rend(); ++iter ) {
+			(*iter)->cleanup();
+		}
 	}
 
 private:

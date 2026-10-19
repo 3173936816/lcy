@@ -68,6 +68,12 @@ public:
 
 		return is_earliest;
 	}
+
+	void cleanup_timers()
+	{
+		timer_set_.clear();
+		timer_set_index_.clear();
+	}
 	
 	virtual long long get_wait_ms() = 0;
 	virtual void get_ready_internal_timer_ops(std::list<operation>& op_list) = 0;

@@ -31,6 +31,8 @@ public:
 
 public:
 	virtual ~service_base() {}
+	
+	virtual void cleanup() = 0;
 	virtual service_id get_id() const = 0;
 };
 

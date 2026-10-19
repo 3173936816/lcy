@@ -105,6 +105,11 @@ public:
 		reactor_->cancel_signal_set(impl.data_);
 	}
 
+	void cleanup() override
+	{
+		// nothing to do
+	}
+
 private:
 	reactor* reactor_;
 };

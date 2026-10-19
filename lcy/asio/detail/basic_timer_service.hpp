@@ -132,6 +132,11 @@ public:
 		return impl.expiry_ - Clock::now();
 	}
 
+	void cleanup() override
+	{
+		timer_set_.cleanup_timers();
+	}
+
 private:
 	reactor* reactor_;
 	basic_timer_set<Clock> timer_set_;

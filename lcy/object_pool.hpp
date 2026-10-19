@@ -55,9 +55,15 @@ public:
 		}
 	}
 
+	void get_live_objects(std::list<Object*>& ob_list)
+	{
+		ob_list = live_list_;
+	}
+
 private:
 	std::list<Object*> live_list_;
 	std::list<Object*> free_list_;
+
 	std::unordered_map<
 		Object*,
 		typename std::list<

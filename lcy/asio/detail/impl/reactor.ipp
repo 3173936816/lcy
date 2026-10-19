@@ -486,6 +486,33 @@ void reactor::handle_descriptor_events(internal_descriptor_state* ds,
 	}
 }
 
+void reactor::cleanup()
+{
+	std::list<operation> abandon_ops;
+
+	std::lock_guard<conditionally_mutex> ts_locker(tsq_cond_mutex_);
+	ts_queue_.get_all_timer_ops(abandon_ops);
+
+	std::lock_guard<conditionally_mutex> ss_locker(ssq_cond_mutex_);
+	ss_queue_.get_all_signal_set_ops(abandon_ops);
+
+	std::lock_guard<conditionally_mutex> ds_locker(ds_cond_mutex_);
+	std::list<internal_descriptor_state*> descriptor_state_list;
+	descriptor_datas_.get_live_objects(descriptor_state_list);
+	for ( auto ds : descriptor_state_list ) {
+		std::lock_guard<conditionally_mutex> ss_locker(ds->cond_mutex_);
+		if ( ds->events_ & event_type::read ) {
+			abandon_ops.push_back(std::move(ds->read_op_));
+		}
+		if ( ds->events_ & event_type::write ) {
+			abandon_ops.push_back(std::move(ds->write_op_));
+		}
+		ds->events_ = event_type::null;
+	}
+
+	scheduler_->abandon_operations(abandon_ops);
+}
+
 }	// namespace detail
 }	// namespace asio
 }	// namespace lcy

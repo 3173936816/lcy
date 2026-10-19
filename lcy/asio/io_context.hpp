@@ -54,6 +54,12 @@ public:
 	io_context(std::size_t concurrency_hint = std::thread::hardware_concurrency()) :
 		sch_(concurrency_hint), repository_(concurrency_hint) {}
 
+	~io_context()
+	{
+		repository_.cleanup_services();
+		sch_.cleanup();
+	}
+
 	void run()
 	{
 		sch_.run();		
