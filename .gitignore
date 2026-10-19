@@ -1,0 +1,18 @@
+# 构建产物
+build/
+CMakeCache.txt
+CMakeFiles/
+*.o
+*.a
+*.so
+*.exe
+*.out
+
+# 编辑器和系统文件
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# 测试输出
+dsurf-out.txt
