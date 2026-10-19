@@ -35,7 +35,7 @@ public:
 private:
 	socket_service_base* self_;
 	socket_impl* impl_;
-	accept_func_type func_;
+	connect_func_type func_;
 };
 
 }	// namespace detail
