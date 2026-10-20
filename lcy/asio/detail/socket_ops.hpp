@@ -1,13 +1,13 @@
 #ifndef __LCY_ASIO_DETAIL_SOCKET_OPS_HPP__
 #define __LCY_ASIO_DETAIL_SOCKET_OPS_HPP__
 
+#include <poll.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <sys/un.h>
-#include <sys/select.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
 
@@ -282,13 +282,14 @@ int getpeername(int sockfd,
 	return 0;
 }
 
-int select_read(int sockfd, lcy::system::error_code& ec)
+int poll_read(int sockfd, lcy::system::error_code& ec)
 {
-	fd_set fds;
-	FD_ZERO(&fds);
-	FD_SET(sockfd, &fds);
+	pollfd pfd;
+	pfd.fd = sockfd;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
 
-	int res = ::select(sockfd + 1, &fds, 0, 0, 0);
+	int res = ::poll(&pfd, 1, -1);
 	if ( res == -1 ) {
 		ec = lcy::system::error_code(errno);
 		return -1;
@@ -299,13 +300,14 @@ int select_read(int sockfd, lcy::system::error_code& ec)
 	return 0;
 }
 
-int select_write(int sockfd, lcy::system::error_code& ec)
+int poll_write(int sockfd, lcy::system::error_code& ec)
 {
-	fd_set fds;
-	FD_ZERO(&fds);
-	FD_SET(sockfd, &fds);
+	pollfd pfd;
+	pfd.fd = sockfd;
+	pfd.events = POLLOUT;
+	pfd.revents = 0;
 
-	int res = ::select(sockfd + 1, 0, &fds, 0, 0);
+	int res = ::poll(&pfd, 1, -1);
 	if ( res == -1 ) {
 		ec = lcy::system::error_code(errno);
 		return -1;
@@ -316,9 +318,9 @@ int select_write(int sockfd, lcy::system::error_code& ec)
 	return 0;
 }
 
-int select_connect(int sockfd, lcy::system::error_code& ec)
+int poll_connect(int sockfd, lcy::system::error_code& ec)
 {
-	if ( select_write(sockfd, ec) ) {
+	if ( poll_write(sockfd, ec) ) {
 		return -1;
 	}
 

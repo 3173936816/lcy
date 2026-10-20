@@ -66,7 +66,8 @@ public:
 	inline void remove_internal_descriptor_state(int sockfd,
 		internal_descriptor_state* ds);
 	inline void start_op(int sockfd,
-		internal_descriptor_state* ds, event_type et, operation op);
+		internal_descriptor_state* ds, event_type et,
+		operation op, bool try_speculative);
 	inline void cancel_ops(int sockfd, internal_descriptor_state* ds, int ets);
 
 

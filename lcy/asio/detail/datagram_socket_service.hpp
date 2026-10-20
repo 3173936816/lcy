@@ -46,7 +46,7 @@ public:
 			}
 			
 			if ( ec == lcy::system::error::resource_unavailable_try_again ) {
-				if ( socket_ops::select_read(impl.sockfd_, ec) ) {
+				if ( socket_ops::poll_read(impl.sockfd_, ec) ) {
 					return 0;
 				}
 				continue;
@@ -83,7 +83,7 @@ public:
 			}
 
 			if ( ec == lcy::system::error::resource_unavailable_try_again ) {
-				if ( socket_ops::select_write(impl.sockfd_, ec) ) {
+				if ( socket_ops::poll_write(impl.sockfd_, ec) ) {
 					return 0;
 				}
 				continue;
@@ -115,7 +115,7 @@ public:
 
 		reactor_->start_op(impl.sockfd_,
 			impl.data_, reactor::event_type::read,
-				operation(std::move(receive_from_op)));
+				operation(std::move(receive_from_op)), true);
 	}
 
 	template <
@@ -138,7 +138,7 @@ public:
 
 		reactor_->start_op(impl.sockfd_,
 			impl.data_, reactor::event_type::write,
-				operation(std::move(send_to_op)));
+				operation(std::move(send_to_op)), true);
 	}
 
 	void cleanup() override

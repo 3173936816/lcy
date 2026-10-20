@@ -38,7 +38,7 @@ public:
 
 	~basic_socket_base()
 	{
-		close();
+		service_.destroy(impl_);
 	}
 
 	bool is_open()

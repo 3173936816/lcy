@@ -83,12 +83,8 @@ public:
 
 	void destroy(socket_impl& impl)
 	{
-		if ( impl.data_ ) {
-			reactor_->free_internal_descriptor_state(impl.data_);
-		}
-
-		impl.sockfd_ = -1;
-		impl.data_ = 0;
+		lcy::system::error_code ignore_ec;
+		this->close(impl, ignore_ec);
 	}
 
 	bool is_open(socket_impl& impl)
@@ -120,10 +116,12 @@ public:
 			reactor_->cancel_ops(impl.sockfd_,
 				impl.data_, reactor::event_type::read | reactor::event_type::write);
 			reactor_->remove_internal_descriptor_state(impl.sockfd_, impl.data_);
+			reactor_->free_internal_descriptor_state(impl.data_);
 			socket_ops::close(impl.sockfd_, ec);
 		}
 
-		destroy(impl);
+		impl.sockfd_ = -1;
+		impl.data_ = 0;
 	}
 
 	template <typename Endpoint>
@@ -154,7 +152,7 @@ public:
 				return;
 			}
 
-			socket_ops::select_connect(impl.sockfd_, ec);
+			socket_ops::poll_connect(impl.sockfd_, ec);
 		}
 	}
 
@@ -178,7 +176,7 @@ public:
 			}
 			
 			if ( ec == lcy::system::error::resource_unavailable_try_again ) {
-				if ( socket_ops::select_read(impl.sockfd_, ec) ) {
+				if ( socket_ops::poll_read(impl.sockfd_, ec) ) {
 					return 0;
 				}
 				continue;
@@ -210,7 +208,7 @@ public:
 			}
 
 			if ( ec == lcy::system::error::resource_unavailable_try_again ) {
-				if ( socket_ops::select_write(impl.sockfd_, ec) ) {
+				if ( socket_ops::poll_write(impl.sockfd_, ec) ) {
 					return 0;
 				}
 				continue;
@@ -326,7 +324,7 @@ public:
 	
 			reactor_->start_op(impl.sockfd_,
 				impl.data_, reactor::event_type::write,
-					operation(std::move(connect_op)));
+					operation(std::move(connect_op)), false);
 	
 			return;
 		}
@@ -350,7 +348,7 @@ public:
 
 		reactor_->start_op(impl.sockfd_,
 			impl.data_, reactor::event_type::read,
-				operation(std::move(receive_op)));
+				operation(std::move(receive_op)), true);
 	}
 
 	template <typename ConstBufferView>
@@ -369,7 +367,7 @@ public:
 
 		reactor_->start_op(impl.sockfd_,
 			impl.data_, reactor::event_type::write,
-				operation(std::move(send_op)));
+				operation(std::move(send_op)), true);
 	}
 
 protected:

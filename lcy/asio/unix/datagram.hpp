@@ -44,4 +44,4 @@ public:
 }	// namespace asio
 }	// namespace lcy
 
-#endif	// __LCY_ASIO_UNIX_STREAM_SOCKET_HPP__
+#endif	// __LCY_ASIO_UNIX_DATAGRAM_SOCKET_HPP__

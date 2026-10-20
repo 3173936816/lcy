@@ -1,9 +1,9 @@
+#include <poll.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <signal.h>
 #include <sys/epoll.h> 
-#include <sys/select.h>
 #include <sys/eventfd.h>
 #include <sys/timerfd.h>
 #include <sys/signalfd.h>
@@ -160,24 +160,26 @@ void reactor::remove_internal_descriptor_state(int sockfd,
 }
 
 void reactor::start_op(int sockfd,
-   internal_descriptor_state* ds, event_type et, operation op)
+   internal_descriptor_state* ds, event_type et,
+   operation op, bool try_speculative)
 {
-	fd_set fds;
-	FD_ZERO(&fds);
-	FD_SET(sockfd, &fds);
-	timeval tv = { 0, 0 };
+	if ( try_speculative ) {
+		pollfd pfd;
+		pfd.fd = sockfd;
+		pfd.events = 0;
+		pfd.revents = 0;
 
-	int is_ready = 0;
-	if ( et == event_type::read ) {
-		is_ready = ::select(sockfd + 1, &fds, 0, 0, &tv);
-	}
-	if ( et == event_type::write ) {
-		is_ready = ::select(sockfd + 1, 0, &fds, 0, &tv);
-	}
+		if ( et == event_type::read ) {
+		    pfd.events = POLLIN;
+		} else if ( et == event_type::write ) {
+		    pfd.events = POLLOUT;
+		}
 
-	if ( is_ready > 0 ) {
-		scheduler_->post(std::move(op));
-		return;
+		int is_ready = ::poll(&pfd, 1, 0);
+		if ( is_ready > 0 ) {
+			scheduler_->post(std::move(op));
+			return;
+		}
 	}
 
 	std::lock_guard<conditionally_mutex> locker(ds->cond_mutex_);
