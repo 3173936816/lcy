@@ -42,7 +42,7 @@ public:
 		return family_;
 	}
 
-	int type()
+	int type() const
 	{
 		return SOCK_DGRAM;
 	}

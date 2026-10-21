@@ -30,7 +30,7 @@ public:
     typedef Protocol protocol_type;
     typedef Endpoint endpoint_type;
 
-    typedef stream_socket_type::accept_func_type accept_func_type;
+    typedef typename stream_socket_type::accept_func_type accept_func_type;
 
 public:
     basic_acceptor(executor_type& executor) :
@@ -41,7 +41,7 @@ public:
     {
         stream_socket_.open(local_endpoint.protocol());
         stream_socket_.bind(local_endpoint);
-        stream_socket_.listen(128);
+        stream_socket_.listen(SOMAXCONN);
     }
 
     bool is_open()

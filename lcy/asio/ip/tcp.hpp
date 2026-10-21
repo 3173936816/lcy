@@ -8,6 +8,7 @@
 #include "lcy/asio/io_context.hpp"
 #include "lcy/asio/detail/basic_endpoint.hpp"
 #include "lcy/asio/detail/basic_stream_socket.hpp"
+#include "lcy/asio/detail/basic_acceptor.hpp"
 
 namespace lcy
 {
@@ -27,6 +28,9 @@ public:
 	typedef detail::basic_stream_socket<
 		io_context, tcp, endpoint> socket;
 
+	typedef detail::basic_acceptor<
+		io_context, tcp, endpoint> acceptor;
+
 	static tcp v4()
 	{
 		return tcp(AF_INET);
@@ -42,7 +46,7 @@ public:
 		return family_;
 	}
 
-	int type()
+	int type() const
 	{
 		return SOCK_STREAM;
 	}

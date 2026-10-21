@@ -6,7 +6,7 @@
 #include <netinet/ip.h>
 
 #include "lcy/asio/io_context.hpp"
-#include "lcy/asio/detail/unix_endpoint.hpp"
+#include "lcy/asio/unix/basic_endpoint.hpp"
 #include "lcy/asio/detail/basic_datagram_socket.hpp"
 
 namespace lcy
@@ -19,7 +19,7 @@ namespace unix
 class datagram
 {
 public:
-	typedef detail::unix_endpoint endpoint;
+	typedef basic_endpoint<datagram> endpoint;
 
 	typedef detail::basic_datagram_socket<
 		io_context, datagram, endpoint> socket;
@@ -29,7 +29,7 @@ public:
 		return AF_UNIX;
 	}
 
-	int type()
+	int type() const
 	{
 		return SOCK_DGRAM;
 	}

@@ -1,5 +1,5 @@
-#ifndef __LCY_ASIO_DETAIL_UNIX_ENDPOINT_HPP__
-#define __LCY_ASIO_DETAIL_UNIX_ENDPOINT_HPP__
+#ifndef __LCY_ASIO_UNIX_BASIC_ENDPOINT_HPP__
+#define __LCY_ASIO_UNIX_BASIC_ENDPOINT_HPP__
 
 #include <string>
 #include <cstring>
@@ -13,20 +13,21 @@ namespace lcy
 {
 namespace asio
 {
-namespace detail
+namespace unix
 {
 
-class unix_endpoint
+template <typename UnixProtocol>
+class basic_endpoint
 {
 public:
-	unix_endpoint()
+	basic_endpoint()
 	{
 		::memset(&addr_, 0x00, sizeof(addr_));
 
 		addr_.sun_family = AF_UNIX;
 	}
 
-	unix_endpoint(std::string path)
+	basic_endpoint(std::string path)
 	{
 		::memset(&addr_, 0x00, sizeof(addr_));
 
@@ -40,7 +41,7 @@ public:
 		::memcpy(&addr_.sun_path[0], &path[0], path.length());
 	}
 
-	bool operator==(const unix_endpoint& rhs) const
+	bool operator==(const basic_endpoint& rhs) const
 	{
 		return ::memcmp(&addr_, &rhs.addr_, sizeof(addr_)) == 0;
 	}
@@ -62,15 +63,21 @@ public:
 
 	std::string to_string() const
 	{
-		return std::string(&addr_.sun_path[0]);
+    	return std::string(&addr_.sun_path[0],
+        	::strnlen(&addr_.sun_path[0], sizeof(addr_.sun_path)));
+	}
+
+	UnixProtocol protocol() const
+	{
+		return UnixProtocol();
 	}
 
 private:
 	sockaddr_un addr_;
 };
 
-}	// namespace detail
+}	// namespace unix
 }	// namespace asio
 }	// namespace lcy
 
-#endif	// __LCY_ASIO_DETAIL_UNIX_ENDPOINT_HPP__
+#endif	// __LCY_ASIO_UNIX_BASIC_ENDPOINT_HPP__
