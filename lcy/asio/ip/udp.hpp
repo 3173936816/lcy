@@ -19,8 +19,7 @@ namespace ip
 class udp
 {
 private:
-	udp(int family) :
-		family_(family) {}
+	udp(int family) : family_(family) {}
 
 public:
 	typedef detail::basic_endpoint<udp> endpoint;

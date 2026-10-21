@@ -20,7 +20,7 @@ public:
     static sptr create_server(lcy::asio::io_context& ioc,
 		lcy::asio::ip::udp::endpoint local_endpoint)
 	{
-		sptr conn(new udp_connection(ioc));		
+		sptr conn(new udp_connection(ioc));
 
 		lcy::system::error_code ec;
 		conn->socket_.open(local_endpoint.protocol(), ec);

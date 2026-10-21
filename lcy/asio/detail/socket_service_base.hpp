@@ -244,8 +244,9 @@ public:
 			return;
 		}
 
+		socklen_t optlen = static_cast<socklen_t>(opt.data_len());
 		socket_ops::getsockopt(impl.sockfd_,
-			opt.level(), opt.name(), opt.data(), opt.data_len(), ec);
+			opt.level(), opt.name(), opt.data(), &optlen, ec);
 	}
 
 	std::size_t available(socket_impl& impl, lcy::system::error_code& ec)

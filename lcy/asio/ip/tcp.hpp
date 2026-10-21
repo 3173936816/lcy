@@ -19,8 +19,7 @@ namespace ip
 class tcp
 {
 private:
-	tcp(int family) :
-		family_(family) {}
+	tcp(int family) : family_(family) {}
 
 public:
 	typedef detail::basic_endpoint<tcp> endpoint;
