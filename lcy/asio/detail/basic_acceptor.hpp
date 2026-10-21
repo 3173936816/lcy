@@ -35,11 +35,15 @@ public:
 public:
     basic_acceptor(executor_type& executor) :
         executor_(executor), stream_socket_(executor) {}
-    
-    basic_acceptor(executor_type& executor, endpoint_type local_endpoint) :
+
+    template <typename... SocketOptions>
+    basic_acceptor(executor_type& executor,
+                   endpoint_type local_endpoint,
+                   SocketOptions... options) :
         executor_(executor), stream_socket_(executor)
     {
         stream_socket_.open(local_endpoint.protocol());
+        set_options(options...);
         stream_socket_.bind(local_endpoint);
         stream_socket_.listen(SOMAXCONN);
     }
@@ -144,6 +148,16 @@ public:
 	{
 		return executor_;
 	}
+
+private:
+    void set_options() {}
+
+    template <typename SocketOption, typename... Args>
+    void set_options(SocketOption opt, Args... rest)
+    {
+        set_option(opt);
+        set_options(rest...);
+    }
 
 private:
     executor_type& executor_;
