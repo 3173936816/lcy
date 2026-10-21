@@ -71,6 +71,10 @@ public:
 
 	void get_all_timer_ops(std::list<operation>& op_list)
 	{
+		for ( auto ts : timer_sets_ ) {
+			ts->cleanup_timers();
+		}
+
 		std::list<internal_timer*> timer_list;
 		timer_datas_.get_live_objects(timer_list);
 
