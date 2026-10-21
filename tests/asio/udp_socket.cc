@@ -80,7 +80,7 @@ public:
 		auto remote_endpoint_sptr = std::make_shared<lcy::asio::ip::udp::endpoint>();
 
 		socket_.async_receive_from(*remote_endpoint_sptr,
-			lcy::asio::mutable_buffer_view(read_buffer_.data(), read_buffer_.size()),
+			lcy::asio::buffer_view(read_buffer_),
 				[remote_endpoint_sptr, this, self](lcy::system::error_code ec, std::size_t nbytes){
 			if ( ec ) {
 				std::cout << "do_receive_from_read error : " << ec.message() << std::endl;
@@ -94,7 +94,7 @@ public:
 			
 			::memcpy(write_buffer_.data(), read_buffer_.data(), nbytes);
 			do_send_to_write(*remote_endpoint_sptr,
-				lcy::asio::const_buffer_view(write_buffer_.data(), nbytes));
+				lcy::asio::buffer_view(write_buffer_.data(), nbytes));
 		});
 	}
 
