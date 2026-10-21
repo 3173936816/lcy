@@ -15,8 +15,9 @@ namespace detail
 class asio_category :
 	public lcy::system::error_category
 {
-	friend const lcy::system::error_category& fetch_asio_category();
 private:
+	friend const lcy::system::error_category& fetch_asio_category();
+	
 	asio_category() {}
 
 public:

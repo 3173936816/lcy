@@ -31,7 +31,7 @@ private:
 
 inline void throw_asio_exception(lcy::system::error_code ec, std::string usermsg)
 {
-	std::string msg = "asio:[" + usermsg + "]: " + ec.message();
+	std::string msg = "asio:{" + usermsg + "}: " + ec.message();
 	throw asio_exception(std::move(msg));
 }
 

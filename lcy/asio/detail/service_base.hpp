@@ -17,8 +17,7 @@ public:
 	class service_id
 	{
 	public:
-		service_id(void* id) :
-			id_(id) {}
+		service_id(void* id) : id_(id) {}
 		
 		operator void*() const
 		{
