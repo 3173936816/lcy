@@ -60,9 +60,9 @@ public:
 		sch_.cleanup();
 	}
 
-	void run()
+	std::size_t run()
 	{
-		sch_.run();		
+		return sch_.run();		
 	}
 
 	void stop()
