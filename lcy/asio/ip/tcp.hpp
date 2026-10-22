@@ -9,6 +9,7 @@
 #include "lcy/asio/detail/basic_endpoint.hpp"
 #include "lcy/asio/detail/basic_stream_socket.hpp"
 #include "lcy/asio/detail/basic_acceptor.hpp"
+#include "lcy/asio/detail/basic_resolver.hpp"
 
 namespace lcy
 {
@@ -30,6 +31,9 @@ public:
 
 	typedef detail::basic_acceptor<
 		io_context, tcp, endpoint> acceptor;
+
+	typedef detail::basic_resolver<
+		tcp, endpoint> resolver;
 
 	static tcp v4()
 	{
