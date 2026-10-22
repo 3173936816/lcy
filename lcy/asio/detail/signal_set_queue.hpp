@@ -27,8 +27,7 @@ public:
 	};
 
 public:
-	signal_set_queue() :
-		sigmask_table_(0) {}
+	signal_set_queue() : sigmask_table_(0) {}
 
 	internal_signal_set* alloc()
 	{

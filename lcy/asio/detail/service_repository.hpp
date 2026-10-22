@@ -19,7 +19,7 @@ class service_repository :
 	private noncopyable
 {
 public:
-	service_repository(std::size_t concurrency_hint) :
+	explicit service_repository(std::size_t concurrency_hint) :
 		mutex_(concurrency_hint != 1) {}
 
 	~service_repository()

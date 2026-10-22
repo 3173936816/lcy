@@ -34,7 +34,7 @@ public:
 		addr_.v4_.sin_addr.s_addr = INADDR_ANY;
 	}
 
-	basic_endpoint(protocol_type proto)
+	explicit basic_endpoint(protocol_type proto)
 	{
 		::memset(&addr_, 0x00, sizeof(addr_));
 

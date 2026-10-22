@@ -17,7 +17,7 @@ class asio_exception :
 	public std::exception
 {
 public:
-	asio_exception(std::string errmsg) :
+	explicit asio_exception(std::string errmsg) :
 		errmsg_(std::move(errmsg)) {}
 
 	const char* what() const noexcept override

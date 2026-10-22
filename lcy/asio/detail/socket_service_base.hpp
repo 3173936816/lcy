@@ -72,7 +72,7 @@ protected:
 	class send_to_operation;
 
 public:
-	socket_service_base(reactor& r) :
+	explicit socket_service_base(reactor& r) :
 		reactor_(&r) {}
 
 	void construct(socket_impl& impl)

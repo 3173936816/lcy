@@ -41,7 +41,7 @@ public:
 	typedef typename base_type::write_func_type write_func_type;
 
 public:
-	basic_datagram_socket(executor_type& executor) :
+	explicit basic_datagram_socket(executor_type& executor) :
 		base_type(executor) {}
 
 	template <typename MutableBufferView>

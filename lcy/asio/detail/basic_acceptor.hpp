@@ -33,7 +33,7 @@ public:
     typedef typename stream_socket_type::accept_func_type accept_func_type;
 
 public:
-    basic_acceptor(executor_type& executor) :
+    explicit basic_acceptor(executor_type& executor) :
         executor_(executor), stream_socket_(executor) {}
 
     template <typename... SocketOptions>

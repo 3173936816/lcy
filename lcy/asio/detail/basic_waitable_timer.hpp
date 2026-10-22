@@ -26,7 +26,7 @@ public:
 	typedef typename service_type::timer_func_type timer_func_type;
 
 public:
-	basic_waitable_timer(executor_type& executor) :
+	explicit basic_waitable_timer(executor_type& executor) :
 		executor_(executor), service_(use_service<service_type>(executor))
 	{
 		service_.construct(impl_);

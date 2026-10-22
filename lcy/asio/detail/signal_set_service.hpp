@@ -57,7 +57,7 @@ private:
 	};
 
 public:
-	signal_set_service(reactor& r) :
+	explicit signal_set_service(reactor& r) :
 		reactor_(&r) {}
 
 	void construct(signal_set_impl& impl, std::initializer_list<int> signums)

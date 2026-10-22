@@ -18,7 +18,7 @@ class stream_socket_service :
 	>
 {
 public:
-	stream_socket_service(reactor& r) :
+	explicit stream_socket_service(reactor& r) :
 		socket_service_base(r) {}
 
 	void listen(socket_impl& impl,

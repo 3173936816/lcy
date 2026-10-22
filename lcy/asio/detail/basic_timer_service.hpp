@@ -58,7 +58,7 @@ private:
 	};
 
 public:
-	basic_timer_service(reactor& r) :
+	explicit basic_timer_service(reactor& r) :
 		reactor_(&r)
 	{
 		reactor_->add_timer_set(&timer_set_);

@@ -18,7 +18,7 @@ class datagram_socket_service :
 	>
 {
 public:
-	datagram_socket_service(reactor& r) :
+	explicit datagram_socket_service(reactor& r) :
 		socket_service_base(r) {}
 
 	template <

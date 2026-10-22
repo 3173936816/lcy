@@ -29,7 +29,7 @@ public:
 		addr_.sun_family = AF_UNIX;
 	}
 
-	basic_unix_endpoint(std::string path)
+	explicit basic_unix_endpoint(std::string path)
 	{
 		::memset(&addr_, 0x00, sizeof(addr_));
 

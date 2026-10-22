@@ -35,7 +35,7 @@ public:
 	typedef typename service_type::write_func_type write_func_type;
 
 public:
-	basic_socket_base(executor_type& executor) :
+	explicit basic_socket_base(executor_type& executor) :
 		executor_(executor), service_(use_service<Service>(executor))
 	{
 		service_.construct(impl_);

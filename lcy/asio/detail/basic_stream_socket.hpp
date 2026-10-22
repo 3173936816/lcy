@@ -42,7 +42,7 @@ public:
 	typedef typename base_type::write_func_type write_func_type;
 
 public:
-	basic_stream_socket(executor_type& executor) :
+	explicit basic_stream_socket(executor_type& executor) :
 		base_type(executor) {}
 
 	void listen(int backlog, lcy::system::error_code& ec)
