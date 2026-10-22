@@ -6,7 +6,7 @@
 #include <netinet/ip.h>
 
 #include "lcy/asio/io_context.hpp"
-#include "lcy/asio/unix/basic_endpoint.hpp"
+#include "lcy/asio/detail/basic_unix_endpoint.hpp"
 #include "lcy/asio/detail/basic_stream_socket.hpp"
 #include "lcy/asio/detail/basic_acceptor.hpp"
 
@@ -20,7 +20,8 @@ namespace unix
 class stream
 {
 public:
-	typedef basic_endpoint<stream> endpoint;
+	typedef detail::basic_unix_endpoint<
+		stream> endpoint;
 
 	typedef detail::basic_stream_socket<
 		io_context, stream, endpoint> socket;
