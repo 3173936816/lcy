@@ -218,6 +218,7 @@ void test_receive_client()
 		std::cout << "receive signal : " << signum << ", server exit" << std::endl;
 	});
 
+	// nc -4 -ul 9950
 	lcy::asio::ip::udp::endpoint remote_endpoint("127.0.0.1", 9950);
 	auto conn = udp_connection::create_connect_client(ioc, remote_endpoint);
 
