@@ -50,3 +50,6 @@ target_include_directories(basic_timer_service_test PRIVATE ${CMAKE_CURRENT_SOUR
 
 add_executable(udp_socket_test tests/asio/udp_socket.cc)
 target_include_directories(udp_socket_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_executable(tcp_socket_test tests/asio/tcp_socket.cc)
+target_include_directories(tcp_socket_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
