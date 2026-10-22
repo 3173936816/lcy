@@ -10,13 +10,15 @@ namespace asio
 namespace detail
 {
 
-template <int Level, int Name, typename Value>
+template <int Level, int OptName, typename OptValue>
 class basic_socket_option
 {
 public:
+    typedef OptValue optval_type;
+
 	basic_socket_option() : value_() {}
 
-	explicit basic_socket_option(Value value) :
+	explicit basic_socket_option(optval_type value) :
         value_(value) {}
 
 	int level() const
@@ -26,7 +28,7 @@ public:
 
 	int name() const
     {
-        return Name; 
+        return OptName; 
     }
 
 	void* data()
@@ -34,18 +36,28 @@ public:
         return &value_;
     }
 
-	std::size_t data_len() const
+    const void* data() const
     { 
-        return sizeof(Value);
+        return &value_;
     }
 
-	Value& value()
+	std::size_t data_len() const
+    { 
+        return sizeof(optval_type);
+    }
+
+	optval_type& value()
+    { 
+        return value_;
+    }
+
+    const optval_type& value() const
     { 
         return value_;
     }
 
 private:
-	Value value_;
+	optval_type value_;
 };
 
 }    // namespace detail

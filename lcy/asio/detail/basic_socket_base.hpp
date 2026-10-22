@@ -41,7 +41,7 @@ public:
 		service_.destroy(impl_);
 	}
 
-	bool is_open()
+	bool is_open() const
 	{
 		return service_.is_open(impl_);
 	}

@@ -48,7 +48,7 @@ public:
         stream_socket_.listen(SOMAXCONN);
     }
 
-    bool is_open()
+    bool is_open() const
     {
         return stream_socket_.is_open();
     }
