@@ -2,7 +2,6 @@
 #define __LCY_ASIO_DETAIL_CONDITIONALLY_CONDITION_VARIABLE_HPP__
 
 #include <unistd.h>
-
 #include <climits>
 #include <cstdint>
 #include <functional>
