@@ -38,13 +38,13 @@ public:
 
     template <typename... SocketOptions>
     basic_acceptor(executor_type& executor,
-                   endpoint_type local_endpoint,
+                   endpoint_type endpoint,
                    SocketOptions... options) :
         executor_(executor), stream_socket_(executor)
     {
-        stream_socket_.open(local_endpoint.protocol());
+        stream_socket_.open(endpoint.protocol());
         set_options(options...);
-        stream_socket_.bind(local_endpoint);
+        stream_socket_.bind(endpoint);
         stream_socket_.listen(SOMAXCONN);
     }
 
@@ -63,9 +63,9 @@ public:
         stream_socket_.close();
     }
 
-    void bind(endpoint_type local_endpoint)
+    void bind(endpoint_type endpoint)
     {
-        stream_socket_.bind(local_endpoint);
+        stream_socket_.bind(endpoint);
     }
 
     void listen(int backlog)
@@ -73,9 +73,9 @@ public:
         stream_socket_.listen(backlog);
     }
 
-    void accept(stream_socket_type& target_socket, endpoint_type& remote_endpoint)
+    void accept(stream_socket_type& target_socket, endpoint_type& endpoint)
     {
-        stream_socket_.accept(target_socket, remote_endpoint);
+        stream_socket_.accept(target_socket, endpoint);
     }
 
     template <typename SocketOption>
@@ -88,6 +88,11 @@ public:
     void get_option(SocketOption& opt)
     {
         stream_socket_.get_option(opt);
+    }
+
+    void local_endpoint(endpoint_type& endpoint)
+    {
+        stream_socket_.local_endpoint(endpoint);
     }
 
     void cancel()
@@ -105,9 +110,9 @@ public:
         stream_socket_.close(ec);
     }
 
-    void bind(endpoint_type local_endpoint, lcy::system::error_code& ec)
+    void bind(endpoint_type endpoint, lcy::system::error_code& ec)
     {
-        stream_socket_.bind(local_endpoint, ec);
+        stream_socket_.bind(endpoint, ec);
     }
 
     void listen(int backlog, lcy::system::error_code& ec)
@@ -116,9 +121,9 @@ public:
     }
 
     void accept(stream_socket_type& target_socket,
-        endpoint_type& remote_endpoint, lcy::system::error_code& ec)
+        endpoint_type& endpoint, lcy::system::error_code& ec)
     {
-        stream_socket_.accept(target_socket, remote_endpoint, ec);
+        stream_socket_.accept(target_socket, endpoint, ec);
     }
 
     template <typename SocketOption>
@@ -133,15 +138,20 @@ public:
         stream_socket_.get_option(opt, ec);
     }
 
+    void local_endpoint(endpoint_type& endpoint, lcy::system::error_code& ec)
+    {
+        stream_socket_.local_endpoint(endpoint, ec);
+    }
+
     void cancel(lcy::system::error_code& ec)
     {
         stream_socket_.cancel(ec);
     }
 
     void async_accept(stream_socket_type& target_socket,
-        endpoint_type& remote_endpoint, accept_func_type func)
+        endpoint_type& endpoint, accept_func_type func)
     {
-        stream_socket_.async_accept(target_socket, remote_endpoint, std::move(func));
+        stream_socket_.async_accept(target_socket, endpoint, std::move(func));
     }
 
     executor_type& get_executor()
