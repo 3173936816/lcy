@@ -98,6 +98,24 @@ public:
 		});
 	}
 
+	void do_send_write(lcy::asio::const_buffer_view buffer_view)
+	{
+		auto self = shared_from_this();
+
+		socket_.async_send(buffer_view,
+				[this, self](lcy::system::error_code ec, std::size_t nbytes){
+			if ( ec ) {
+				std::cout << "do_send_write error : " << ec.message() << std::endl;
+				return;
+			}
+
+			std::cout << "do_send_write -- length : "
+				<< nbytes << std::endl;
+
+			do_receive_read();
+		});
+	}
+
     void cancel()
 	{
 		socket_.cancel();
@@ -133,6 +151,26 @@ private:
 		});
 	}
 
+	void do_receive_read()
+	{
+		auto self = shared_from_this();
+
+		socket_.async_receive(lcy::asio::buffer_view(read_buffer_),
+				[this, self](lcy::system::error_code ec, std::size_t nbytes){
+			if ( ec ) {
+				std::cout << "do_receive_read error : " << ec.message() << std::endl;
+				return;
+			}
+
+			std::cout << "do_receive_read -- data : "
+				<< std::string(read_buffer_.data(), nbytes) << ", length : "
+				<< nbytes << std::endl;
+
+			::memcpy(write_buffer_.data(), read_buffer_.data(), nbytes);
+			do_send_write(lcy::asio::buffer_view(write_buffer_.data(), nbytes));
+		});
+	}
+
 private:
     udp_connection(lcy::asio::io_context& ioc) :
 		socket_(ioc) {}
@@ -165,9 +203,33 @@ void test_receive_from_server()
 	ioc.run();
 }
 
+void test_receive_client()
+{
+	lcy::asio::io_context ioc;
+
+	lcy::asio::signal_set signal_set(ioc, { SIGINT });
+	signal_set.async_wait([&ioc](lcy::system::error_code ec, int signum){
+		if ( ec ) {
+			std::cout << "signal_set error : " << ec.message() << std::endl;
+			return;
+		}
+
+		ioc.stop();
+		std::cout << "receive signal : " << signum << ", server exit" << std::endl;
+	});
+
+	lcy::asio::ip::udp::endpoint remote_endpoint("127.0.0.1", 9950);
+	auto conn = udp_connection::create_connect_client(ioc, remote_endpoint);
+
+	conn->do_send_write(lcy::asio::buffer_view(std::string("hello world")));
+
+	ioc.run();
+}
+
 int main()
 {
 	test_receive_from_server();
+	// test_receive_client();
 
 	return 0;
 }
