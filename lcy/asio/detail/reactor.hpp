@@ -100,7 +100,7 @@ private:
 	inline void destroy_fd(int fd);
 
 	void update_timerfd(long long timeout);
-	void update_signalfd(const std::list<int>& signum_list);
+	void update_signalfd(std::list<int> signum_list);
 
 	inline void handle_wake_up_events();
 	inline void handle_timer_events(std::list<operation>& op_list);
