@@ -2,14 +2,15 @@
 #define __LCY_ASIO_DETAIL_SOCKET_OPS_HPP__
 
 #include <poll.h>
+#include <netdb.h>
 #include <unistd.h>
+#include <sys/un.h>
+#include <sys/time.h>
+#include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
-#include <sys/un.h>
-#include <sys/time.h>
-#include <sys/ioctl.h>
 
 #include "lcy/asio/detail/error.hpp"
 
@@ -339,6 +340,50 @@ int poll_connect(int sockfd, lcy::system::error_code& ec)
 	ec = lcy::system::error_code();
 
 	return 0;
+}
+
+template <
+	typename Protocol,
+	typename Endpoint,
+	typename Container
+>
+int getaddrinfo(std::string host,
+	std::string service, Protocol proto,
+    Container& endpoints, lcy::system::error_code& ec)
+{
+	addrinfo hints;
+    ::memset(&hints, 0x00, sizeof(hints));
+
+    hints.ai_family = proto.family();
+    hints.ai_socktype = proto.type();
+    hints.ai_protocol = proto.protocol();
+    hints.ai_flags = AI_PASSIVE;
+
+	addrinfo* res = 0;
+	int error = ::getaddrinfo(host.c_str(), service.c_str(), &hints, &res);
+	if ( error ) {
+		ec = lcy::system::error_code(error, fetch_resolver_category());
+		return error;
+	}
+
+	for ( addrinfo* ptr = res; ptr; ptr = ptr->ai_next ) {
+        if ( ptr->ai_family == AF_INET ) {
+			Endpoint endpoint;
+            ::memcpy(endpoint.data(), ptr->ai_addr, sizeof(sockaddr_in));
+            endpoints.push_back(endpoint);
+        } 
+		
+		else if ( ptr->ai_family == AF_INET6 ) {
+            Endpoint endpoint;
+            ::memcpy(endpoint.data(), ptr->ai_addr, sizeof(sockaddr_in6));
+            endpoints.push_back(endpoint);
+        }
+    }
+    ::freeaddrinfo(res);
+
+    ec = lcy::system::error_code();
+
+    return 0;
 }
 
 }	// namespace socket_ops

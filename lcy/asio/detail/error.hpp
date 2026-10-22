@@ -1,9 +1,10 @@
 #ifndef __LCY_ASIO_DETAIL_ERROR_HPP__
 #define __LCY_ASIO_DETAIL_ERROR_HPP__
 
-#include "lcy/system/error.hpp"
+#include <netdb.h>
 
 #include "lcy/asio/error.hpp"
+#include "lcy/system/error.hpp"
 
 namespace lcy
 {
@@ -47,6 +48,28 @@ inline const lcy::system::error_category& fetch_asio_category()
 inline lcy::system::error_code make_asio_error_code(int errnum = error::success)
 {
 	return lcy::system::error_code(errnum, fetch_asio_category());
+}
+
+
+class resolver_category
+	: public lcy::system::error_category
+{
+public:
+    const char* name() const override
+	{ 
+		return "asio resolver";
+	}
+
+    const char* message(int errnum) const override
+	{
+        return ::gai_strerror(errnum);
+    }
+};
+
+inline const resolver_category& fetch_resolver_category()
+{
+    static resolver_category m;
+    return m;
 }
 
 }	// namespace detail
