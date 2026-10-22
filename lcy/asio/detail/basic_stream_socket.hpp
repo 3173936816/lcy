@@ -32,13 +32,17 @@ public:
 		stream_socket_service
 	> base_type;
 
+	typedef Executor executor_type;
+    typedef Protocol protocol_type;
+    typedef Endpoint endpoint_type;
+
 	typedef typename base_type::accept_func_type accept_func_type;
 	typedef typename base_type::connect_func_type connect_func_type;
 	typedef typename base_type::read_func_type read_func_type;
 	typedef typename base_type::write_func_type write_func_type;
 
 public:
-	basic_stream_socket(Executor& executor) :
+	basic_stream_socket(executor_type& executor) :
 		base_type(executor) {}
 
 	void listen(int backlog, lcy::system::error_code& ec)
@@ -47,7 +51,7 @@ public:
 	}
 
 	void accept(basic_stream_socket& target_socket,
-		Endpoint& endpoint, lcy::system::error_code& ec)
+		endpoint_type& endpoint, lcy::system::error_code& ec)
 	{
 		base_type::service_.accept(base_type::impl_,
 			target_socket.impl_, endpoint, ec);
@@ -74,7 +78,7 @@ public:
 		}
 	}
 
-	void accept(basic_stream_socket& target_socket, Endpoint& endpoint)
+	void accept(basic_stream_socket& target_socket, endpoint_type& endpoint)
 	{
 		lcy::system::error_code ec;
 		base_type::service_.accept(base_type::impl_, target_socket.impl_, endpoint, ec);
@@ -110,7 +114,7 @@ public:
 	}
 
 	void async_accept(basic_stream_socket& target_socket,
-		Endpoint& endpoint, accept_func_type func)
+		endpoint_type& endpoint, accept_func_type func)
 	{
 		base_type::service_.async_accept(base_type::impl_,
 			target_socket.impl_, endpoint, std::move(func));

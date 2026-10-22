@@ -19,17 +19,21 @@ class basic_waitable_timer :
 	private noncopyable
 {
 public:
-	typedef typename Service::clock clock;
-	typedef typename Service::timer_func_type timer_func_type;
+	typedef Executor executor_type;
+	typedef Service service_type;
 
-	basic_waitable_timer(Executor& executor) :
-		executor_(executor), service_(use_service<Service>(executor))
+	typedef typename service_type::clock clock;
+	typedef typename service_type::timer_func_type timer_func_type;
+
+public:
+	basic_waitable_timer(executor_type& executor) :
+		executor_(executor), service_(use_service<service_type>(executor))
 	{
 		service_.construct(impl_);
 	}
 
-	basic_waitable_timer(Executor& executor, long long timeout) :
-		executor_(executor), service_(use_service<Service>(executor))
+	basic_waitable_timer(executor_type& executor, long long timeout) :
+		executor_(executor), service_(use_service<service_type>(executor))
 	{
 		service_.construct(impl_);
 		service_.expires_after(impl_, timeout);
@@ -79,17 +83,17 @@ public:
 		return service_.expiry(impl_);
 	}
 
-	Executor& get_executor()
+	executor_type& get_executor()
 	{
 		return executor_;
 	}
 
 private:
-	typedef typename Service::timer_impl timer_impl;
+	typedef typename service_type::timer_impl timer_impl;
 
-	Executor& executor_;
+	executor_type& executor_;
 	timer_impl impl_;
-	Service& service_;
+	service_type& service_;
 };
 
 }	// namesapce detail

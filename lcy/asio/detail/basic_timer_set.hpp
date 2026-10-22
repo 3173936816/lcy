@@ -15,6 +15,8 @@ class basic_timer_set :
 	public timer_set_base
 {
 public:
+	typedef Clock clock;
+
 	long long get_wait_ms() override
 	{
 		if ( timer_set_.empty() ) {
@@ -22,7 +24,7 @@ public:
 		}
 
 		internal_timer* earliest_timer = *timer_set_.begin();
-		long long now_time = Clock::now();
+		long long now_time = clock::now();
 
 		if ( now_time >= earliest_timer->expiry_ ) {
 			return 0;
@@ -34,7 +36,7 @@ public:
 	void get_ready_internal_timer_ops(std::list<operation>& op_list) override
 	{
 		internal_timer tag;
-		tag.expiry_ = Clock::now();
+		tag.expiry_ = clock::now();
 
 		auto beg_iter = timer_set_.begin();
 		auto end_iter = timer_set_.upper_bound(&tag);

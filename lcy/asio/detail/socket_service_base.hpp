@@ -87,7 +87,7 @@ public:
 		this->close(impl, ignore_ec);
 	}
 
-	bool is_open(socket_impl& impl) const
+	bool is_open(const socket_impl& impl) const
 	{
 		return impl.sockfd_ != -1;
 	}

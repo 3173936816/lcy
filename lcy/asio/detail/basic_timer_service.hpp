@@ -23,6 +23,8 @@ class basic_timer_service :
 	>
 {
 public:
+	typedef Clock clock;
+
 	typedef std::function<
 		void (
 			lcy::system::error_code ec
@@ -56,8 +58,6 @@ private:
 	};
 
 public:
-	typedef Clock clock;
-
 	basic_timer_service(reactor& r) :
 		reactor_(&r)
 	{
@@ -119,7 +119,7 @@ public:
 
 	void expires_after(timer_impl& impl, long long timeout)
 	{
-		impl.expiry_ = Clock::now() + timeout;
+		impl.expiry_ = clock::now() + timeout;
 	}
 	
 	void expires_at(timer_impl& impl, long long expiry)
@@ -129,7 +129,7 @@ public:
 
 	long long expiry(const timer_impl& impl) const
 	{
-		return impl.expiry_ - Clock::now();
+		return impl.expiry_ - clock::now();
 	}
 
 	void cleanup() override
@@ -139,7 +139,7 @@ public:
 
 private:
 	reactor* reactor_;
-	basic_timer_set<Clock> timer_set_;
+	basic_timer_set<clock> timer_set_;
 };
 
 }	// namespace detail

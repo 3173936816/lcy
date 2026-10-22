@@ -23,6 +23,7 @@ class basic_endpoint
 {
 public:
 	typedef uint16_t port_type;
+	typedef InternetProtocol protocol_type;
 
 	basic_endpoint()
 	{
@@ -33,7 +34,7 @@ public:
 		addr_.v4_.sin_addr.s_addr = INADDR_ANY;
 	}
 
-	basic_endpoint(InternetProtocol proto)
+	basic_endpoint(protocol_type proto)
 	{
 		::memset(&addr_, 0x00, sizeof(addr_));
 
@@ -42,7 +43,7 @@ public:
 		addr_.v4_.sin_addr.s_addr = INADDR_ANY;
 	}
 
-	basic_endpoint(InternetProtocol proto, port_type port_num)
+	basic_endpoint(protocol_type proto, port_type port_num)
 	{
 		::memset(&addr_, 0x00, sizeof(addr_));
 
@@ -117,10 +118,10 @@ public:
 		return ip_port;
 	}
 
-	InternetProtocol protocol() const
+	protocol_type protocol() const
 	{
-		return is_v4() ? InternetProtocol::v4() :
-			InternetProtocol::v6();
+		return is_v4() ? protocol_type::v4() :
+			protocol_type::v6();
 	}
 
 private:

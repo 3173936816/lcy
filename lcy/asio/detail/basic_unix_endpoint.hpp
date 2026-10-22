@@ -20,6 +20,8 @@ template <typename UnixProtocol>
 class basic_unix_endpoint
 {
 public:
+	typedef UnixProtocol protocol_type;
+
 	basic_unix_endpoint()
 	{
 		::memset(&addr_, 0x00, sizeof(addr_));
@@ -67,9 +69,9 @@ public:
         	::strnlen(&addr_.sun_path[0], sizeof(addr_.sun_path)));
 	}
 
-	UnixProtocol protocol() const
+	protocol_type protocol() const
 	{
-		return UnixProtocol();
+		return protocol_type();
 	}
 
 private:

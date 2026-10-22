@@ -24,13 +24,18 @@ class basic_socket_base :
 	private noncopyable
 {
 public:
-	typedef typename Service::accept_func_type accept_func_type;
-	typedef typename Service::connect_func_type connect_func_type;
-	typedef typename Service::read_func_type read_func_type;
-	typedef typename Service::write_func_type write_func_type;
+	typedef Executor executor_type;
+    typedef Protocol protocol_type;
+    typedef Endpoint endpoint_type;
+	typedef Service service_type;
+
+	typedef typename service_type::accept_func_type accept_func_type;
+	typedef typename service_type::connect_func_type connect_func_type;
+	typedef typename service_type::read_func_type read_func_type;
+	typedef typename service_type::write_func_type write_func_type;
 
 public:
-	basic_socket_base(Executor& executor) :
+	basic_socket_base(executor_type& executor) :
 		executor_(executor), service_(use_service<Service>(executor))
 	{
 		service_.construct(impl_);
@@ -46,7 +51,7 @@ public:
 		return service_.is_open(impl_);
 	}
 
-	void open(Protocol proto, lcy::system::error_code& ec)
+	void open(protocol_type proto, lcy::system::error_code& ec)
 	{
 		service_.open(impl_, proto, ec);
 	}
@@ -61,12 +66,12 @@ public:
 		service_.cancel(impl_, ec);
 	}
 
-	void bind(Endpoint endpoint, lcy::system::error_code& ec)
+	void bind(endpoint_type endpoint, lcy::system::error_code& ec)
 	{
 		service_.bind(impl_, endpoint, ec);
 	}
 
-	void connect(Endpoint endpoint, lcy::system::error_code& ec)
+	void connect(endpoint_type endpoint, lcy::system::error_code& ec)
 	{
 		service_.connect(impl_, endpoint, ec);
 	}
@@ -100,17 +105,17 @@ public:
 		return service_.available(impl_, ec);
 	}
 
-	void local_endpoint(Endpoint& endpoint, lcy::system::error_code& ec)
+	void local_endpoint(endpoint_type& endpoint, lcy::system::error_code& ec)
 	{
 		service_.local_endpoint(impl_, endpoint, ec);
 	}
 
-	void remote_endpoint(Endpoint& endpoint, lcy::system::error_code& ec)
+	void remote_endpoint(endpoint_type& endpoint, lcy::system::error_code& ec)
 	{
 		service_.remote_endpoint(impl_, endpoint, ec);
 	}
 
-	void open(Protocol proto)
+	void open(protocol_type proto)
 	{
 		lcy::system::error_code ec;
 		service_.open(impl_, proto, ec);
@@ -125,7 +130,7 @@ public:
 		service_.close(impl_, ignored_ec);
 	}
 
-	void bind(Endpoint endpoint)
+	void bind(endpoint_type endpoint)
 	{
 		lcy::system::error_code ec;
 		service_.bind(impl_, endpoint, ec);
@@ -134,7 +139,7 @@ public:
 		}
 	}
 
-	void connect(Endpoint endpoint)
+	void connect(endpoint_type endpoint)
 	{
 		lcy::system::error_code ec;
 		service_.connect(impl_, endpoint, ec);
@@ -193,7 +198,7 @@ public:
 		return service_.available(impl_, ignored_ec);
 	}
 
-	void local_endpoint(Endpoint& endpoint)
+	void local_endpoint(endpoint_type& endpoint)
 	{
 		lcy::system::error_code ec;
 		service_.local_endpoint(impl_, endpoint, ec);
@@ -202,7 +207,7 @@ public:
 		}
 	}
 
-	void remote_endpoint(Endpoint& endpoint)
+	void remote_endpoint(endpoint_type& endpoint)
 	{
 		lcy::system::error_code ec;
 		service_.remote_endpoint(impl_, endpoint, ec);
@@ -217,7 +222,7 @@ public:
 		service_.cancel(impl_, ignored_ec);
 	}
 
-	void async_connect(Endpoint endpoint, connect_func_type func)
+	void async_connect(endpoint_type endpoint, connect_func_type func)
 	{
 		service_.async_connect(impl_, endpoint, std::move(func));
 	}
@@ -234,17 +239,17 @@ public:
 		service_.async_send(impl_, buffer_view, std::move(func));
 	}
 
-	Executor& get_executor()
+	executor_type& get_executor()
 	{
 		return executor_;
 	}
 
 protected:
-	typedef typename Service::socket_impl socket_impl;
+	typedef typename service_type::socket_impl socket_impl;
 
-	Executor& executor_;
+	executor_type& executor_;
 	socket_impl impl_;
-	Service& service_;
+	service_type& service_;
 };
 
 }	// namespace detail

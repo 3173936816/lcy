@@ -32,16 +32,20 @@ public:
 		datagram_socket_service
 	> base_type;
 
+	typedef Executor executor_type;
+    typedef Protocol protocol_type;
+    typedef Endpoint endpoint_type;
+
 	typedef typename base_type::connect_func_type connect_func_type;
 	typedef typename base_type::read_func_type read_func_type;
 	typedef typename base_type::write_func_type write_func_type;
 
 public:
-	basic_datagram_socket(Executor& executor) :
+	basic_datagram_socket(executor_type& executor) :
 		base_type(executor) {}
 
 	template <typename MutableBufferView>
-	std::size_t receive_from(Endpoint& endpoint,
+	std::size_t receive_from(endpoint_type& endpoint,
 		MutableBufferView buffer_view, lcy::system::error_code& ec)
 	{
 		return base_type::service_.receive_from(base_type::impl_,
@@ -49,7 +53,7 @@ public:
 	}
 
 	template <typename ConstBufferView>
-	std::size_t send_to(Endpoint endpoint,
+	std::size_t send_to(endpoint_type endpoint,
 		ConstBufferView buffer_view, lcy::system::error_code& ec)
 	{
 		return base_type::service_.send_to(base_type::impl_,
@@ -57,7 +61,7 @@ public:
 	}
 	
 	template <typename MutableBufferView>
-	std::size_t receive_from(Endpoint& endpoint, MutableBufferView buffer_view)
+	std::size_t receive_from(endpoint_type& endpoint, MutableBufferView buffer_view)
 	{
 		lcy::system::error_code ec;
 		std::size_t transferred_bytes =
@@ -71,7 +75,7 @@ public:
 	}
 
 	template <typename ConstBufferView>
-	std::size_t send_to(Endpoint endpoint, ConstBufferView buffer_view)
+	std::size_t send_to(endpoint_type endpoint, ConstBufferView buffer_view)
 	{
 		lcy::system::error_code ec;
 		std::size_t transferred_bytes =
@@ -85,7 +89,7 @@ public:
 	}
 
 	template <typename MutableBufferView>
-	void async_receive_from(Endpoint& endpoint,
+	void async_receive_from(endpoint_type& endpoint,
 		MutableBufferView buffer_view, read_func_type func)
 	{
 		base_type::service_.async_receive_from(base_type::impl_,
@@ -93,7 +97,7 @@ public:
 	}
 	
 	template <typename ConstBufferView>
-	void async_send_to(Endpoint endpoint,
+	void async_send_to(endpoint_type endpoint,
 		ConstBufferView buffer_view, write_func_type func)
 	{
 		base_type::service_.async_send_to(base_type::impl_,
