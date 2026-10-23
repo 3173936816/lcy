@@ -56,3 +56,6 @@ target_include_directories(tcp_socket_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(basic_resolver_test tests/asio/basic_resolver.cc)
 target_include_directories(basic_resolver_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_executable(strand_test tests/asio/strand.cc)
+target_include_directories(strand_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

@@ -1,6 +1,7 @@
 #ifndef __LCY_ASIO_STRAND_HPP__
 #define __LCY_ASIO_STRAND_HPP__
 
+#include <thread>
 #include <functional>
 
 #include "lcy/noncopyable.hpp"
@@ -36,8 +37,8 @@ private:
     void serial_execute()
     {
         lcy::asio::post(ioc_, [this](){
-            func_type func;
 
+            func_type func;
             {
                 std::lock_guard<std::mutex> locker(mutex_);
                 if ( !serial_queue_.empty() ) {
@@ -65,11 +66,11 @@ private:
     std::list<func_type> serial_queue_;
 };
 
-template <typename... Args>
-std::function<void(Args...)> strand_wrapper(strand& s,
-    std::function<void(Args...)> func)
+// C++14
+template <typename Function>
+auto strand_wrapper(strand& s, Function func)
 {
-    return [&s, func](Args... args) {
+    return [&s, func](auto&&... args) {
         auto task = [func, args...]() {
             func(args...);
         };

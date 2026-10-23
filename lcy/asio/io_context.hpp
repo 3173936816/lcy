@@ -70,6 +70,11 @@ public:
 		sch_.stop();
 	}
 
+	std::size_t concurrency_hint() const
+	{
+		return sch_.concurrency_hint_;
+	}
+
 private:
 	typedef detail::scheduler scheduler;
 	typedef detail::service_repository service_repository;
