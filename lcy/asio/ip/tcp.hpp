@@ -32,8 +32,7 @@ public:
 	typedef detail::basic_acceptor<
 		io_context, tcp, endpoint> acceptor;
 
-	typedef detail::basic_resolver<
-		tcp, endpoint> resolver;
+	typedef detail::basic_resolver<tcp, endpoint> resolver;
 
 	static tcp v4()
 	{

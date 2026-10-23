@@ -13,12 +13,12 @@ public:
 					 socket_impl& source_impl,
 					 socket_impl& target_impl,
 					 Endpoint& endpoint,
-					 accept_func_type func)
-		: self_(self)
-		, source_impl_(&source_impl)
-		, target_impl_(&target_impl)
-		, endpoint_(&endpoint)
-		, func_(std::move(func)) {}
+					 accept_func_type func) :
+		self_(self),
+		source_impl_(&source_impl),
+		target_impl_(&target_impl),
+		endpoint_(&endpoint),
+		func_(std::move(func)) {}
 
 	void operator()(lcy::system::error_code ec, int) const
 	{

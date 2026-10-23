@@ -12,11 +12,11 @@ public:
 	send_operation(socket_service_base* self,
 				   socket_impl& impl,
 				   ConstBufferView buffer_view,
-				   write_func_type func)
-		: self_(self)
-		, impl_(&impl)
-		, buffer_view_(buffer_view)
-		, func_(std::move(func)) {}
+				   write_func_type func) :
+		self_(self),
+		impl_(&impl),
+		buffer_view_(buffer_view),
+		func_(std::move(func)) {}
 
 	void operator()(lcy::system::error_code ec, int) const
 	{

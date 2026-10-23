@@ -28,8 +28,7 @@ public:
 	typedef detail::basic_datagram_socket<
 		io_context, udp, endpoint> socket;
 
-	typedef detail::basic_resolver<
-		udp, endpoint> resolver;
+	typedef detail::basic_resolver<udp, endpoint> resolver;
 
 	static udp v4()
 	{
