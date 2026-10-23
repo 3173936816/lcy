@@ -26,12 +26,6 @@ public:
     typedef Protocol protocol_type;
     typedef Endpoint endpoint_type;
 
-    typedef std::function<
-        void (
-            lcy::system::error_code ec
-        )
-    > resolve_func_type;
-
 public:
     template <typename Container>
     void resolve(std::string host,
