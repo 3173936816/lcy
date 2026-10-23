@@ -1,7 +1,7 @@
 #ifndef __LCY_ASIO_DETAIL_CONDITIONALLY_MUTEX_HPP__
 #define __LCY_ASIO_DETAIL_CONDITIONALLY_MUTEX_HPP__
 
-#include <mutex>	// C++11 start
+#include <mutex>
 
 #include "lcy/noncopyable.hpp"
 
@@ -22,14 +22,14 @@ public:
 	void lock()
 	{
 		if ( enable_lock_ ) {
-			mtx_.lock();
+			mutex_.lock();
 		}
 	}
 
 	void unlock()
 	{
 		if ( enable_lock_ ) {
-			mtx_.unlock();
+			mutex_.unlock();
 		}
 	}
 
@@ -40,12 +40,12 @@ public:
 
 	std::mutex& get_mutex()
 	{
-		return mtx_;
+		return mutex_;
 	}
 
 private:
 	bool enable_lock_;
-	std::mutex mtx_;
+	std::mutex mutex_;
 };
 
 }	// namespace detail
