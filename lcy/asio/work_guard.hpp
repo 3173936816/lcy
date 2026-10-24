@@ -14,7 +14,7 @@ class work_guard :
 {
 public:
     work_guard(io_context& ioc) :
-        ioc_(ioc), is_owners_(true)
+        ioc_(ioc), is_owner_(true)
     {
         ioc_.sch_.operation_increase();
     }
@@ -26,20 +26,20 @@ public:
 
     void reset()
     {
-        if ( is_owners_ ) {
+        if ( is_owner_ ) {
             ioc_.sch_.operation_decrease();
-            is_owners_ = false;
+            is_owner_ = false;
         }
     }
 
-    bool is_owners() const
+    bool is_owner() const
     {
-        return is_owners_;
+        return is_owner_;
     }
 
 private:
     io_context& ioc_;
-    bool is_owners_;
+    bool is_owner_;
 };
 
 }   // namespace asio
