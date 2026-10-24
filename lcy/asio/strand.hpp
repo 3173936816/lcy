@@ -12,23 +12,27 @@ namespace lcy
 namespace asio
 {
 
-class strand :
-    private noncopyable
+class strand : private noncopyable
 {
 public:
     typedef std::function<void()> func_type;
 
 public:
-    strand(io_context& ioc) : ioc_(ioc) {}
+    strand(io_context& ioc) :
+        ioc_(ioc), executing_(false) {}
 
     void post(func_type func)
     {
-        std::lock_guard<std::mutex> locker(mutex_);
-
-        bool is_empty = serial_queue_.empty();
-        serial_queue_.push_back(std::move(func));
-
-        if ( is_empty ) {
+        bool need_execute = false;
+        {
+            std::lock_guard<std::mutex> locker(mutex_);
+            serial_queue_.push_back(std::move(func));
+            if ( !executing_ ) {
+                executing_ = true;
+                need_execute = true;
+            }
+        }
+        if ( need_execute ) {
             serial_execute();
         }
     }
@@ -36,8 +40,7 @@ public:
 private:
     void serial_execute()
     {
-        lcy::asio::post(ioc_, [this](){
-
+        lcy::asio::post(ioc_, [this]() {
             func_type func;
             {
                 std::lock_guard<std::mutex> locker(mutex_);
@@ -51,11 +54,18 @@ private:
                 func();
             }
 
+            bool has_more = false;
             {
                 std::lock_guard<std::mutex> locker(mutex_);
                 if ( !serial_queue_.empty() ) {
-                    serial_execute();
+                    has_more = true;
+                } else {
+                    executing_ = false;
                 }
+            }
+
+            if ( has_more ) {
+                serial_execute();
             }
         });
     }
@@ -63,6 +73,7 @@ private:
 private:
     io_context& ioc_;
     std::mutex mutex_;
+    bool executing_;
     std::list<func_type> serial_queue_;
 };
 
