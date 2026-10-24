@@ -26,7 +26,7 @@ public:
         std::lock_guard<std::mutex> locker(mutex_);
 
         bool is_empty = serial_queue_.empty();
-        serial_queue_.push_back(std::move(std::move(func)));
+        serial_queue_.push_back(std::move(func));
 
         if ( is_empty ) {
             serial_execute();
