@@ -38,6 +38,8 @@ private:
 	};
 
 public:
+	friend class work_guard;
+
 	template <typename Service>
 	friend Service& use_service(io_context& ioc)
 	{

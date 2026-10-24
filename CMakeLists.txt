@@ -59,3 +59,6 @@ target_include_directories(basic_resolver_test PRIVATE ${CMAKE_CURRENT_SOURCE_DI
 
 add_executable(strand_test tests/asio/strand.cc)
 target_include_directories(strand_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_executable(work_guard_test tests/asio/work_guard.cc)
+target_include_directories(work_guard_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
