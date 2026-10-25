@@ -9,7 +9,9 @@ namespace lcy
 namespace asio
 {
 
-typedef detail::basic_signal_set<io_context> signal_set;
+typedef detail::basic_signal_set<
+    io_context
+> signal_set;
 
 }	// namespace asio
 }	// namespace lcy

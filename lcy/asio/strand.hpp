@@ -79,7 +79,7 @@ private:
 
 namespace detail
 {
-    
+
 template <typename Function>
 class strand_wrapper_impl
 {
