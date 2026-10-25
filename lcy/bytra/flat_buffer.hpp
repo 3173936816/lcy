@@ -73,7 +73,7 @@ public:
 
     std::size_t capacity() const
     {
-        return buffer_.size() - write_index_;
+        return buffer_.size();
     }
 
     std::size_t available() const
