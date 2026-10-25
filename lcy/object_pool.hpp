@@ -15,8 +15,6 @@ class object_pool :
 	public noncopyable
 {
 public:
-	object_pool() {}
-
 	~object_pool()
 	{
 		for ( auto ob : live_list_ ) {
