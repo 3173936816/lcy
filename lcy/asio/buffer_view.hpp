@@ -41,6 +41,11 @@ public:
 		return length_;
 	}
 
+	std::size_t size() const
+	{
+		return length_;
+	}
+
 private:
 	const void* data_;
 	std::size_t length_;
@@ -77,6 +82,11 @@ public:
 	}
 
 	std::size_t length() const
+	{
+		return length_;
+	}
+
+	std::size_t size() const
 	{
 		return length_;
 	}
