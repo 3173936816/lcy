@@ -406,12 +406,12 @@ protected:
 }	// namespace asio
 }	// namespace lcy
 
-#include "impl/post_operation.ipp"
-#include "impl/accept_operation.ipp"
-#include "impl/connect_operation.ipp"
-#include "impl/receive_operation.ipp"
-#include "impl/send_operation.ipp"
-#include "impl/receive_from_operation.ipp"
-#include "impl/send_to_operation.ipp"
+#include "lcy/asio/detail/impl/post_operation.ipp"
+#include "lcy/asio/detail/impl/accept_operation.ipp"
+#include "lcy/asio/detail/impl/connect_operation.ipp"
+#include "lcy/asio/detail/impl/receive_operation.ipp"
+#include "lcy/asio/detail/impl/send_operation.ipp"
+#include "lcy/asio/detail/impl/receive_from_operation.ipp"
+#include "lcy/asio/detail/impl/send_to_operation.ipp"
 
 #endif	// __LCY_ASIO_DETAIL_SOCKET_SERVICE_BASE_HPP__
