@@ -14,12 +14,13 @@ int main()
 
     char buffer[6];
     lcy::asio::async_read(socket, lcy::asio::mutable_buffer_view(buffer, sizeof(buffer)),
-        [](const lcy::system::error_code& ec, std::size_t bytes_transferred) {
+        [&buffer](const lcy::system::error_code& ec, std::size_t bytes_transferred) {
             if ( ec ) {
                 std::cerr << "Read error: " << ec.message() << std::endl;
                 return;
             }
-            std::cout << "Read " << bytes_transferred << " bytes." << std::endl;
+            std::cout << "Read " << bytes_transferred << " bytes."
+                << std::string(buffer, bytes_transferred) << std::endl;
         });
 
     ioc.run();
