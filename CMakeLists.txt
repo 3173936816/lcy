@@ -3,7 +3,7 @@ project(lcy LANGUAGES CXX)
 
 enable_testing()
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 if(MSVC)
     add_compile_options(/W4 /WX)
 else()

@@ -77,16 +77,37 @@ private:
     std::list<func_type> serial_queue_;
 };
 
-// C++14
-template <typename Function>
-auto strand_wrapper(strand& s, Function func)
+namespace detail
 {
-    return [&s, func](auto&&... args) {
+    
+template <typename Function>
+class strand_wrapper_impl
+{
+public:
+    strand_wrapper_impl(strand& s, Function func) :
+        strand_(&s), func_(std::move(func)) {}
+
+    template <typename... Args>
+    void operator()(Args&&... args) const
+    {
+        Function func = func_; 
         auto task = [func, args...]() {
             func(args...);
         };
-        s.post(std::move(task));
-    };
+        strand_->post(std::move(task));
+    }
+
+private:
+    strand* strand_;
+    Function func_;
+};
+
+}   // namespace detail
+
+template <typename Function>
+detail::strand_wrapper_impl<Function> strand_wrapper(strand& s, Function func)
+{
+    return detail::strand_wrapper_impl<Function>(s, std::move(func));
 }
 
 }   // namespace asio
