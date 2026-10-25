@@ -12,7 +12,8 @@ namespace lcy
 namespace asio
 {
 
-class strand : private noncopyable
+class strand :
+    private noncopyable
 {
 public:
     typedef std::function<void()> func_type;
