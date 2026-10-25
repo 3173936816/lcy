@@ -1,5 +1,5 @@
-#ifndef __LCY_ASIO_ASYNC_HPP__
-#define __LCY_ASIO_ASYNC_HPP__
+#ifndef __LCY_ASIO_ASYNC_STREAM_HPP__
+#define __LCY_ASIO_ASYNC_STREAM_HPP__
 
 #include <memory>
 
@@ -152,4 +152,4 @@ void async_write(StreamSocket& stream_socket,
 }	// namespace asio
 }	// namespace lcy
 
-#endif	// __LCY_ASIO_ASYNC_HPP__
+#endif	// __LCY_ASIO_ASYNC_STREAM_HPP__
