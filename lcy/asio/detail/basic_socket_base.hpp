@@ -34,6 +34,8 @@ public:
 	typedef typename service_type::read_func_type read_func_type;
 	typedef typename service_type::write_func_type write_func_type;
 
+	typedef typename service_type::native_handle_type native_handle_type;
+
 public:
 	explicit basic_socket_base(executor_type& executor) :
 		executor_(executor), service_(use_service<Service>(executor))
@@ -44,6 +46,11 @@ public:
 	~basic_socket_base()
 	{
 		service_.destroy(impl_);
+	}
+
+	native_handle_type native_handle()
+	{
+		return service_.native_handle(impl_);
 	}
 
 	bool is_open() const

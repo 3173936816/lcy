@@ -72,6 +72,8 @@ protected:
 	class send_to_operation;
 
 public:
+	typedef int native_handle_type;
+
 	explicit socket_service_base(reactor& r) :
 		reactor_(&r) {}
 
@@ -85,6 +87,11 @@ public:
 	{
 		lcy::system::error_code ignore_ec;
 		this->close(impl, ignore_ec);
+	}
+
+	native_handle_type native_handle(socket_impl& impl)
+	{
+		return impl.sockfd_;
 	}
 
 	bool is_open(const socket_impl& impl) const

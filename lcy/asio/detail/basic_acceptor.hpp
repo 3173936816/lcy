@@ -31,6 +31,7 @@ public:
     typedef Endpoint endpoint_type;
 
     typedef typename stream_socket_type::accept_func_type accept_func_type;
+    typedef typename stream_socket_type::native_handle_type native_handle_type;
 
 public:
     explicit basic_acceptor(executor_type& executor) :
@@ -46,6 +47,11 @@ public:
         set_options(options...);
         stream_socket_.bind(endpoint);
         stream_socket_.listen(SOMAXCONN);
+    }
+
+    native_handle_type native_handle()
+    {
+        return stream_socket_.native_handle();
     }
 
     bool is_open() const
