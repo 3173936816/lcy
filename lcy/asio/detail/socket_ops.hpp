@@ -347,8 +347,8 @@ template <
 	typename Endpoint,
 	typename Container
 >
-int getaddrinfo(std::string host,
-	std::string service, Protocol proto,
+int getaddrinfo(const std::string& host,
+	const std::string& service, Protocol proto,
     Container& endpoints, lcy::system::error_code& ec)
 {
 	addrinfo hints;

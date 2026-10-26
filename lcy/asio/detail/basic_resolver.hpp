@@ -28,25 +28,25 @@ public:
 
 public:
     template <typename Container>
-    void resolve(std::string host,
-        std::string service, Protocol proto,
+    void resolve(const std::string& host,
+        const std::string& service, Protocol proto,
         Container& endpoints, lcy::system::error_code& ec)
     {
         socket_ops::getaddrinfo<
             protocol_type,
             endpoint_type
-        >(std::move(host), std::move(service), proto, endpoints, ec);
+        >(host, service, proto, endpoints, ec);
     }
 
     template <typename Container>
-    void resolve(std::string host,
-        std::string service, Protocol proto, Container& endpoints)
+    void resolve(const std::string& host,
+        const std::string& service, Protocol proto, Container& endpoints)
     {
         lcy::system::error_code ec;
         socket_ops::getaddrinfo<
             protocol_type,
             endpoint_type
-        >(std::move(host), std::move(service), proto, endpoints, ec);
+        >(host, service, proto, endpoints, ec);
         if ( ec ) {
             throw_asio_exception(ec, "basic_resolver::resolve");
         }

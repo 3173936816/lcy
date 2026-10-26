@@ -52,7 +52,7 @@ public:
 		addr_.v4_.sin_addr.s_addr = INADDR_ANY;
 	}
 
-	basic_endpoint(std::string ip, port_type port_num)
+	basic_endpoint(const std::string& ip, port_type port_num)
 	{
 		::memset(&addr_, 0x00, sizeof(addr_));
 		
