@@ -325,7 +325,7 @@ void reactor::capture_signal_set(internal_signal_set* s,
 		std::list<int> signum_list;
 		ss_queue_.get_signal_table(signum_list);
 
-		update_signalfd(std::move(signum_list));
+		update_signalfd(signum_list);
 	}
 }
 
@@ -414,7 +414,7 @@ void reactor::update_timerfd(long long wait_ms)
 	::timerfd_settime(timer_fd_, 0, &itspec, 0);
 }
 
-void reactor::update_signalfd(std::list<int> signum_list)
+void reactor::update_signalfd(const std::list<int>& signum_list)
 {
 	sigset_t mask;
 	::sigemptyset(&mask);
