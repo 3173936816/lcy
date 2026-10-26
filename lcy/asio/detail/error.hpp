@@ -54,6 +54,11 @@ inline lcy::system::error_code make_asio_error_code(int errnum = error::success)
 class resolver_category
 	: public lcy::system::error_category
 {
+private:
+	friend const resolver_category& fetch_resolver_category();
+
+	resolver_category() {}
+
 public:
     const char* name() const override
 	{ 
