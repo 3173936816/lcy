@@ -362,7 +362,7 @@ int getaddrinfo(std::string host,
 	addrinfo* res = 0;
 	int error = ::getaddrinfo(host.c_str(), service.c_str(), &hints, &res);
 	if ( error ) {
-		ec = lcy::system::error_code(error, fetch_resolver_category());
+		ec = make_asio_resolver_error_code(error);
 		return error;
 	}
 

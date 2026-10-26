@@ -72,6 +72,11 @@ inline const resolver_category& fetch_resolver_category()
     return m;
 }
 
+inline lcy::system::error_code make_asio_resolver_error_code(int errnum = error::success)
+{
+	return lcy::system::error_code(errnum, fetch_resolver_category());
+}
+
 }	// namespace detail
 }	// namespace asio
 }	// namespace lcy
