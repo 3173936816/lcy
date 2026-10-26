@@ -47,7 +47,7 @@ public:
 	}
 
 private:
-	typedef detail::signal_set_service::signal_set_impl signal_set_impl;
+	typedef signal_set_service::signal_set_impl signal_set_impl;
 	
 	Executor& executor_;
 	signal_set_impl impl_;
