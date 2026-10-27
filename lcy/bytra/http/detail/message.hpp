@@ -4,6 +4,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "lcy/bytra/http/version.hpp"
+
 namespace lcy
 {
 namespace bytra
@@ -23,19 +25,20 @@ public:
     typedef BodyContainer body_container_type;
 
 public:
-    message() : version_(0) {}
+    explicit message(version v = version::http_1_1) :
+        version_(v) {}
 
     bool is_request() const
     {
         return IsRequest::value;
     }
 
-    int get_version() const
+    version get_version() const
     {
         return version_;
     }
 
-    void set_version(int version)
+    void set_version(version version)
     {
         version_ = version;
     }
@@ -43,10 +46,11 @@ public:
     const std::string& get_header(const std::string& name,
         const std::string& default_value = "") const
     {
-        auto it = headers_.find(name);
-        if ( it != headers_.end() ) {
-            return it->second;
+        auto iter = headers_.find(name);
+        if ( iter != headers_.end() ) {
+            return iter->second;
         }
+
         return default_value;
     }
 
@@ -61,7 +65,7 @@ public:
     }
 
 protected:
-    int version_;
+    version version_;
     std::unordered_map<
         std::string,
         std::string
