@@ -23,18 +23,25 @@ public:
     typedef BodyContainer body_container_type;
 
 public:
+    message() : version_(0) {}
+
     bool is_request() const
     {
         return IsRequest::value;
     }
 
-    void set_header(std::string name, std::string value)
+    int get_version() const
     {
-        headers_[std::move(name)] = std::move(value);
+        return version_;
+    }
+
+    void set_version(int version)
+    {
+        version_ = version;
     }
 
     const std::string& get_header(const std::string& name,
-        const std::string& default_value = std::string()) const
+        const std::string& default_value = "") const
     {
         auto it = headers_.find(name);
         if ( it != headers_.end() ) {
@@ -43,12 +50,18 @@ public:
         return default_value;
     }
 
+    void set_header(std::string name, std::string value)
+    {
+        headers_[std::move(name)] = std::move(value);
+    }
+
     body_container_type& body_container()
     {
         return body_container_;
     }
 
-private:
+protected:
+    int version_;
     std::unordered_map<
         std::string,
         std::string
