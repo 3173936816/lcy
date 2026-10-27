@@ -10,26 +10,27 @@ namespace bytra
 {
 namespace http
 {
-namespace detail
-{
 
 template <typename BodyContainer>
 class response :
-    public message<
-        response_tag,
+    public detail::message<
+        detail::response_tag,
         BodyContainer
     >
 {
 public:
-    typedef message<
-        response_tag,
+    typedef detail::message<
+        detail::response_tag,
         BodyContainer
     > base_type;
 
     typedef BodyContainer body_container_type;
 
 public:
-    response() : status_(status::ok) {}
+    response() : status_(status::ok), reason_(status_to_reason(status::ok)) {}
+
+    response(status s, version v) :
+        base_type(v), status_(s), reason_(status_to_reason(s)) {}
 
     response(status s, std::string reason, version v) :
         base_type(v), status_(s), reason_(std::move(reason)) {}
@@ -42,6 +43,7 @@ public:
     void set_status(status s)
     {
         status_ = s;
+        reason_ = status_to_reason(s);
     }
 
     const std::string& get_reason() const
@@ -57,7 +59,7 @@ public:
     std::string header_to_string() const
     {
         std::string result;
-        result += status_to_string(this->status_) + " ";
+        result += status_to_string(status_) + " ";
         result += reason_ + " ";
         result += version_to_string(this->get_version()) + "\r\n";
         for ( const auto& header : this->headers_ ) {
@@ -72,7 +74,6 @@ private:
     std::string reason_;
 };
 
-}   // namespace detail
 }   // nameapce http
 }   // namespace bytra 
 }   // namespace lcy

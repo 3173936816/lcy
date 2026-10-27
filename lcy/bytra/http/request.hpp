@@ -10,19 +10,17 @@ namespace bytra
 {
 namespace http
 {
-namespace detail
-{
 
 template <typename BodyContainer>
 class request :
-    public message<
-        request_tag,
+    public detail::message<
+        detail::request_tag,
         BodyContainer
     >
 {
 public:
-    typedef message<
-        request_tag,
+    typedef detail::message<
+        detail::request_tag,
         BodyContainer
     > base_type;
 
@@ -72,7 +70,6 @@ private:
     std::string path_;
 };
 
-}   // namespace detail
 }   // namespace http
 }   // namespace bytra
 }   // namespace lcy
