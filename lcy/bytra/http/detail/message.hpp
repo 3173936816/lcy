@@ -1,6 +1,7 @@
 #ifndef __LCY_BYTRA_HTTP_MESSAGE_HPP__
 #define __LCY_BYTRA_HTTP_MESSAGE_HPP__
 
+#include <list>
 #include <string>
 #include <unordered_map>
 
@@ -17,7 +18,8 @@ namespace detail
 
 template <
     typename IsRequest,
-    typename BodyContainer,
+    typename FieldContainer,
+    typename BodyContainer
 >
 class message
 {
@@ -46,9 +48,9 @@ public:
     const std::string& get_header(const std::string& name,
         const std::string& default_value = "") const
     {
-        auto iter = headers_.find(name);
-        if ( iter != headers_.end() ) {
-            return iter->second;
+        auto iter = header_index_.find(name);
+        if ( iter != header_index_.end() ) {
+            return *(iter->second);
         }
 
         return default_value;
@@ -56,7 +58,17 @@ public:
 
     void set_header(std::string name, std::string value)
     {
-        headers_[std::move(name)] = std::move(value);
+        auto iter = headers_.insert(headers_.end(), { name, std::move(value) });
+        header_index_.insert({ std::move(name), iter });
+    }
+
+    void remove_header(const std::string& name)
+    {
+        auto iter = header_index_.find(name);
+        if ( iter != header_index_.end() ) {
+            headers_.erase(iter->second);
+            header_index_.earse(iter);
+        }
     }
 
     body_container_type& body_container()
@@ -66,11 +78,6 @@ public:
 
 protected:
     version version_;
-    std::unordered_map<
-        std::string,
-        std::string
-    > headers_;
-
     body_container_type body_container_;
 };
 

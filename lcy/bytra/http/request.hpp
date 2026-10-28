@@ -15,6 +15,7 @@ template <typename BodyContainer>
 class request :
     public detail::message<
         detail::request_tag,
+        detail::field_container,
         BodyContainer
     >
 {
@@ -27,10 +28,10 @@ public:
     typedef BodyContainer body_container_type;
 
 public:
-    request() : method_(method::get), path_("/") {}
+    request() : method_(method::get), target_("/") {}
 
-    request(method m, std::string path, version v) :
-        base_type(v), method_(m), path_(std::move(path)) {}
+    request(method m, std::string target, version v) :
+        base_type(v), method_(m), target_(std::move(target)) {}
 
     method get_method() const
     {
@@ -42,21 +43,21 @@ public:
         method_ = m;
     }
 
-    const std::string& get_path() const
+    const std::string& get_target() const
     {
-        return path_;
+        return target_;
     }
 
-    void set_path(std::string path)
+    void set_target(std::string target)
     {
-        path_ = std::move(path);
+        target_ = std::move(target);
     }
 
     std::string header_to_string() const
     {
         std::string result;
         result += method_to_string(this->method_) + " ";
-        result += path_ + " ";
+        result += target_ + " ";
         result += version_to_string(this->get_version()) + "\r\n";
         for ( const auto& header : this->headers_ ) {
             result += header.first + ": " + header.second + "\r\n";
@@ -68,7 +69,7 @@ public:
 
 private:
     method method_;
-    std::string path_;
+    std::string target_;
 };
 
 }   // namespace http

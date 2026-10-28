@@ -9,6 +9,7 @@ namespace http
 {
 
 #define LCY_BYTRA_HTTP_STATUS_MAP(XX)                                       \
+  XX(0,   unknown,                         Unknown)                         \
   XX(100, continue,                        Continue)                        \
   XX(101, switching_protocols,             Switching Protocols)             \
   XX(102, processing,                      Processing)                      \
@@ -68,7 +69,6 @@ namespace http
   XX(508, loop_detected,                   Loop Detected)                   \
   XX(510, not_extended,                    Not Extended)                    \
   XX(511, network_authentication_required, Network Authentication Required) \
-  XX(999, unknown,                         Unknown)                         \
 
 
 enum status
@@ -93,20 +93,21 @@ inline status status_from_string(const std::string& s)
           LCY_BYTRA_HTTP_STATUS_MAP(XX)
       #undef XX
       default : {
-          return status::internal_server_error;
+          return status::unknown;
       }
     }
 }
 
-inline std::string status_to_reason(status s)
+inline std::string status_to_reason(status s,
+  std::string default_value = "")
 {
     switch ( s ) {
       #define XX(xx_code, xx_name, xx_string)  \
-            case status::xx_name : { return xx_string; break; }
+            case status::xx_name : { return #xx_string; break; }
           LCY_BYTRA_HTTP_STATUS_MAP(XX)
       #undef XX
       default : {
-          return "Unknown";
+          return default_value;
       }
     }
 }

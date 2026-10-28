@@ -9,7 +9,7 @@ namespace http
 {
 
 #define LCY_BYTRA_HTTP_METHOD_MAP(XX)   \
-  XX(0,  delete,      DELETE)           \
+  XX(0,  delete_,     DELETE)           \
   XX(1,  get,         GET)              \
   XX(2,  head,        HEAD)             \
   XX(3,  post,        POST)             \
@@ -54,15 +54,16 @@ enum method
 #undef XX
 };
 
-inline std::string method_to_string(method m)
+inline std::string method_to_string(method m,
+    std::string default_value = "")
 {
     switch ( m ) {
       #define XX(xx_num, xx_name, xx_string)  \
-            case method::xx_name : { return xx_string; break; }
+            case method::xx_name : { return #xx_string; break; }
           LCY_BYTRA_HTTP_METHOD_MAP(XX)
       #undef XX
       default : {
-          return "Unknown";
+          return default_value;
       }
     }
 }

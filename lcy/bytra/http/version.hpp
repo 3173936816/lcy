@@ -1,6 +1,8 @@
 #ifndef __LCY_BYTRA_HTTP_VERSION_HPP__
 #define __LCY_BYTRA_HTTP_VERSION_HPP__
 
+#include <string>
+
 namespace lcy
 {
 namespace bytra
@@ -15,7 +17,8 @@ enum version
     http_unknown = 2,
 };
 
-inline std::string version_to_string(version v)
+inline std::string version_to_string(version v,
+    std::string default_value = "")
 {
     if ( v == version::http_1_0 ) {
         return "HTTP/1.0";
@@ -23,7 +26,7 @@ inline std::string version_to_string(version v)
         return "HTTP/1.1";
     }
 
-    return "Unknown";
+    return default_value;
 }
 
 inline version version_from_string(const std::string& s)

@@ -65,3 +65,9 @@ target_include_directories(work_guard_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(async_stream_test tests/asio/async_stream.cc)
 target_include_directories(async_stream_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+
+####### bytra
+
+add_executable(http_request_test tests/bytra/http/request.cc)
+target_include_directories(http_request_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
