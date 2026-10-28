@@ -61,6 +61,7 @@ public:
         for ( const auto& header : this->headers_ ) {
             result += header.first + ": " + header.second + "\r\n";
         }
+        result += "\r\n";
 
         return result;
     }
