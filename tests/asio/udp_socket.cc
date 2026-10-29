@@ -1,236 +1,369 @@
+// test_udp_echo.cc
 #include <array>
+#include <atomic>
+#include <cassert>
+#include <chrono>
+#include <cstring>
+#include <iostream>
 #include <memory>
 #include <string>
-#include <iostream>
+#include <thread>
+#include <vector>
 
+#include "lcy/asio/io_context.hpp"
 #include "lcy/asio/ip/udp.hpp"
-#include "lcy/asio/signal_set.hpp"
 #include "lcy/asio/buffer_view.hpp"
 
-class udp_connection :
-	public std::enable_shared_from_this<udp_connection>
+using namespace lcy::asio;
+
+static std::atomic<int> g_recv_count{0};
+static std::atomic<int> g_send_count{0};
+
+class udp_connection : public std::enable_shared_from_this<udp_connection>
 {
 public:
     typedef std::shared_ptr<udp_connection> sptr;
 
-	typedef lcy::asio::ip::udp::socket::connect_func_type connect_func_type;
-	typedef lcy::asio::ip::udp::socket::read_func_type read_func_type;
-	typedef lcy::asio::ip::udp::socket::write_func_type write_func_type;
+    static sptr create_server(io_context& ioc, ip::udp::endpoint local_ep)
+    {
+        sptr conn(new udp_connection(ioc));
+        lcy::system::error_code ec;
+        conn->socket_.open(local_ep.protocol(), ec);
+        if ( ec ) { std::cout << "  server open: " << ec.message() << "\n"; return nullptr; }
+        conn->socket_.bind(local_ep, ec);
+        if ( ec ) { std::cout << "  server bind: " << ec.message() << "\n"; return nullptr; }
+        return conn;
+    }
 
-    static sptr create_server(lcy::asio::io_context& ioc,
-		lcy::asio::ip::udp::endpoint local_endpoint)
-	{
-		sptr conn(new udp_connection(ioc));
+    static sptr create_client(io_context& ioc, ip::udp proto)
+    {
+        sptr conn(new udp_connection(ioc));
+        lcy::system::error_code ec;
+        conn->socket_.open(proto, ec);
+        if ( ec ) { std::cout << "  client open: " << ec.message() << "\n"; return nullptr; }
+        return conn;
+    }
 
-		lcy::system::error_code ec;
-		conn->socket_.open(local_endpoint.protocol(), ec);
-		if ( ec ) {
-			std::cout << "create_server open : " << ec.message() << std::endl;
-			return 0;
-		}
-		
-		conn->socket_.bind(local_endpoint, ec);
-		if ( ec ) {
-			std::cout << "create_server bind : " << ec.message() << std::endl;
-			return 0;
-		}
-		
-		return conn;
-	}
+    static sptr create_connect_client(io_context& ioc, ip::udp::endpoint remote_ep)
+    {
+        sptr conn(new udp_connection(ioc));
+        lcy::system::error_code ec;
+        conn->socket_.open(remote_ep.protocol(), ec);
+        if ( ec ) { std::cout << "  client open: " << ec.message() << "\n"; return nullptr; }
+        conn->socket_.connect(remote_ep, ec);
+        if ( ec ) { std::cout << "  client connect: " << ec.message() << "\n"; return nullptr; }
+        return conn;
+    }
 
-    static sptr create_client(lcy::asio::io_context& ioc,
-		lcy::asio::ip::udp udp_protocol)
-	{
-		sptr conn(new udp_connection(ioc));		
+    void do_receive_from_read()
+    {
+        auto self = shared_from_this();
+        auto remote = std::make_shared<ip::udp::endpoint>();
 
-		lcy::system::error_code ec;
-		conn->socket_.open(udp_protocol, ec);
-		if ( ec ) {
-			std::cout << "create_server open : " << ec.message() << std::endl;
-			return 0;
-		}
-		
-		return conn;
-	}
+        socket_.async_receive_from(*remote, buffer_view(read_buffer_),
+            [remote, this, self](lcy::system::error_code ec, std::size_t n) {
+                if ( ec ) { std::cout << "  recv_from error: " << ec.message() << "\n"; return; }
+                ++g_recv_count;
+                std::cout << "  recv_from " << n << " bytes from "
+                          << remote->to_string() << "\n";
+                std::memcpy(write_buffer_.data(), read_buffer_.data(), n);
+                do_send_to_write(*remote, const_buffer_view(write_buffer_.data(), n));
+            });
+    }
 
- 	static sptr create_connect_client(lcy::asio::io_context& ioc,
-		lcy::asio::ip::udp::endpoint remote_endpoint)
-	{
-		sptr conn(new udp_connection(ioc));		
+    void do_send_write(const_buffer_view bv)
+    {
+        auto self = shared_from_this();
+        socket_.async_send(bv,
+            [this, self](lcy::system::error_code ec, std::size_t n) {
+                if ( ec ) { std::cout << "  send error: " << ec.message() << "\n"; return; }
+                ++g_send_count;
+                std::cout << "  send " << n << " bytes\n";
+                do_receive_read();
+            });
+    }
 
-		lcy::system::error_code ec;
-		conn->socket_.open(remote_endpoint.protocol(), ec);
-		if ( ec ) {
-			std::cout << "create_server open : " << ec.message() << std::endl;
-			return 0;
-		}
-		
-		conn->socket_.connect(remote_endpoint, ec);
-		if ( ec ) {
-			std::cout << "create_server connect : " << ec.message() << std::endl;
-			return 0;
-		}
-		
-		return conn;
-	}
+    void do_receive_read()
+    {
+        auto self = shared_from_this();
+        socket_.async_receive(buffer_view(read_buffer_),
+            [this, self](lcy::system::error_code ec, std::size_t n) {
+                if ( ec ) { std::cout << "  recv error: " << ec.message() << "\n"; return; }
+                ++g_recv_count;
+                std::cout << "  recv " << n << " bytes\n";
+                std::memcpy(write_buffer_.data(), read_buffer_.data(), n);
+                do_send_write(const_buffer_view(write_buffer_.data(), n));
+            });
+    }
 
-	void do_receive_from_read()
-	{
-		auto self = shared_from_this();
-		auto remote_endpoint_sptr = std::make_shared<lcy::asio::ip::udp::endpoint>();
+    void do_send_to_loop(ip::udp::endpoint remote)
+    {
+        auto self = shared_from_this();
+        static const char msg[] = "ping";
+        socket_.async_send_to(remote, const_buffer_view(msg, sizeof(msg) - 1),
+            [this, self, remote](lcy::system::error_code ec, std::size_t n) {
+                if ( ec ) { std::cout << "  send_to error: " << ec.message() << "\n"; return; }
+                ++g_send_count;
+                std::cout << "  send_to " << n << " bytes\n";
+                do_recv_from_loop(remote);
+            });
+    }
 
-		socket_.async_receive_from(*remote_endpoint_sptr,
-			lcy::asio::buffer_view(read_buffer_),
-				[remote_endpoint_sptr, this, self](lcy::system::error_code ec, std::size_t nbytes){
-			if ( ec ) {
-				std::cout << "do_receive_from_read error : " << ec.message() << std::endl;
-				return;
-			}
+    void do_recv_from_loop(ip::udp::endpoint remote)
+    {
+        (void)remote;
 
-			std::cout << "do_receive_from_read -- remote_endpoint : "
-				<< remote_endpoint_sptr->to_string() << ", data : "
-				<< std::string(read_buffer_.data(), nbytes) << ", length : "
-				<< nbytes << std::endl;
-			
-			::memcpy(write_buffer_.data(), read_buffer_.data(), nbytes);
-			do_send_to_write(*remote_endpoint_sptr,
-				lcy::asio::buffer_view(write_buffer_.data(), nbytes));
-		});
-	}
+        auto self = shared_from_this();
+        auto from = std::make_shared<ip::udp::endpoint>();
+        socket_.async_receive_from(*from, buffer_view(read_buffer_),
+            [this, self](lcy::system::error_code ec, std::size_t n) {
+                if ( ec ) { std::cout << "  recv_from error: " << ec.message() << "\n"; return; }
+                ++g_recv_count;
+                std::cout << "  recv_from " << n << " bytes\n";
+            });
+    }
 
-	void do_send_write(lcy::asio::const_buffer_view buffer_view)
-	{
-		auto self = shared_from_this();
-
-		socket_.async_send(buffer_view,
-				[this, self](lcy::system::error_code ec, std::size_t nbytes){
-			if ( ec ) {
-				std::cout << "do_send_write error : " << ec.message() << std::endl;
-				return;
-			}
-
-			std::cout << "do_send_write -- length : "
-				<< nbytes << std::endl;
-
-			do_receive_read();
-		});
-	}
-
-    void cancel()
-	{
-		socket_.cancel();
-	}
-
-    void close()
-	{
-		socket_.close();
-	}
-
-    lcy::asio::ip::udp::socket& socket()
-	{ 
-		return socket_;
-	}
+    void close() { socket_.close(); }
+    ip::udp::socket& socket() { return socket_; }
 
 private:
-	void do_send_to_write(lcy::asio::ip::udp::endpoint remote_endpoint,
-		lcy::asio::const_buffer_view buffer_view)
-	{
-		auto self = shared_from_this();
+    void do_send_to_write(ip::udp::endpoint remote, const_buffer_view bv)
+    {
+        auto self = shared_from_this();
+        socket_.async_send_to(remote, bv,
+            [this, self](lcy::system::error_code ec, std::size_t n) {
+                if ( ec ) { std::cout << "  send_to error: " << ec.message() << "\n"; return; }
+                ++g_send_count;
+                std::cout << "  send_to " << n << " bytes\n";
+                do_receive_from_read();
+            });
+    }
 
-		socket_.async_send_to(remote_endpoint, buffer_view,
-				[this, self](lcy::system::error_code ec, std::size_t nbytes){
-			if ( ec ) {
-				std::cout << "do_send_to_write error : " << ec.message() << std::endl;
-				return;
-			}
+    explicit udp_connection(io_context& ioc) : socket_(ioc) {}
 
-			std::cout << "do_send_to_write -- length : "
-				<< nbytes << std::endl;
-
-			do_receive_from_read();
-		});
-	}
-
-	void do_receive_read()
-	{
-		auto self = shared_from_this();
-
-		socket_.async_receive(lcy::asio::buffer_view(read_buffer_),
-				[this, self](lcy::system::error_code ec, std::size_t nbytes){
-			if ( ec ) {
-				std::cout << "do_receive_read error : " << ec.message() << std::endl;
-				return;
-			}
-
-			std::cout << "do_receive_read -- data : "
-				<< std::string(read_buffer_.data(), nbytes) << ", length : "
-				<< nbytes << std::endl;
-
-			::memcpy(write_buffer_.data(), read_buffer_.data(), nbytes);
-			do_send_write(lcy::asio::buffer_view(write_buffer_.data(), nbytes));
-		});
-	}
-
-private:
-    udp_connection(lcy::asio::io_context& ioc) :
-		socket_(ioc) {}
-
-	std::array<char, 2048> read_buffer_;
-	std::array<char, 2048> write_buffer_;
-    lcy::asio::ip::udp::socket socket_;
+    std::array<char, 2048> read_buffer_;
+    std::array<char, 2048> write_buffer_;
+    ip::udp::socket socket_;
 };
 
-void test_receive_from_server()
+struct udp_server_fixture
 {
-	lcy::asio::io_context ioc;
+    io_context ioc;
+    udp_connection::sptr server;
+    std::vector<std::thread> runners;
+    ip::udp::endpoint ep;
 
-	lcy::asio::signal_set signal_set(ioc, { SIGINT });
-	signal_set.async_wait([&ioc](lcy::system::error_code ec, int signum){
-		if ( ec ) {
-			std::cout << "signal_set error : " << ec.message() << std::endl;
-			return;
-		}
+    udp_server_fixture(std::size_t nthreads, unsigned short port)
+        : ioc(nthreads), ep(ip::udp::v4(), port)
+    {
+        server = udp_connection::create_server(ioc, ep);
+        assert(server);
+        server->do_receive_from_read();
 
-		ioc.stop();
-		std::cout << "receive signal : " << signum << ", server exit" << std::endl;
-	});
+        for ( std::size_t i = 0; i < nthreads; ++i ) {
+            runners.emplace_back([this]() { ioc.run(); });
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
 
-	lcy::asio::ip::udp::endpoint local_endpoint(lcy::asio::ip::udp::v4(), 9950);
-	auto conn = udp_connection::create_server(ioc, local_endpoint);
+    ~udp_server_fixture()
+    {
+        ioc.stop();
+        for ( auto& t : runners ) {
+            if ( t.joinable() ) t.join();
+        }
+    }
+};
 
-	conn->do_receive_from_read();
+static bool udp_echo_sync(io_context& ioc, ip::udp::endpoint server_ep,
+                          const std::string& msg, std::string& reply)
+{
+    ip::udp::socket sock(ioc);
+    lcy::system::error_code ec;
+    sock.open(ip::udp::v4(), ec);
+    if ( ec ) return false;
 
-	ioc.run();
+    std::size_t sent = sock.send_to(server_ep,
+        const_buffer_view(msg.data(), msg.size()), ec);
+    if ( ec || sent != msg.size() ) return false;
+
+    reply.assign(2048, '\0');
+    ip::udp::endpoint from;
+    std::size_t got = sock.receive_from(from,
+        mutable_buffer_view(&reply[0], reply.size()), ec);
+    if ( ec ) return false;
+
+    reply.resize(got);
+    sock.close();
+    return reply == msg;
 }
 
-void test_receive_client()
+static void test_server_echo()
 {
-	lcy::asio::io_context ioc;
+    std::cout << "[test_server_echo]\n";
+    g_recv_count = 0;
+    g_send_count = 0;
 
-	lcy::asio::signal_set signal_set(ioc, { SIGINT });
-	signal_set.async_wait([&ioc](lcy::system::error_code ec, int signum){
-		if ( ec ) {
-			std::cout << "signal_set error : " << ec.message() << std::endl;
-			return;
-		}
+    udp_server_fixture fx(4, 19960);
 
-		ioc.stop();
-		std::cout << "receive signal : " << signum << ", server exit" << std::endl;
-	});
+    std::string reply;
+    assert(udp_echo_sync(fx.ioc, fx.ep, "hello!", reply));
+    assert(reply == "hello!");
 
-	// nc -4 -ul 9950
-	lcy::asio::ip::udp::endpoint remote_endpoint("127.0.0.1", 9950);
-	auto conn = udp_connection::create_connect_client(ioc, remote_endpoint);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    assert(g_recv_count >= 1);
+    assert(g_send_count >= 1);
+    std::cout << "  echo ok\n";
+}
 
-	conn->do_send_write(lcy::asio::buffer_view(std::string("hello world")));
+static void test_server_multi_echo()
+{
+    std::cout << "[test_server_multi_echo]\n";
+    g_recv_count = 0;
+    g_send_count = 0;
 
-	ioc.run();
+    udp_server_fixture fx(4, 19961);
+
+    for ( int i = 0; i < 10; ++i ) {
+        std::string msg = "msg" + std::to_string(i);
+        std::string reply;
+        assert(udp_echo_sync(fx.ioc, fx.ep, msg, reply));
+        assert(reply == msg);
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    assert(g_recv_count >= 10);
+    assert(g_send_count >= 10);
+    std::cout << "  10 echoes ok\n";
+}
+
+static void test_server_large()
+{
+    std::cout << "[test_server_large]\n";
+    g_recv_count = 0;
+    g_send_count = 0;
+
+    udp_server_fixture fx(4, 19962);
+
+    std::string msg(1400, 'x');
+    std::string reply;
+    assert(udp_echo_sync(fx.ioc, fx.ep, msg, reply));
+    assert(reply == msg);
+    std::cout << "  1400-byte echo ok\n";
+}
+
+static void test_connect_client()
+{
+    std::cout << "[test_connect_client]\n";
+    g_recv_count = 0;
+    g_send_count = 0;
+
+    io_context ioc(4);
+    ip::udp::endpoint server_ep(ip::udp::v4(), 19963);
+
+    auto server = udp_connection::create_server(ioc, server_ep);
+    assert(server);
+    server->do_receive_from_read();
+
+    std::vector<std::thread> runners;
+    for ( int i = 0; i < 4; ++i ) {
+        runners.emplace_back([&ioc]() { ioc.run(); });
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    auto client = udp_connection::create_connect_client(ioc, server_ep);
+    assert(client);
+
+    std::string msg = "hello world";
+    client->do_send_write(const_buffer_view(msg.data(), msg.size()));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+    assert(g_send_count >= 1);
+    assert(g_recv_count >= 1);
+    std::cout << "  connect client echo ok, send=" << g_send_count
+              << " recv=" << g_recv_count << "\n";
+
+    ioc.stop();
+    for ( auto& t : runners ) t.join();
+}
+
+static void test_unconnect_client()
+{
+    std::cout << "[test_unconnect_client]\n";
+    g_recv_count = 0;
+    g_send_count = 0;
+
+    io_context ioc(4);
+    ip::udp::endpoint server_ep(ip::udp::v4(), 19964);
+
+    auto server = udp_connection::create_server(ioc, server_ep);
+    assert(server);
+    server->do_receive_from_read();
+
+    std::vector<std::thread> runners;
+    for ( int i = 0; i < 4; ++i ) {
+        runners.emplace_back([&ioc]() { ioc.run(); });
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    auto client = udp_connection::create_client(ioc, ip::udp::v4());
+    assert(client);
+    client->do_send_to_loop(server_ep);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+    assert(g_send_count >= 1);
+    assert(g_recv_count >= 1);
+    std::cout << "  unconnect client ok, send=" << g_send_count
+              << " recv=" << g_recv_count << "\n";
+
+    ioc.stop();
+    for ( auto& t : runners ) t.join();
+}
+
+static void test_bind_conflict()
+{
+    std::cout << "[test_bind_conflict]\n";
+    io_context ioc(1);
+    ip::udp::endpoint ep(ip::udp::v4(), 19965);
+
+    auto s1 = udp_connection::create_server(ioc, ep);
+    assert(s1);
+
+    auto s2 = udp_connection::create_server(ioc, ep);
+    assert(!s2);
+    std::cout << "  second bind failed as expected\n";
+}
+
+static void test_not_open()
+{
+    std::cout << "[test_not_open]\n";
+    io_context ioc(1);
+    auto conn = udp_connection::create_client(ioc, ip::udp::v4());
+    assert(conn);
+    conn->close();
+
+    std::atomic<bool> got_error{false};
+    char buf[8];
+    lcy::system::error_code ec;
+    ip::udp::endpoint from;
+    auto n = conn->socket().receive_from(
+        from, mutable_buffer_view(buf, sizeof(buf)), ec);
+    assert(ec);
+    (void)n;
+    std::cout << "  not open error: " << ec.message() << "\n";
 }
 
 int main()
 {
-	test_receive_from_server();
-	// test_receive_client();
+    test_server_echo();
+    test_server_multi_echo();
+    test_server_large();
+    test_connect_client();
+    test_unconnect_client();
+    test_bind_conflict();
+    test_not_open();
 
-	return 0;
+    std::cout << "\nall udp echo tests passed\n";
+    return 0;
 }

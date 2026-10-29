@@ -60,12 +60,10 @@ static void test_get_field()
     h.set_field("A", "2");
     h.set_field("B", "1");
 
-    // 第一个同名
     auto it = h.get_field("A");
     assert(it != h.field_end());
     assert(it->first == "A" && it->second == "1");
 
-    // 不存在 → end()
     auto miss = h.get_field("X");
     assert(miss == h.field_end());
 }
