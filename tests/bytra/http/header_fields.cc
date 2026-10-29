@@ -34,9 +34,9 @@ static void test_basic_insert()
 {
     header_fields h;
 
-    h.set_field("A", "1");   // A1
-    h.set_field("B", "1");   // A1 B1
-    h.set_field("A", "2");   // A1 A2 B1  （A 追加到 A 区间尾，保持 A 连续）
+    h.set_field("A", "1");
+    h.set_field("B", "1");
+    h.set_field("A", "2");
 
     expect_eq(dump(h), {"A:1", "A:2", "B:1"}, "basic insert order");
 }
@@ -90,7 +90,6 @@ static void test_count()
 
 static void test_remove_field()
 {
-    // 删首
     {
         header_fields h;
         h.set_field("A", "1");
