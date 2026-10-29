@@ -24,21 +24,19 @@ public:
 public:
 	const_iterator set_field(std::string key, std::string value)
 	{
-		auto key_scope_iter = key_scope_index_.find(key);
-		if ( key_scope_iter == key_scope_index_.end() ) {
-			auto key_scope_begin = fields_.insert(fields_.end(), { key, std::move(value) });
-			key_scope_index_[std::move(key)] = { key_scope_begin, fields_.end() };
+        auto key_scope_iter = key_scope_index_.find(key);
+        if ( key_scope_iter != key_scope_index_.end() ) {
+            auto key_scope_last = key_scope_iter->second.second;
+            auto key_scope_new_last = fields_.insert(++key_scope_last, { std::move(key), std::move(value) });
+            key_scope_iter->second.second = key_scope_new_last;
 
-			return key_scope_begin;
-		}
+            return key_scope_new_last;
+        }
 
-		auto key_scope_end = key_scope_iter->second.second;
-		auto key_scope_last = fields_.insert(key_scope_end, { std::move(key), std::move(value) });
-		key_scope_iter->second.second = ++key_scope_last;
+        auto iter = fields_.insert(fields_.end(), { key, std::move(value) });
+        key_scope_index_[std::move(key)] = { iter, iter };
 
-		--key_scope_last;
-
-		return key_scope_last;
+        return iter;
 	}
 
 	const_iterator get_field(const std::string& key) const
@@ -55,15 +53,19 @@ public:
 	{
 		auto key_scope_iter = key_scope_index_.find(iter->first);
 		if ( key_scope_iter != key_scope_index_.end() ) {
+            if ( key_scope_iter->second.first == key_scope_iter->second.second ) {
+                fields_.erase(iter);
+                key_scope_index_.erase(key_scope_iter);
+                return;
+            }
+
 			if ( iter == key_scope_iter->second.first ) {
 				++key_scope_iter->second.first;
-			}
+			} else if ( iter == key_scope_iter->second.second ) {
+                --key_scope_iter->second.second;
+            }
 
 			fields_.erase(iter);
-
-			if ( key_scope_iter->second.first == key_scope_iter->second.second ) {
-				key_scope_index_.erase(key_scope_iter);
-			}
 		}
 	}
 
@@ -71,7 +73,7 @@ public:
 	{
 		auto key_scope_iter = key_scope_index_.find(key);
 		if ( key_scope_iter != key_scope_index_.end() ) {
-			fields_.erase(key_scope_iter->second.first, key_scope_iter->second.second);
+			fields_.erase(key_scope_iter->second.first, ++key_scope_iter->second.second);
 			key_scope_index_.erase(key_scope_iter);
 		}
 	}
@@ -84,10 +86,17 @@ public:
 		if ( key_scope_iter != key_scope_index_.end() ) {
 			result = static_cast<std::size_t>(std::distance(
 				key_scope_iter->second.first, key_scope_iter->second.second));
+            ++result;
 		}
 
 		return result;
 	}
+
+    void remove_all_fields()
+    {
+        fields_.clear();
+        key_scope_index_.clear();
+    }
 
 	const_iterator field_begin() const
 	{
