@@ -1,6 +1,9 @@
 #ifndef __LCY_BYTRA_HTTP_STATUS_HPP__
 #define __LCY_BYTRA_HTTP_STATUS_HPP__
 
+#include <string>
+#include <cstdlib>
+
 namespace lcy
 {
 namespace bytra
@@ -74,7 +77,7 @@ namespace http
 enum status
 {
 #define XX(xx_code, xx_name, xx_string) \
-      xx_name = xx_code,
+        xx_name = xx_code,
     LCY_BYTRA_HTTP_STATUS_MAP(XX)
 #undef XX
 };
@@ -86,7 +89,7 @@ inline std::string status_to_string(status s)
 
 inline status status_from_string(const std::string& s)
 {
-    int code = std::stoi(s);
+    int code = ::atoi(s.c_str());
     switch ( code ) {
     #define XX(xx_code, xx_name, xx_string)  \
             case xx_code : { return status::xx_name; break; }
