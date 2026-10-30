@@ -1,5 +1,5 @@
-#ifndef __LCY_BYTRA_HTTP_DETAIL_REQUEST_HPP__
-#define __LCY_BYTRA_HTTP_DETAIL_REQUEST_HPP__
+#ifndef __LCY_BYTRA_HTTP_REQUEST_HPP__
+#define __LCY_BYTRA_HTTP_REQUEST_HPP__
 
 #include "lcy/bytra/http/method.hpp"
 #include "lcy/bytra/http/detail/message.hpp"
@@ -75,4 +75,4 @@ private:
 }   // namespace bytra
 }   // namespace lcy
 
-#endif  // __LCY_BYTRA_HTTP_DETAIL_REQUEST_HPP__
+#endif  // __LCY_BYTRA_HTTP_REQUEST_HPP__

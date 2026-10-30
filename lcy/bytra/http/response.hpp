@@ -1,5 +1,5 @@
-#ifndef __LCY_BYTRA_HTTP_DETAIL_RESPONSE_HPP__
-#define __LCY_BYTRA_HTTP_DETAIL_RESPONSE_HPP__
+#ifndef __LCY_BYTRA_HTTP_RESPONSE_HPP__
+#define __LCY_BYTRA_HTTP_RESPONSE_HPP__
 
 #include "lcy/bytra/http/status.hpp"
 #include "lcy/bytra/http/detail/message.hpp"
@@ -75,8 +75,8 @@ private:
     std::string reason_;
 };
 
-}   // nameapce http
+}   // namespace http
 }   // namespace bytra 
 }   // namespace lcy
 
-#endif  // __LCY_BYTRA_HTTP_DETAIL_RESPONSE_HPP__
+#endif  // __LCY_BYTRA_HTTP_RESPONSE_HPP__
