@@ -69,6 +69,12 @@ target_include_directories(async_stream_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 
 ####### bytra
 
+add_executable(flat_buffer_test tests/bytra/flat_buffer.cc)
+target_include_directories(flat_buffer_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_executable(ostream_test tests/bytra/ostream.cc)
+target_include_directories(ostream_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
 add_executable(header_fields_test tests/bytra/http/header_fields.cc)
 target_include_directories(header_fields_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
