@@ -17,7 +17,7 @@ class basic_parser :
     private noncopyable
 {
 public:
-    enum phase
+    enum parse_phase
     {
         first_line,
         field_line,
@@ -25,21 +25,76 @@ public:
         complete,
     };
 
-    enum result
+    enum parse_result
     {
+        normal,
         wait_more,
         error_occurred,
-        complete,
+    };
+
+public:
+    struct data_view
+    {
+        const char* ptr_;
+        std::size_t length_;
+    };
+
+    struct first_line_view
+    {
+        data_view first_;
+        data_view second_;
+        data_view third_;
+    };
+
+    struct field_line_view
+    {
+        data_view key_;
+        data_view value_;
+    };
+
+    struct chunk_view
+    {
+        std::size_t size_;
+        data_view payload_;
+    };
+
+    struct body_view
+    {
+        data_view body_;
     };
 
 public:
     typedef std::function<
         void (
-            lcy::system::error_code,
-            const void* data,
-            std::size_t length
+            lcy::system::error_code ec,
+            const first_line_view& view,
+            parse_result result
         )
-    > parse_func_type;
+    > first_line_func_type;
+
+    typedef std::function<
+        void (
+            lcy::system::error_code ec,
+            const field_line_view& view,
+            parse_result result
+        )
+    > field_line_func_type;
+
+    typedef std::function<
+        void (
+            lcy::system::error_code ec,
+            const chunk_view& view,
+            parse_result result
+        )
+    > chunk_view_func_type;
+
+    typedef std::function<
+        void (
+            lcy::system::error_code ec,
+            const body_view& view,
+            parse_result result
+        )
+    > body_view_func_type;
 
 public:
     basic_parser() :
@@ -48,17 +103,26 @@ public:
         field_total_limit_(0),
         chunk_line_limit_(0),
         body_total_limit_(0),
-        parse_phase_(phase::first_line),
+        has_trailer_(false),
+        parse_phase_(parse_phase::first_line),
         parsed_bytes_(0) {}
 
-    void set_trailer_check();
+    void set_trailer_check(bool v)
+    {
+        has_trailer_ = v;
+    }
 
-    result parse(const void* data, std::size_t length, Message& message);
-    void parse_first_line(const void* data, std::size_t length, parse_func_type func);
-    void parse_field_line(const void* data, std::size_t length, parse_func_type func);
-    void parse_chunk_line(const void* data, std::size_t length, parse_func_type func);
-    void parse_body_stream(const void* data, std::size_t length, parse_func_type func);
-    void parse_trailer_check(const void* data, std::size_t length, parse_func_type func);
+    bool is_check_trailer() const
+    {
+        return has_trailer_;
+    }
+
+    parse_result parse(const void* data, std::size_t length, Message& message);
+    void parse_first_line(const void* data, std::size_t length, first_line_func_type func);
+    void parse_field_line(const void* data, std::size_t length, field_line_func_type func);
+    void parse_chunk(const void* data, std::size_t length, chunk_view_func_type func);
+    void parse_body(const void* data, std::size_t length, body_view_func_type func);
+    void parse_trailer(const void* data, std::size_t length, field_line_func_type func);
 
 private:
     std::size_t first_line_limit_;
@@ -67,7 +131,8 @@ private:
     std::size_t chunk_line_limit_;
     std::size_t body_total_limit_;
 
-    phase parse_phase_;
+    bool has_trailer_;
+    parse_phase parse_phase_;
     std::size_t parsed_bytes_;
 };
 
