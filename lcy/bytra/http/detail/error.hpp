@@ -2,7 +2,7 @@
 #define __LCY_BYTRA_HTTP_DETAIL_ERROR_HPP__
 
 #include "lcy/system/error.hpp"
-#include "lcy/byrta/http/error.hpp"
+#include "lcy/bytra/http/error.hpp"
 
 namespace lcy
 {

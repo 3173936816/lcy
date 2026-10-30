@@ -20,7 +20,7 @@ enum error
 };
 
 }   // namespace http
-}	// namespace asio
+}	// namespace bytra
 }	// namespace lcy
 
 #endif	// __LCY_BYTRA_HTTP_ERROR_HPP__
