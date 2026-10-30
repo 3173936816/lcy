@@ -10,7 +10,7 @@ namespace http
 
 #define LCY_BYTRA_HTTP_STATUS_MAP(XX)                                       \
   XX(0,   unknown,                         Unknown)                         \
-  XX(100, continue,                        Continue)                        \
+  XX(100, continue_,                       Continue)                        \
   XX(101, switching_protocols,             Switching Protocols)             \
   XX(102, processing,                      Processing)                      \
   XX(200, ok,                              OK)                              \

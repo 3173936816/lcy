@@ -62,8 +62,8 @@ public:
         result += status_to_string(status_) + " ";
         result += reason_ + " ";
         result += version_to_string(this->get_version()) + "\r\n";
-        for ( const auto& header : this->headers_ ) {
-            result += header.first + ": " + header.second + "\r\n";
+        for ( auto beg = this->field_begin(); beg != this->field_end(); ++beg ) {
+            result += beg->first + ": " + beg->second + "\r\n";
         }
         result += "\r\n";
 
