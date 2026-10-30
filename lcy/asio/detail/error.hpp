@@ -34,7 +34,9 @@ public:
 				case xx_errnum : { return #xx_errmsg; break; }
 			LCY_ASIO_ERROR_NUMBER_MAP(XX)
 		#undef XX
-			default : { return "Unknown error"; break; }
+			default : {
+				return "Unknown error";
+			}
 		}	
 	}
 };
