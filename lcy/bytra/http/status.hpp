@@ -88,13 +88,13 @@ inline status status_from_string(const std::string& s)
 {
     int code = std::stoi(s);
     switch ( code ) {
-      #define XX(xx_code, xx_name, xx_string)  \
+    #define XX(xx_code, xx_name, xx_string)  \
             case xx_code : { return status::xx_name; break; }
-          LCY_BYTRA_HTTP_STATUS_MAP(XX)
-      #undef XX
-      default : {
-          return status::unknown;
-      }
+        LCY_BYTRA_HTTP_STATUS_MAP(XX)
+    #undef XX
+        default : {
+            return status::unknown;
+        }
     }
 }
 
@@ -102,13 +102,13 @@ inline std::string status_to_reason(status s,
   std::string default_value = "")
 {
     switch ( s ) {
-      #define XX(xx_code, xx_name, xx_string)  \
+    #define XX(xx_code, xx_name, xx_string)  \
             case status::xx_name : { return #xx_string; break; }
-          LCY_BYTRA_HTTP_STATUS_MAP(XX)
-      #undef XX
-      default : {
-          return default_value;
-      }
+        LCY_BYTRA_HTTP_STATUS_MAP(XX)
+    #undef XX
+        default : {
+            return default_value;
+        }
     }
 }
 

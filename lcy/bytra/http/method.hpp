@@ -49,7 +49,7 @@ namespace http
 enum method
 {
 #define XX(xx_num, xx_name, xx_string)  \
-      xx_name = xx_num,
+        xx_name = xx_num,
     LCY_BYTRA_HTTP_METHOD_MAP(XX)
 #undef XX
 };
@@ -58,13 +58,13 @@ inline std::string method_to_string(method m,
     std::string default_value = "")
 {
     switch ( m ) {
-      #define XX(xx_num, xx_name, xx_string)  \
+    #define XX(xx_num, xx_name, xx_string)  \
             case method::xx_name : { return #xx_string; break; }
-          LCY_BYTRA_HTTP_METHOD_MAP(XX)
-      #undef XX
-      default : {
-          return default_value;
-      }
+        LCY_BYTRA_HTTP_METHOD_MAP(XX)
+    #undef XX
+        default : {
+            return default_value;
+        }
     }
 }
 
