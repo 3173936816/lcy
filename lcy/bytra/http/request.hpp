@@ -15,7 +15,6 @@ template <typename BodyContainer>
 class request :
     public detail::message<
         detail::request_tag,
-        detail::field_container,
         BodyContainer
     >
 {
@@ -56,11 +55,11 @@ public:
     std::string header_to_string() const
     {
         std::string result;
-        result += method_to_string(this->method_) + " ";
+        result += method_to_string(method_) + " ";
         result += target_ + " ";
         result += version_to_string(this->get_version()) + "\r\n";
-        for ( const auto& header : this->headers_ ) {
-            result += header.first + ": " + header.second + "\r\n";
+        for ( auto beg = this->field_begin(); beg != this->field_end(); ++beg ) {
+            result += beg->first + ": " + beg->second + "\r\n";
         }
         result += "\r\n";
 

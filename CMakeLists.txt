@@ -72,5 +72,5 @@ target_include_directories(async_stream_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 add_executable(header_fields_test tests/bytra/http/header_fields.cc)
 target_include_directories(header_fields_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-# add_executable(http_request_test tests/bytra/http/request.cc)
-# target_include_directories(http_request_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+add_executable(http_request_test tests/bytra/http/request.cc)
+target_include_directories(http_request_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

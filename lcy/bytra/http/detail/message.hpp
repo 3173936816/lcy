@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "lcy/bytra/http/version.hpp"
+#include "lcy/bytra/http/detail/header_fields.hpp"
 
 namespace lcy
 {
@@ -18,10 +19,10 @@ namespace detail
 
 template <
     typename IsRequest,
-    typename FieldContainer,
     typename BodyContainer
 >
-class message
+class message :
+    public header_fields
 {
 public:
     typedef BodyContainer body_container_type;
@@ -40,35 +41,9 @@ public:
         return version_;
     }
 
-    void set_version(version version)
+    void set_version(version v)
     {
-        version_ = version;
-    }
-
-    const std::string& get_header(const std::string& name,
-        const std::string& default_value = "") const
-    {
-        auto iter = header_index_.find(name);
-        if ( iter != header_index_.end() ) {
-            return *(iter->second);
-        }
-
-        return default_value;
-    }
-
-    void set_header(std::string name, std::string value)
-    {
-        auto iter = headers_.insert(headers_.end(), { name, std::move(value) });
-        header_index_.insert({ std::move(name), iter });
-    }
-
-    void remove_header(const std::string& name)
-    {
-        auto iter = header_index_.find(name);
-        if ( iter != header_index_.end() ) {
-            headers_.erase(iter->second);
-            header_index_.earse(iter);
-        }
+        version_ = v;
     }
 
     body_container_type& body_container()
@@ -76,7 +51,7 @@ public:
         return body_container_;
     }
 
-protected:
+private:
     version version_;
     body_container_type body_container_;
 };
