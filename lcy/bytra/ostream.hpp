@@ -1,5 +1,5 @@
-#ifndef __LCY_BYTRA_STREAM_HPP__
-#define __LCY_BYTRA_STREAM_HPP__
+#ifndef __LCY_BYTRA_OSTREAM_HPP__
+#define __LCY_BYTRA_OSTREAM_HPP__
 
 #include <cstddef>
 #include <cstring>
@@ -65,4 +65,4 @@ private:
 }   // namespace bytra
 }   // namespace lcy
 
-#endif  // __LCY_BYTRA_STREAM_HPP__
+#endif  // __LCY_BYTRA_OSTREAM_HPP__

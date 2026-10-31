@@ -7,7 +7,7 @@
 #include <string>
 #include <climits>
 
-#include "lcy/bytra/stream.hpp"
+#include "lcy/bytra/ostream.hpp"
 #include "lcy/bytra/flat_buffer.hpp"
 
 namespace {
