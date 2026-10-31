@@ -8,8 +8,11 @@ namespace bytra
 namespace http
 {
 
-#define LCY_BYTRA_HTTP_ERROR_NUMBER_MAP(XX)		    \
-	XX(success,         0, Success)					\
+#define LCY_BYTRA_HTTP_ERROR_NUMBER_MAP(XX)		    		\
+	XX(success,         	0, Success)						\
+	XX(phase_mismatch,  	1, Phase mismatch)      		\
+	XX(first_line_limit,    2, First line limit exceeded)  	\
+	XX(bad_first_line       3, Bad first line)				\
 
 enum error
 {
