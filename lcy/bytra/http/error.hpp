@@ -17,6 +17,7 @@ namespace http
     XX(invalid_header,       5, Invalid header)                 \
     XX(invalid_body,         6, Invalid body)                   \
 
+
 enum error
 {
 #define XX(xx_errnum, xx_custom_num, xx_errmsg) \

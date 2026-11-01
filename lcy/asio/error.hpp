@@ -12,6 +12,7 @@ namespace asio
 	XX(already_open, 	2, Descriptor already open)	\
 	XX(eof, 			3, Peer socket close)		\
 
+
 enum error
 {
 #define XX(xx_errnum, xx_custom_num, xx_errmsg)	\
