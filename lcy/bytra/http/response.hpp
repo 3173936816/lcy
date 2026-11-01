@@ -54,9 +54,9 @@ public:
     std::string header_to_string() const
     {
         std::string result;
+        result += version_to_string(this->get_version()) + " ";
         result += status_to_string(status_) + " ";
-        result += reason_ + " ";
-        result += version_to_string(this->get_version()) + "\r\n";
+        result += reason_ + "\r\n";
         for ( auto beg = this->field_begin(); beg != this->field_end(); ++beg ) {
             result += beg->first + ": " + beg->second + "\r\n";
         }
