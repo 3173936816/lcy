@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 11)
 if(MSVC)
     add_compile_options(/W4 /WX)
 else()
-    add_compile_options(-g -Wall -Wextra -Werror -Wno-implicit-fallthrough)
+    add_compile_options(-g -Wall -Wextra -Werror -Wno-implicit-fallthrough -Wno-unused-function)
 endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -84,5 +84,5 @@ target_include_directories(http_request_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 add_executable(http_response_test tests/bytra/http/response.cc)
 target_include_directories(http_response_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(http_request_parser_test tests/bytra/http/request_parser.cc)
-target_include_directories(http_request_parser_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+add_executable(http_parser_test tests/bytra/http/parser.cc)
+target_include_directories(http_parser_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

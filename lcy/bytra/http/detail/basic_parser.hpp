@@ -6,6 +6,7 @@
 
 #include "lcy/noncopyable.hpp"
 #include "lcy/bytra/http/detail/error.hpp"
+#include "lcy/bytra/http/detail/message.hpp"
 
 namespace lcy
 {

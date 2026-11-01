@@ -190,6 +190,91 @@ inline void append_body(flat_buffer& body, const char* data, std::size_t size)
     body.commit(size);
 }
 
+template <typename Message>
+bool split_request_line(const char* data, std::size_t size, Message& message)
+{
+    const char* const end = data + size;
+
+    const char* space1 = std::find(data, end, ' ');
+    if ( space1 == end ) {
+        return false;
+    }
+    const char* space2 = std::find(space1 + 1, end, ' ');
+    if ( space2 == end ) {
+        return false;
+    }
+
+    if ( space1 + 1 == space2 ) {
+        return false;
+    }
+
+    method m;
+    if ( !method_from_string(std::string(data, space1 - data), m) ) {
+        return false;
+    }
+    message.set_method(m);
+    message.set_target(std::string(space1 + 1, space2));
+
+    version v;
+    if ( !parse_version(space2 + 1, end, v) ) {
+        return false;
+    }
+    message.set_version(v);
+    return true;
+}
+
+template <typename Message>
+bool split_response_line(const char* data, std::size_t size, Message& message)
+{
+    const char* const end = data + size;
+
+    const char* space1 = std::find(data, end, ' ');
+    if ( space1 == end ) {
+        return false;
+    }
+
+    version v;
+    if ( !parse_version(data, space1, v) ) {
+        return false;
+    }
+    message.set_version(v);
+
+    const char* space2 = std::find(space1 + 1, end, ' ');
+    const char* status_end = ( space2 == end ) ? end : space2;
+
+    int code = 0;
+    if ( !parse_uint(space1 + 1, status_end, code) || code < 100 || code > 599 ) {
+        return false;
+    }
+
+    status st;
+    if ( !status_from_string(std::string(space1 + 1, status_end), st) ) {
+        return false;
+    }
+    message.set_status(st);
+
+    if ( space2 != end ) {
+        message.set_reason(std::string(space2 + 1, end));
+    } else {
+        message.set_reason(std::string());
+    }
+    return true;
+}
+
+template <typename Message>
+bool split_first_line_dispatch(const char* data,
+    std::size_t size, Message& message, request_tag)
+{
+    return split_request_line(data, size, message);
+}
+
+template <typename Message>
+bool split_first_line_dispatch(const char* data,
+    std::size_t size, Message& message, response_tag)
+{
+    return split_response_line(data, size, message);
+}
+
 } // namespace
 
 template <typename Message>
@@ -275,11 +360,17 @@ void basic_parser<Message>::parse_header(const char* data,
     buf_size_ = size;
     buf_pos_ = 0;
 
-    if ( phase_ == phase::header_line ) {
-        parse_first_line(message, ec);
-    } else {
-        parse_fields(message, ec);
+    while ( phase_ == phase::header_line || phase_ == phase::header_fields ) {
+        if ( phase_ == phase::header_line ) {
+            parse_first_line(message, ec);
+        } else {
+            parse_fields(message, ec);
+        }
+        if ( ec ) {
+            return;
+        }
     }
+    ec = make_http_error_code(lcy::bytra::http::error::success);
 }
 
 template <typename Message>
@@ -338,7 +429,8 @@ void basic_parser<Message>::parse_first_line(message_type& message,
 {
     const char* crlf = CRLF();
     if ( !crlf ) {
-        if ( header_limit_ && buf_size_ > header_limit_ ) {
+        if ( header_limit_ &&
+             parsed_bytes_ + (buf_size_ - buf_pos_) > header_limit_ ) {
             ec = make_http_error_code(lcy::bytra::http::error::header_too_large);
             return;
         }
@@ -369,7 +461,8 @@ void basic_parser<Message>::parse_fields(message_type& message,
         const char* start = buf_ + buf_pos_;
         const char* crlf = CRLF();
         if ( !crlf ) {
-            if ( header_limit_ && buf_size_ > header_limit_ ) {
+            if ( header_limit_ &&
+                 parsed_bytes_ + (buf_size_ - buf_pos_) > header_limit_ ) {
                 ec = make_http_error_code(lcy::bytra::http::error::header_too_large);
                 return;
             }
@@ -385,7 +478,6 @@ void basic_parser<Message>::parse_fields(message_type& message,
             parsed_bytes_ += consumed;
             total_parsed_bytes_ += consumed;
 
-            std::string te;
             bool chunked = false;
             auto te_iter = message.get_field("Transfer-Encoding");
             if ( te_iter != message.field_end() ) {
@@ -609,61 +701,8 @@ template <typename Message>
 bool basic_parser<Message>::split_first_line(const char* data,
         std::size_t size, message_type& message) const
 {
-    const char* const end = data + size;
-
-    if ( message.is_request() ) {
-        const char* space1 = std::find(data, end, ' ');
-        if ( space1 == end ) {
-            return false;
-        }
-        const char* space2 = std::find(space1 + 1, end, ' ');
-        if ( space2 == end ) {
-            return false;
-        }
-
-        auto m = method_from_string(std::string(data, space1 - data));
-        if ( m == method::unknown ) {
-            return false;
-        }
-        message.set_method(m);
-        message.set_target(std::string(space1 + 1, space2));
-
-        version v;
-        if ( !parse_version(space2 + 1, end, v) ) {
-            return false;
-        }
-        message.set_version(v);
-        return true;
-    }
-
-    const char* space1 = std::find(data, end, ' ');
-    if ( space1 == end ) {
-        return false;
-    }
-
-    version v;
-    if ( !parse_version(data, space1, v) ) {
-        return false;
-    }
-    message.set_version(v);
-
-    const char* space2 = std::find(space1 + 1, end, ' ');
-    const char* status_end = ( space2 == end ) ? end : space2;
-
-    int code = 0;
-    if ( !parse_uint(space1 + 1, status_end, code) || code < 100 || code > 599 ) {
-        return false;
-    }
-
-    status st = status_from_string(std::string(space1 + 1, status_end));
-    message.set_status(st);
-
-    if ( space2 != end ) {
-        message.set_reason(std::string(space2 + 1, end));
-    } else {
-        message.set_reason(std::string());
-    }
-    return true;
+    return split_first_line_dispatch(data, size, message,
+        typename message_type::is_request_type());
 }
 
 }   // namespace detail
