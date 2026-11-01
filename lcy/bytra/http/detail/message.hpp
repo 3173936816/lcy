@@ -19,6 +19,9 @@ class message :
     public header_fields
 {
 public:
+    typedef IsRequest is_request_type;
+
+public:
     explicit message(version v = version::http_1_1) :
         version_(v) {}
 
