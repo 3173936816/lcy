@@ -10,7 +10,7 @@ namespace bytra
 namespace http
 {
 
-enum version
+enum class version
 {
     http_1_0 = 0,
     http_1_1 = 1,

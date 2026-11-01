@@ -74,7 +74,7 @@ namespace http
   XX(511, network_authentication_required, Network Authentication Required) \
 
 
-enum status
+enum class status
 {
 #define XX(xx_code, xx_name, xx_string) \
         xx_name = xx_code,

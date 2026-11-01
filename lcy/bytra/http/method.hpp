@@ -1,6 +1,8 @@
 #ifndef __LCY_BYTRA_HTTP_METHOD_HPP__
 #define __LCY_BYTRA_HTTP_METHOD_HPP__
 
+#include <string>
+
 namespace lcy
 {
 namespace bytra
@@ -46,7 +48,7 @@ namespace http
   XX(34, unknown,     UNKNOWN)          \
 
 
-enum method
+enum class method
 {
 #define XX(xx_num, xx_name, xx_string)  \
         xx_name = xx_num,
