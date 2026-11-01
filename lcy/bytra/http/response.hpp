@@ -11,20 +11,15 @@ namespace bytra
 namespace http
 {
 
-template <typename BodyContainer>
 class response :
     public detail::message<
-        detail::response_tag,
-        BodyContainer
+        detail::response_tag
     >
 {
 public:
     typedef detail::message<
-        detail::response_tag,
-        BodyContainer
+        detail::response_tag
     > base_type;
-
-    typedef BodyContainer body_container_type;
 
 public:
     response() : status_(status::ok), reason_(status_to_reason(status::ok)) {}

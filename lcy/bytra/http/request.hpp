@@ -11,20 +11,15 @@ namespace bytra
 namespace http
 {
 
-template <typename BodyContainer>
 class request :
     public detail::message<
-        detail::request_tag,
-        BodyContainer
+        detail::request_tag
     >
 {
 public:
     typedef detail::message<
-        detail::request_tag,
-        BodyContainer
+        detail::request_tag
     > base_type;
-
-    typedef BodyContainer body_container_type;
 
 public:
     request() : method_(method::get), target_("/") {}

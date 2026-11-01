@@ -65,7 +65,7 @@ static void expect_true(bool cond, const char* msg)
 static void test_default_construct()
 {
     std::cout << "[test_default_construct]\n";
-    response<lcy::bytra::flat_buffer> res;
+    response res;
 
     expect_true(res.get_status() == status::ok, "default status ok");
 
@@ -81,7 +81,7 @@ static void test_default_construct()
 static void test_construct_status_version()
 {
     std::cout << "[test_construct_status_version]\n";
-    response<lcy::bytra::flat_buffer> res(status::not_found, version::http_1_1);
+    response res(status::not_found, version::http_1_1);
 
     expect_true(res.get_status() == status::not_found, "status not_found");
     expect_str_eq(res.get_reason(), "Not Found", "reason Not Found");
@@ -95,7 +95,7 @@ static void test_construct_status_version()
 static void test_construct_custom_reason()
 {
     std::cout << "[test_construct_custom_reason]\n";
-    response<lcy::bytra::flat_buffer> res(
+    response res(
         status::ok, "Everything Fine", version::http_1_1);
 
     expect_true(res.get_status() == status::ok, "status ok");
@@ -110,7 +110,7 @@ static void test_construct_custom_reason()
 static void test_set_status_resets_reason()
 {
     std::cout << "[test_set_status_resets_reason]\n";
-    response<lcy::bytra::flat_buffer> res;
+    response res;
     res.set_reason("Custom");
     expect_str_eq(res.get_reason(), "Custom", "reason before set_status");
 
@@ -129,7 +129,7 @@ static void test_set_status_resets_reason()
 static void test_set_reason()
 {
     std::cout << "[test_set_reason]\n";
-    response<lcy::bytra::flat_buffer> res(status::ok, version::http_1_1);
+    response res(status::ok, version::http_1_1);
 
     res.set_reason("All Good");
     expect_str_eq(res.get_reason(), "All Good", "reason override");
@@ -144,7 +144,7 @@ static void test_set_reason()
 static void test_single_header()
 {
     std::cout << "[test_single_header]\n";
-    response<lcy::bytra::flat_buffer> res(status::ok, version::http_1_1);
+    response res(status::ok, version::http_1_1);
     res.set_field("Content-Type", "text/plain");
 
     std::string s = res.header_to_string();
@@ -156,7 +156,7 @@ static void test_single_header()
 static void test_multi_headers_order()
 {
     std::cout << "[test_multi_headers_order]\n";
-    response<lcy::bytra::flat_buffer> res(status::ok, version::http_1_1);
+    response res(status::ok, version::http_1_1);
     res.set_field("A", "1");
     res.set_field("B", "2");
     res.set_field("C", "3");
@@ -177,7 +177,7 @@ static void test_multi_headers_order()
 static void test_duplicate_header()
 {
     std::cout << "[test_duplicate_header]\n";
-    response<lcy::bytra::flat_buffer> res(status::ok, version::http_1_1);
+    response res(status::ok, version::http_1_1);
     res.set_field("Set-Cookie", "a=1");
     res.set_field("Set-Cookie", "b=2");
 
@@ -192,7 +192,7 @@ static void test_duplicate_header()
 static void test_field_accessors()
 {
     std::cout << "[test_field_accessors]\n";
-    response<lcy::bytra::flat_buffer> res(status::ok, version::http_1_1);
+    response res(status::ok, version::http_1_1);
     res.set_field("X-A", "va");
     res.set_field("X-B", "vb");
     res.set_field("X-A", "va2");
@@ -217,7 +217,7 @@ static void test_field_accessors()
 static void test_common_statuses()
 {
     std::cout << "[test_common_statuses]\n";
-    response<lcy::bytra::flat_buffer> res;
+    response res;
 
     struct { status s; const char* reason_prefix; } cases[] = {
         { status::ok,                     "200" },
@@ -251,7 +251,7 @@ static void test_common_statuses()
 static void test_versions()
 {
     std::cout << "[test_versions]\n";
-    response<lcy::bytra::flat_buffer> res;
+    response res;
 
     res.set_version(version::http_1_0);
     expect_contains(res.header_to_string(), "HTTP/1.0", "http_1_0");
@@ -265,7 +265,7 @@ static void test_versions()
 static void test_body()
 {
     std::cout << "[test_body]\n";
-    response<lcy::bytra::flat_buffer> res(status::ok, version::http_1_1);
+    response res(status::ok, version::http_1_1);
     res.set_field("Content-Length", "5");
 
     auto buf = res.body_container().prepare(5);
@@ -286,7 +286,7 @@ static void test_body()
 static void test_format_strict()
 {
     std::cout << "[test_format_strict]\n";
-    response<lcy::bytra::flat_buffer> res(status::ok, version::http_1_1);
+    response res(status::ok, version::http_1_1);
     res.set_field("A", "1");
     res.set_field("B", "2");
 

@@ -1,6 +1,7 @@
 #ifndef __LCY_BYTRA_HTTP_MESSAGE_HPP__
 #define __LCY_BYTRA_HTTP_MESSAGE_HPP__
 
+#include "lcy/bytra/flat_buffer.hpp"
 #include "lcy/bytra/http/version.hpp"
 #include "lcy/bytra/http/detail/header_fields.hpp"
 
@@ -13,16 +14,10 @@ namespace http
 namespace detail
 {
 
-template <
-    typename IsRequest,
-    typename BodyContainer
->
+template <typename IsRequest>
 class message :
     public header_fields
 {
-public:
-    typedef BodyContainer body_container_type;
-
 public:
     explicit message(version v = version::http_1_1) :
         version_(v) {}
@@ -42,14 +37,14 @@ public:
         version_ = v;
     }
 
-    body_container_type& body_container()
+    flat_buffer& body_container()
     {
         return body_container_;
     }
 
 private:
     version version_;
-    body_container_type body_container_;
+    flat_buffer body_container_;
 };
 
 struct request_tag { static constexpr bool value = true; };
