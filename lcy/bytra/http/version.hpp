@@ -10,11 +10,10 @@ namespace bytra
 namespace http
 {
 
-enum class version
+enum version
 {
     http_1_0 = 0,
     http_1_1 = 1,
-    http_unknown = 2,
 };
 
 inline std::string version_to_string(version v,
@@ -29,15 +28,17 @@ inline std::string version_to_string(version v,
     return default_value;
 }
 
-inline version version_from_string(const std::string& s)
+inline bool version_from_string(const std::string& s, version& v)
 {
     if ( s == "HTTP/1.0" ) {
-        return version::http_1_0;
+        v = version::http_1_0;
+        return true;
     } else if ( s == "HTTP/1.1" ) {
-        return version::http_1_1;
+        v = version::http_1_1;
+        return true;
     }
 
-    return version::http_unknown;
+    return false;
 }
 
 }   // namespace http

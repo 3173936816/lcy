@@ -45,10 +45,9 @@ namespace http
   XX(31, link,        LINK)             \
   XX(32, unlink,      UNLINK)           \
   XX(33, source,      SOURCE)           \
-  XX(34, unknown,     UNKNOWN)          \
 
 
-enum class method
+enum method
 {
 #define XX(xx_num, xx_name, xx_string)  \
         xx_name = xx_num,
@@ -70,13 +69,13 @@ inline std::string method_to_string(method m,
     }
 }
 
-inline method method_from_string(const std::string& s)
+inline bool method_from_string(const std::string& s, method& m)
 {
 #define XX(xx_num, xx_name, xx_string)  \
-        if ( s == #xx_string ) { return method::xx_name; }
+        if ( s == #xx_string ) { m = method::xx_name; return true; }
     LCY_BYTRA_HTTP_METHOD_MAP(XX)
 #undef XX
-    return method::unknown;
+    return false;
 }
 
 }   // namespace http

@@ -12,7 +12,6 @@ namespace http
 {
 
 #define LCY_BYTRA_HTTP_STATUS_MAP(XX)                                       \
-  XX(0,   unknown,                         Unknown)                         \
   XX(100, continue_,                       Continue)                        \
   XX(101, switching_protocols,             Switching Protocols)             \
   XX(102, processing,                      Processing)                      \
@@ -74,7 +73,7 @@ namespace http
   XX(511, network_authentication_required, Network Authentication Required) \
 
 
-enum class status
+enum status
 {
 #define XX(xx_code, xx_name, xx_string) \
         xx_name = xx_code,
@@ -87,16 +86,16 @@ inline std::string status_to_string(status s)
     return std::to_string(static_cast<int>(s));
 }
 
-inline status status_from_string(const std::string& s)
+inline bool status_from_string(const std::string& s, status& m)
 {
     int code = ::atoi(s.c_str());
     switch ( code ) {
     #define XX(xx_code, xx_name, xx_string)  \
-            case xx_code : { return status::xx_name; break; }
+            case xx_code : { m = status::xx_name; return true; }
         LCY_BYTRA_HTTP_STATUS_MAP(XX)
     #undef XX
         default : {
-            return status::unknown;
+            return false;
         }
     }
 }
