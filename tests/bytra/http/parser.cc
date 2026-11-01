@@ -172,6 +172,121 @@ static void test_request_chunked_trailer()
     std::cout << "  ok\n";
 }
 
+static void test_trailer_multiple_fields()
+{
+    std::cout << "[test_trailer_multiple_fields]\n";
+    request_parser p;
+    request req;
+    auto ec = feed_all(p, req,
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
+        "5\r\nhello\r\n0\r\nX-A: 1\r\nX-B: 2\r\n\r\n");
+    expect_true(!ec, "success");
+    auto a = req.get_field("X-A");
+    expect_true(a != req.field_end(), "X-A found");
+    expect_str(a->second, "1", "X-A value");
+    auto b = req.get_field("X-B");
+    expect_true(b != req.field_end(), "X-B found");
+    expect_str(b->second, "2", "X-B value");
+    std::cout << "  ok\n";
+}
+
+static void test_trailer_same_name_as_header()
+{
+    std::cout << "[test_trailer_same_name_as_header]\n";
+    request_parser p;
+    request req;
+    auto ec = feed_all(p, req,
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\nX-T: h\r\n\r\n"
+        "5\r\nhello\r\n0\r\nX-T: t\r\n\r\n");
+    expect_true(!ec, "success");
+    expect_size(req.count("X-T"), 2, "X-T count 2");
+    std::vector<std::string> vals;
+    for (auto it = req.field_begin(); it != req.field_end(); ++it) {
+        if (it->first == "X-T") vals.push_back(it->second);
+    }
+    expect_size(vals.size(), 2, "two X-T");
+    expect_str(vals[0], "h", "header X-T first");
+    expect_str(vals[1], "t", "trailer X-T second");
+    std::cout << "  ok\n";
+}
+
+static void test_trailer_name_split()
+{
+    std::cout << "[test_trailer_name_split]\n";
+    request_parser p;
+    request req;
+    auto ec = feed_pieces(p, req,
+        {"POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
+         "5\r\nhello\r\n0\r\nX-Traile",
+         "r: v\r\n\r\n"});
+    expect_true(!ec, "success");
+    auto it = req.get_field("X-Trailer");
+    expect_true(it != req.field_end(), "X-Trailer found");
+    expect_str(it->second, "v", "X-Trailer value");
+    std::cout << "  ok\n";
+}
+
+static void test_trailer_done_after_empty_line()
+{
+    std::cout << "[test_trailer_done_after_empty_line]\n";
+    request_parser p;
+    request req;
+    lcy::system::error_code ec;
+    const char* s =
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
+        "5\r\nhello\r\n0\r\nX-T: v\r\n\r\n";
+    p.parse(s, std::strlen(s), req, ec);
+    expect_true(!ec, "success");
+    // done 后 parse_body 应 invalid_state
+    p.parse_body("x", 1, req, ec);
+    expect_ec(ec, lcy::bytra::http::error::invalid_state, "done -> invalid_state");
+    std::cout << "  ok\n";
+}
+
+static void test_trailer_empty()
+{
+    std::cout << "[test_trailer_empty]\n";
+    request_parser p;
+    request req;
+    auto ec = feed_all(p, req,
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
+        "5\r\nhello\r\n0\r\n\r\n");
+    expect_true(!ec, "success");
+    expect_size(req.body_container().size(), 5, "body 5");
+    std::cout << "  ok\n";
+}
+
+static void test_response_chunked_trailer()
+{
+    std::cout << "[test_response_chunked_trailer]\n";
+    response_parser p;
+    response res;
+    auto ec = feed_all(p, res,
+        "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n"
+        "3\r\nabc\r\n0\r\nX-T: v\r\n\r\n");
+    expect_true(!ec, "success");
+    expect_str(buf_to_string(res.body_container()), "abc", "body abc");
+    auto it = res.get_field("X-T");
+    expect_true(it != res.field_end(), "X-T found");
+    expect_str(it->second, "v", "X-T value");
+    std::cout << "  ok\n";
+}
+
+static void test_trailer_value_with_colon_ows()
+{
+    std::cout << "[test_trailer_value_with_colon_ows]\n";
+    request_parser p;
+    request req;
+    auto ec = feed_all(p, req,
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
+        "5\r\nhello\r\n0\r\nX-T:   a:b:c   \r\n\r\n");
+    expect_true(!ec, "success");
+    auto it = req.get_field("X-T");
+    expect_true(it != req.field_end(), "X-T found");
+    expect_str(it->second, "a:b:c", "value trimmed, colon kept");
+    std::cout << "  ok\n";
+}
+
 static void test_request_chunk_extension()
 {
     std::cout << "[test_request_chunk_extension]\n";
@@ -1026,6 +1141,13 @@ int main()
     test_request_post_content_length();
     test_request_chunked();
     test_request_chunked_trailer();
+    test_trailer_multiple_fields();
+    test_trailer_same_name_as_header();
+    test_trailer_name_split();
+    test_trailer_done_after_empty_line();
+    test_trailer_empty();
+    test_response_chunked_trailer();
+    test_trailer_value_with_colon_ows();
     test_request_chunk_extension();
     test_request_multiple_chunks();
     test_request_http10();
