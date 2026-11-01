@@ -24,7 +24,9 @@ public:
 public:
 	const_iterator set_field(std::string key, std::string value)
 	{
-        auto key_scope_iter = key_scope_index_.find(key);
+		std::string key_lower = lowercase(key);
+
+        auto key_scope_iter = key_scope_index_.find(key_lower);
         if ( key_scope_iter != key_scope_index_.end() ) {
             auto key_scope_last = key_scope_iter->second.second;
             auto key_scope_new_last = fields_.insert(++key_scope_last, { std::move(key), std::move(value) });
@@ -33,15 +35,17 @@ public:
             return key_scope_new_last;
         }
 
-        auto iter = fields_.insert(fields_.end(), { key, std::move(value) });
-        key_scope_index_[std::move(key)] = { iter, iter };
+        auto iter = fields_.insert(fields_.end(), { std::move(key), std::move(value) });
+        key_scope_index_[std::move(key_lower)] = { iter, iter };
 
         return iter;
 	}
 
 	const_iterator get_field(const std::string& key) const
 	{
-		auto key_scope_iter = key_scope_index_.find(key);
+		std::string key_lower = lowercase(key);
+		
+		auto key_scope_iter = key_scope_index_.find(key_lower);
 		if ( key_scope_iter != key_scope_index_.end() ) {
 			return key_scope_iter->second.first;
 		}
@@ -51,7 +55,9 @@ public:
 
 	void remove_field(const_iterator iter)
 	{
-		auto key_scope_iter = key_scope_index_.find(iter->first);
+		std::string key_lower = lowercase(iter->first);
+		
+		auto key_scope_iter = key_scope_index_.find(key_lower);
 		if ( key_scope_iter != key_scope_index_.end() ) {
             if ( key_scope_iter->second.first == key_scope_iter->second.second ) {
                 fields_.erase(iter);
@@ -71,7 +77,9 @@ public:
 
 	void remove_fields(const std::string& key)
 	{
-		auto key_scope_iter = key_scope_index_.find(key);
+		std::string key_lower = lowercase(key);
+
+		auto key_scope_iter = key_scope_index_.find(key_lower);
 		if ( key_scope_iter != key_scope_index_.end() ) {
 			fields_.erase(key_scope_iter->second.first, ++key_scope_iter->second.second);
 			key_scope_index_.erase(key_scope_iter);
@@ -80,9 +88,10 @@ public:
 
 	std::size_t count(const std::string& key) const
 	{
-		std::size_t result = 0;
+		std::string key_lower = lowercase(key);
 
-		auto key_scope_iter = key_scope_index_.find(key);
+		std::size_t result = 0;
+		auto key_scope_iter = key_scope_index_.find(key_lower);
 		if ( key_scope_iter != key_scope_index_.end() ) {
 			result = static_cast<std::size_t>(std::distance(
 				key_scope_iter->second.first, key_scope_iter->second.second));
@@ -106,6 +115,18 @@ public:
 	const_iterator field_end() const
 	{
 		return fields_.end();
+	}
+
+private:
+	std::string lowercase(const std::string& str) const
+	{
+		std::string result;
+		result.reserve(str.size());
+		for ( auto c : str ) {
+			result.push_back(( c >= 'A' && c <= 'Z' ) ?
+				static_cast<char>(c - 'A' + 'a') : c);
+		}
+		return result;
 	}
 
 private:
