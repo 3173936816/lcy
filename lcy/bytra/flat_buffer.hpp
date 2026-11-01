@@ -36,7 +36,7 @@ public:
 
     void commit(std::size_t n)
     {
-        if ( write_index_ + n > available() ) {
+        if ( n > available() ) {
             n = available();
         }
         write_index_ += n;
