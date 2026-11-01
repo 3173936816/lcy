@@ -1,8 +1,10 @@
 #ifndef __LCY_BYTRA_HTTP_DETAIL_STREAM_PARSER_HPP__
 #define __LCY_BYTRA_HTTP_DETAIL_STREAM_PARSER_HPP__
 
+#include <cstddef>
+#include <functional>
+
 #include "lcy/noncopyable.hpp"
-#include "lcy/bytra/ostream.hpp"
 #include "lcy/bytra/http/detail/error.hpp"
 
 namespace lcy
@@ -66,52 +68,50 @@ public:
     };
 
 public:
-    typedef std::function<
-        void (
-            lcy::system::error_code ec,
-            const first_line_view& view,
-            parse_result result
-        )
-    > first_line_func_type;
+    typedef std::function<void(
+        lcy::system::error_code ec,
+        const first_line_view& view,
+        parse_result result
+    )> first_line_func_type;
 
-    typedef std::function<
-        void (
-            lcy::system::error_code ec,
-            const field_line_view& view,
-            parse_result result
-        )
-    > field_line_func_type;
+    typedef std::function<void(
+        lcy::system::error_code ec,
+        const field_line_view& view,
+        parse_result result
+    )> field_line_func_type;
 
-    typedef std::function<
-        void (
-            lcy::system::error_code ec,
-            const chunk_view& view,
-            parse_result result
-        )
-    > chunk_view_func_type;
+    typedef std::function<void(
+        lcy::system::error_code ec,
+        const chunk_view& view,
+        parse_result result
+    )> chunk_view_func_type;
 
-    typedef std::function<
-        void (
-            lcy::system::error_code ec,
-            const body_view& view,
-            parse_result result
-        )
-    > body_view_func_type;
+    typedef std::function<void(
+        lcy::system::error_code ec,
+        const body_view& view,
+        parse_result result
+    )> body_view_func_type;
 
 public:
-    inline stream_parser();
+    stream_parser();
 
     inline void set_first_line_limit(std::size_t limit);
     inline void set_field_line_limit(std::size_t limit);
     inline void set_field_total_limit(std::size_t limit);
+    inline void set_chunk_line_limit(std::size_t limit);
     inline void set_chunk_payload_limit(std::size_t limit);
     inline void set_body_total_limit(std::size_t limit);
+    inline void set_body_remaining(std::size_t n);
 
+    inline void set_chunk_mode(bool v);
+    inline bool is_chunk_mode() const;
     inline void set_trailer_check(bool v);
     inline bool is_check_trailer() const;
 
     inline parse_phase get_parse_phase() const;
     inline std::size_t get_parse_bytes() const;
+
+    inline void reset();
 
     inline std::size_t parse_first_line(const char* data, std::size_t length, first_line_func_type func);
     inline std::size_t parse_field_line(const char* data, std::size_t length, field_line_func_type func);
@@ -120,8 +120,17 @@ public:
     inline std::size_t parse_trailer(const char* data, std::size_t length, field_line_func_type func);
 
 private:
+    enum chunk_state
+    {
+        chunk_size_line,
+        chunk_payload,
+        chunk_crlf,
+    };
+
     inline const char* CRLF(const char* data, std::size_t length) const;
-    inline bool split_first_line(const char* data, std::size_t length, first_line_view& view) const; 
+    inline bool split_first_line(const char* data, std::size_t length, first_line_view& view) const;
+    inline bool split_field_line(const char* data, std::size_t length, field_line_view& view) const;
+    inline bool parse_chunk_size(const char* data, std::size_t length, std::size_t& size, std::size_t& consumed) const;
 
 private:
     bool is_chunk_;
@@ -130,9 +139,14 @@ private:
     std::size_t parsed_bytes_;
     std::size_t body_remaining_;
 
+    chunk_state chunk_state_;
+    std::size_t chunk_remaining_;
+    std::size_t chunk_size_;
+
     std::size_t first_line_limit_;
     std::size_t field_line_limit_;
     std::size_t field_total_limit_;
+    std::size_t chunk_line_limit_;
     std::size_t chunk_payload_limit_;
     std::size_t body_total_limit_;
 };
