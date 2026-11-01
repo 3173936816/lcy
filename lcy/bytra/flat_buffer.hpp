@@ -26,7 +26,7 @@ public:
             read_index_ = 0;
         }
 
-        if ( write_index_ + n > available() ) {
+        if ( n > available() ) {
             buffer_.resize(write_index_ + n);
         }
 
