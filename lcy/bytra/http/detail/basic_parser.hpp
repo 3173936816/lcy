@@ -34,7 +34,6 @@ public:
     inline std::size_t get_body_limit() const;
 
     inline std::size_t get_parsed_bytes() const;
-    inline std::size_t get_total_parsed_bytes() const;
 
     inline void reset();
 
@@ -79,7 +78,6 @@ private:
     bool is_chunk_;
     std::size_t body_remaining_;
     std::size_t parsed_bytes_;
-    std::size_t total_parsed_bytes_;
 
     const char* buf_;
     std::size_t buf_size_;

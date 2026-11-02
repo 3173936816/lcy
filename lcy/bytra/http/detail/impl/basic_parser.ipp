@@ -285,7 +285,6 @@ basic_parser<Message>::basic_parser() :
     is_chunk_(false),
     body_remaining_(0),
     parsed_bytes_(0),
-    total_parsed_bytes_(0),
     buf_(0),
     buf_size_(0),
     buf_pos_(0),
@@ -324,19 +323,12 @@ std::size_t basic_parser<Message>::get_parsed_bytes() const
 }
 
 template <typename Message>
-std::size_t basic_parser<Message>::get_total_parsed_bytes() const
-{
-    return total_parsed_bytes_;
-}
-
-template <typename Message>
 void basic_parser<Message>::reset()
 {
     phase_ = phase::header_line;
     is_chunk_ = false;
     body_remaining_ = 0;
     parsed_bytes_ = 0;
-    total_parsed_bytes_ = 0;
 
     buf_ = 0;
     buf_size_ = 0;
@@ -447,7 +439,6 @@ void basic_parser<Message>::parse_first_line(message_type& message,
 
     buf_pos_ += line_len + 2;
     parsed_bytes_ += line_len + 2;
-    total_parsed_bytes_ += line_len + 2;
 
     phase_ = phase::header_fields;
     ec = make_http_error_code(lcy::bytra::http::error::success);
@@ -476,7 +467,6 @@ void basic_parser<Message>::parse_fields(message_type& message,
         if ( line_len == 0 ) {
             buf_pos_ += consumed;
             parsed_bytes_ += consumed;
-            total_parsed_bytes_ += consumed;
 
             bool chunked = false;
             auto te_iter = message.get_field("Transfer-Encoding");
@@ -525,7 +515,6 @@ void basic_parser<Message>::parse_fields(message_type& message,
 
         buf_pos_ += consumed;
         parsed_bytes_ += consumed;
-        total_parsed_bytes_ += consumed;
     }
 
     ec = make_http_error_code(lcy::bytra::http::error::wait_more);
@@ -557,7 +546,6 @@ void basic_parser<Message>::parse_chunked_body(message_type& message,
                 const std::size_t consumed = static_cast<std::size_t>(crlf - start) + 2;
                 buf_pos_ += consumed;
                 parsed_bytes_ += consumed;
-                total_parsed_bytes_ += consumed;
 
                 if ( sz == 0 ) {
                     chunk_phase_ = chunk_phase::trailer;
@@ -587,7 +575,6 @@ void basic_parser<Message>::parse_chunked_body(message_type& message,
                 chunk_size_ -= take;
                 body_parsed_ += take;
                 parsed_bytes_ += take;
-                total_parsed_bytes_ += take;
                 if ( chunk_size_ == 0 ) {
                     chunk_phase_ = chunk_phase::data_crlf;
                 }
@@ -607,7 +594,6 @@ void basic_parser<Message>::parse_chunked_body(message_type& message,
                 }
                 buf_pos_ += 2;
                 parsed_bytes_ += 2;
-                total_parsed_bytes_ += 2;
                 chunk_phase_ = chunk_phase::size;
                 break;
             }
@@ -626,7 +612,6 @@ void basic_parser<Message>::parse_chunked_body(message_type& message,
                 if ( line_len == 0 ) {
                     buf_pos_ += consumed;
                     parsed_bytes_ += consumed;
-                    total_parsed_bytes_ += consumed;
                     chunk_phase_ = chunk_phase::done;
                     phase_ = phase::done;
                     ec = make_http_error_code(lcy::bytra::http::error::success);
@@ -643,7 +628,6 @@ void basic_parser<Message>::parse_chunked_body(message_type& message,
 
                 buf_pos_ += consumed;
                 parsed_bytes_ += consumed;
-                total_parsed_bytes_ += consumed;
                 break;
             }
 
@@ -672,7 +656,6 @@ void basic_parser<Message>::parse_fixed_body(message_type& message,
         body_remaining_ -= take;
         body_parsed_ += take;
         parsed_bytes_ += take;
-        total_parsed_bytes_ += take;
     }
 
     if ( body_remaining_ == 0 ) {
