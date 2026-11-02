@@ -14,6 +14,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cassert>
 
 using namespace lcy::bytra;
 using namespace lcy::bytra::http;
@@ -1134,6 +1135,51 @@ static void test_parse_header_then_body()
     std::cout << "  ok\n";
 }
 
+static void test_parser_returns_consumed_bytes()
+{
+    std::cout << "[test_parser_returns_consumed_bytes]\n";
+
+    const std::string req =
+        "POST /hello HTTP/1.1\r\n"
+        "Host: example.com\r\n"
+        "Content-Length: 5\r\n"
+        "\r\n"
+        "world";
+
+    request_parser parser;
+    request msg;
+    lcy::system::error_code ec;
+
+    const std::size_t first = 10;
+    std::size_t used1 = parser.parse_header(req.data(), first, msg, ec);
+
+    assert(ec == make_http_error_code(lcy::bytra::http::error::wait_more));
+    assert(used1 == 0);
+
+    const std::size_t header_end = req.find("\r\n\r\n") + 4;
+    std::size_t used2 = parser.parse_header(req.data(), header_end, msg, ec);
+    assert(!ec || ec == make_http_error_code(lcy::bytra::http::error::success));
+    assert(used2 == header_end);
+    assert(parser.get_parsed_bytes() == header_end);
+
+    const char* body = req.data() + header_end;
+    std::size_t used3 = parser.parse_body(body, 3, msg, ec);
+    assert(ec == make_http_error_code(lcy::bytra::http::error::wait_more));
+    assert(used3 == 3);
+
+    std::size_t used4 = parser.parse_body(body + 3, 2, msg, ec);
+    assert(!ec);
+    assert(used4 == 2);
+    assert(msg.body_container().size() == 5);
+    assert(parser.get_parsed_bytes() == header_end + 5);
+
+    std::size_t used5 = parser.parse_body(body, 1, msg, ec);
+    assert(ec == make_http_error_code(lcy::bytra::http::error::invalid_state));
+    assert(used5 == 0);
+
+    std::cout << "  ok\n";
+}
+
 int main()
 {
     test_request_minimal_get();
@@ -1218,6 +1264,7 @@ int main()
     test_roundtrip_response();
 
     test_parse_header_then_body();
+    test_parser_returns_consumed_bytes();
 
     std::cout << "\nall parser tests passed\n";
     return 0;

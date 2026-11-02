@@ -37,11 +37,11 @@ public:
 
     inline void reset();
 
-    inline void parse_header(const char* data,
+    inline std::size_t parse_header(const char* data,
         std::size_t size, message_type& message, lcy::system::error_code& ec);
-    inline void parse_body(const char* data,
+    inline std::size_t parse_body(const char* data,
         std::size_t size, message_type& message, lcy::system::error_code& ec);
-    inline void parse(const char* data,
+    inline std::size_t parse(const char* data,
         std::size_t size, message_type& message, lcy::system::error_code& ec);
 
 private:

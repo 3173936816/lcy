@@ -340,17 +340,19 @@ void basic_parser<Message>::reset()
 }
 
 template <typename Message>
-void basic_parser<Message>::parse_header(const char* data,
+std::size_t basic_parser<Message>::parse_header(const char* data,
     std::size_t size, message_type& message, lcy::system::error_code& ec)
 {
     if ( phase_ != phase::header_line && phase_ != phase::header_fields ) {
         ec = make_http_error_code(lcy::bytra::http::error::invalid_state);
-        return;
+        return 0;
     }
 
     buf_ = data;
     buf_size_ = size;
     buf_pos_ = 0;
+
+    const std::size_t begin = parsed_bytes_;
 
     while ( phase_ == phase::header_line || phase_ == phase::header_fields ) {
         if ( phase_ == phase::header_line ) {
@@ -359,39 +361,45 @@ void basic_parser<Message>::parse_header(const char* data,
             parse_fields(message, ec);
         }
         if ( ec ) {
-            return;
+            return parsed_bytes_ - begin;
         }
     }
     ec = make_http_error_code(lcy::bytra::http::error::success);
+    return parsed_bytes_ - begin;
 }
 
 template <typename Message>
-void basic_parser<Message>::parse_body(const char* data,
+std::size_t basic_parser<Message>::parse_body(const char* data,
     std::size_t size, message_type& message, lcy::system::error_code& ec)
 {
     if ( phase_ != phase::body ) {
         ec = make_http_error_code(lcy::bytra::http::error::invalid_state);
-        return;
+        return 0;
     }
 
     buf_ = data;
     buf_size_ = size;
     buf_pos_ = 0;
+
+    const std::size_t begin = parsed_bytes_;
 
     if ( is_chunk_ ) {
         parse_chunked_body(message, ec);
     } else {
         parse_fixed_body(message, ec);
     }
+    return parsed_bytes_ - begin;
 }
 
 template <typename Message>
-void basic_parser<Message>::parse(const char* data,
+std::size_t basic_parser<Message>::parse(const char* data,
     std::size_t size, message_type& message, lcy::system::error_code& ec)
 {
     buf_ = data;
     buf_size_ = size;
     buf_pos_ = 0;
+
+    const std::size_t begin = parsed_bytes_;
 
     while ( true ) {
         if ( phase_ == phase::header_line ) {
@@ -406,11 +414,11 @@ void basic_parser<Message>::parse(const char* data,
             }
         } else {
             ec = make_http_error_code(lcy::bytra::http::error::success);
-            return;
+            return parsed_bytes_ - begin;
         }
 
         if ( ec ) {
-            return;
+            return parsed_bytes_ - begin;
         }
     }
 }
