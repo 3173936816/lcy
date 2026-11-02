@@ -7,8 +7,8 @@
 
 #include "lcy/system/error.hpp"
 #include "lcy/asio/async_stream.hpp"
-#include "lcy/bytra/http/error.hpp"
 #include "lcy/bytra/flat_buffer.hpp"
+#include "lcy/bytra/http/error.hpp"
 #include "lcy/bytra/http/request_parser.hpp"
 #include "lcy/bytra/http/response_parser.hpp"
 
@@ -24,7 +24,7 @@ namespace detail
 
 template <
     typename StreamSocket,
-    typename FlatBuffer,
+    typename DynamicBuffer,
     typename HttpParser,
     typename Message,
     typename Function
@@ -33,7 +33,7 @@ class async_parse_state :
     public std::enable_shared_from_this<
         async_parse_state<
             StreamSocket,
-            FlatBuffer,
+            DynamicBuffer,
             HttpParser,
             Message,
             Function
@@ -44,7 +44,7 @@ public:
     enum mode { header, body, full };
 
     async_parse_state(StreamSocket& stream_socket,
-                      FlatBuffer& buffer,
+                      DynamicBuffer& buffer,
                       HttpParser& parser,
                       Message& message,
                       Function func,
@@ -103,7 +103,7 @@ public:
 
 private:
     StreamSocket* stream_socket_;
-    FlatBuffer* buffer_;
+    DynamicBuffer* buffer_;
     HttpParser* parser_;
     Message* message_;
     Function func_;
@@ -115,17 +115,17 @@ private:
 
 template <
     typename StreamSocket,
-    typename FlatBuffer,
+    typename DynamicBuffer,
     typename HttpParser,
     typename Message,
     typename Function
 >
 void async_read_header(StreamSocket& stream_socket,
-    FlatBuffer& buffer, HttpParser& parser, Message& message, Function func)
+    DynamicBuffer& buffer, HttpParser& parser, Message& message, Function func)
 {
     std::make_shared<detail::async_parse_state<
         StreamSocket,
-        FlatBuffer,
+        DynamicBuffer,
         HttpParser,
         Message,
         Function
@@ -133,7 +133,7 @@ void async_read_header(StreamSocket& stream_socket,
         std::move(func),
         detail::async_parse_state<
             StreamSocket,
-            FlatBuffer,
+            DynamicBuffer,
             HttpParser,
             Message,
             Function
@@ -142,17 +142,17 @@ void async_read_header(StreamSocket& stream_socket,
 
 template <
     typename StreamSocket,
-    typename FlatBuffer,
+    typename DynamicBuffer,
     typename HttpParser,
     typename Message,
     typename Function
 >
 void async_read_body(StreamSocket& stream_socket,
-    FlatBuffer& buffer, HttpParser& parser, Message& message, Function func)
+    DynamicBuffer& buffer, HttpParser& parser, Message& message, Function func)
 {
     std::make_shared<detail::async_parse_state<
         StreamSocket,
-        FlatBuffer,
+        DynamicBuffer,
         HttpParser,
         Message,
         Function
@@ -160,7 +160,7 @@ void async_read_body(StreamSocket& stream_socket,
         std::move(func),
         detail::async_parse_state<
             StreamSocket,
-            FlatBuffer,
+            DynamicBuffer,
             HttpParser,
             Message,
             Function
@@ -169,17 +169,17 @@ void async_read_body(StreamSocket& stream_socket,
 
 template <
     typename StreamSocket,
-    typename FlatBuffer,
+    typename DynamicBuffer,
     typename HttpParser,
     typename Message,
     typename Function
 >
 void async_read(StreamSocket& stream_socket,
-    FlatBuffer& buffer, HttpParser& parser, Message& message, Function func)
+    DynamicBuffer& buffer, HttpParser& parser, Message& message, Function func)
 {
     std::make_shared<detail::async_parse_state<
         StreamSocket,
-        FlatBuffer,
+        DynamicBuffer,
         HttpParser,
         Message,
         Function
@@ -187,7 +187,7 @@ void async_read(StreamSocket& stream_socket,
         std::move(func),
         detail::async_parse_state<
             StreamSocket,
-            FlatBuffer,
+            DynamicBuffer,
             HttpParser,
             Message,
             Function
@@ -196,36 +196,33 @@ void async_read(StreamSocket& stream_socket,
 
 template <
     typename StreamSocket,
-    typename HttpParser,
     typename Message,
     typename Function
 >
-void async_read(StreamSocket& stream_socket,
-    HttpParser& parser, Message& message, Function func)
+void async_write_header(StreamSocket& stream_socket, Message& message, Function func)
 {
-    auto buffer = std::make_shared<flat_buffer>();
-    auto func_wrapper = [buffer, func](
-            lcy::system::error_code ec, std::size_t parsed_bytes) {
-        func(ec, parsed_bytes);
+    auto header_sptr = std::make_shared<std::string>(message.header_to_string());
+    auto buffer_view = lcy::asio::buffer_view(header_sptr->c_str(), header_sptr->size());
+    auto func_wrapper = [header_sptr, func](
+            lcy::system::error_code ec, std::size_t bytes_transferred){
+        func(ec, bytes_transferred);
     };
 
-    std::make_shared<detail::async_parse_state<
-        StreamSocket,
-        flat_buffer,
-        HttpParser,
-        Message,
-        decltype(func_wrapper)
-    > >(stream_socket, *buffer, parser, message,
-        std::move(func_wrapper),
-        detail::async_parse_state<
-            StreamSocket,
-            flat_buffer,
-            HttpParser,
-            Message,
-            decltype(func_wrapper)
-        >::mode::full)->do_parse();
+    lcy::asio::async_write(stream_socket, buffer_view, std::move(func_wrapper));
 }
 
+template <
+    typename StreamSocket,
+    typename Message,
+    typename Function
+>
+void async_write_body(StreamSocket& stream_socket, Message& message, Function func)
+{
+    auto& buffer = message.body_container();
+    auto buffer_view = lcy::asio::buffer_view(static_cast<const char*>(buffer.data()), buffer.size());
+
+    lcy::asio::async_write(stream_socket, buffer_view, std::move(func));
+}
 
 template <
     typename StreamSocket,
@@ -234,12 +231,17 @@ template <
 >
 void async_write(StreamSocket& stream_socket, Message& message, Function func)
 {
-    auto message_str = std::make_shared<std::string>(message.header_to_string() +
-        std::string(static_cast<char*>(message.body_container().data()), message.body_container().size())); 
-    auto func_wrapper = [message_str, func](lcy::system::error_code ec, std::size_t n){
-        func(ec, n);
+    auto func_wrapper = [&stream_socket, &message, func](
+            lcy::system::error_code ec, std::size_t bytes_transferred){
+        if ( ec ) {
+            func(ec, bytes_transferred);
+            return;
+        }
+
+        async_write_body(stream_socket, message, std::move(func));
     };
-    lcy::asio::async_write(stream_socket, lcy::asio::buffer_view(message_str->c_str(), message_str->size()), std::move(func_wrapper));
+
+    async_write_header(stream_socket, message, std::move(func_wrapper));
 }
 
 }   // namespace http

@@ -180,7 +180,8 @@ inline bool parse_version(const char* b, const char* e, version& out)
     return false;
 }
 
-inline void append_body(flat_buffer& body, const char* data, std::size_t size)
+template <typename DyanmicBuffer>
+inline void append_body(DyanmicBuffer& body, const char* data, std::size_t size)
 {
     if ( size == 0 ) {
         return;

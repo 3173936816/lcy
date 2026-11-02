@@ -33,22 +33,22 @@ public:
         auto self = shared_from_this();
         auto request = std::make_shared<lcy::bytra::http::request>();
 
-        lcy::bytra::http::async_read(socket_, parser_, *request,
+        lcy::bytra::http::async_read(socket_, read_buffer_, parser_, *request,
                 [self, this, request](lcy::system::error_code ec, std::size_t){
             if ( ec ) {
-                std::cout << "ec = " << ec.message() << std::endl;
+                std::cout << "async_read ec = " << ec.message() << std::endl;
                 return;
             }
 
             std::cout << "async_read ok" << std::endl;
 
-            lcy::bytra::http::response response;
-            func_(*request, response);
+            auto response = std::make_shared<lcy::bytra::http::response>();
+            func_(*request, *response);
 
-            lcy::bytra::http::async_write(socket_, response,
-                    [self, this](lcy::system::error_code ec, std::size_t){
+            lcy::bytra::http::async_write(socket_, *response,
+                    [self, this, response](lcy::system::error_code ec, std::size_t){
                 if ( ec ) {
-                    std::cout << "ec = " << ec.message() << std::endl;
+                    std::cout << "async_write ec = " << ec.message() << std::endl;
                     return;
                 }
 
@@ -66,6 +66,7 @@ public:
 
 private:
     lcy::asio::ip::tcp::socket socket_;
+    lcy::bytra::flat_buffer read_buffer_;
     lcy::bytra::http::request_parser parser_;
     func_type func_;
 };
@@ -124,9 +125,6 @@ int main()
         [](const lcy::bytra::http::request& request,
            lcy::bytra::http::response& response)
         {
-            std::cout << "request target: "
-                      << request.get_target() << "\n";
-
             response.set_status(lcy::bytra::http::status::ok);
             response.set_version(lcy::bytra::http::version::http_1_1);
             response.set_field("Content-Type", "text/plain; charset=utf-8");
@@ -135,8 +133,6 @@ int main()
             auto view = response.body_container().prepare(5);
             std::memcpy(view.data(), "hello", 5);
             response.body_container().commit(5);
-
-            std::cout << "header_to_string : " << response.header_to_string() << std::endl;
         });
 
     server.do_accept();
