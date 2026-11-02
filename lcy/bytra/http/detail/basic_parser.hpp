@@ -19,7 +19,7 @@ namespace detail
 
 template <typename Message>
 class basic_parser :
-    private lcy::noncopyable
+    private noncopyable
 {
 public:
     typedef Message message_type;

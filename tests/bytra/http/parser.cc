@@ -63,16 +63,16 @@ static std::string buf_to_string(const flat_buffer& b)
 }
 
 template <typename Parser, typename Message>
-static lcy::system::error_code feed_all(Parser& p, Message& m,
+static lcy::system::error_code feed_all(Parser& parser, Message& m,
                                         const std::string& s)
 {
     lcy::system::error_code ec;
-    p.parse(s.data(), s.size(), m, ec);
+    parser.parse(s.data(), s.size(), m, ec);
     return ec;
 }
 
 template <typename Parser, typename Message>
-static lcy::system::error_code feed_pieces(Parser& p, Message& m,
+static lcy::system::error_code feed_pieces(Parser& parser, Message& m,
     const std::vector<std::string>& pieces)
 {
     flat_buffer buf;
@@ -84,7 +84,7 @@ static lcy::system::error_code feed_pieces(Parser& p, Message& m,
         std::memcpy(view.data(), piece.data(), piece.size());
         buf.commit(piece.size());
 
-        p.parse(static_cast<const char*>(buf.data()), buf.size(), m, ec);
+        parser.parse(static_cast<const char*>(buf.data()), buf.size(), m, ec);
 
         bool is_wait_more = ( ec ==
             static_cast<int>(lcy::bytra::http::error::wait_more) );
@@ -92,7 +92,7 @@ static lcy::system::error_code feed_pieces(Parser& p, Message& m,
             return ec;
         }
 
-        std::size_t now = p.get_parsed_bytes();
+        std::size_t now = parser.get_parsed_bytes();
         buf.consume(now - last);
         last = now;
     }
@@ -102,9 +102,9 @@ static lcy::system::error_code feed_pieces(Parser& p, Message& m,
 static void test_request_minimal_get()
 {
     std::cout << "[test_request_minimal_get]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req, "GET / HTTP/1.1\r\n\r\n");
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req, "GET / HTTP/1.1\r\n\r\n");
     expect_true(!ec, "ec success");
     expect_true(req.get_method() == method::get, "method get");
     expect_str(req.get_target(), "/", "target /");
@@ -116,10 +116,9 @@ static void test_request_minimal_get()
 static void test_request_with_headers()
 {
     std::cout << "[test_request_with_headers]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req,
-        "GET /path HTTP/1.1\r\nHost: a\r\n\r\n");
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req, "GET /path HTTP/1.1\r\nHost: a\r\n\r\n");
     expect_true(!ec, "ec success");
     expect_str(req.get_target(), "/path", "target /path");
     expect_size(req.count("Host"), 1, "Host count");
@@ -132,9 +131,9 @@ static void test_request_with_headers()
 static void test_request_post_content_length()
 {
     std::cout << "[test_request_post_content_length]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nContent-Length: 5\r\n\r\nhello");
     expect_true(!ec, "ec success");
     expect_true(req.get_method() == method::post, "method post");
@@ -146,9 +145,9 @@ static void test_request_post_content_length()
 static void test_request_chunked()
 {
     std::cout << "[test_request_chunked]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
         "5\r\nhello\r\n0\r\n\r\n");
     expect_true(!ec, "ec success");
@@ -160,9 +159,9 @@ static void test_request_chunked()
 static void test_request_chunked_trailer()
 {
     std::cout << "[test_request_chunked_trailer]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
         "5\r\nhello\r\n0\r\nX-Trailer: v\r\n\r\n");
     expect_true(!ec, "ec success");
@@ -176,9 +175,9 @@ static void test_request_chunked_trailer()
 static void test_trailer_multiple_fields()
 {
     std::cout << "[test_trailer_multiple_fields]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
         "5\r\nhello\r\n0\r\nX-A: 1\r\nX-B: 2\r\n\r\n");
     expect_true(!ec, "success");
@@ -194,9 +193,9 @@ static void test_trailer_multiple_fields()
 static void test_trailer_same_name_as_header()
 {
     std::cout << "[test_trailer_same_name_as_header]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\nX-T: h\r\n\r\n"
         "5\r\nhello\r\n0\r\nX-T: t\r\n\r\n");
     expect_true(!ec, "success");
@@ -214,9 +213,9 @@ static void test_trailer_same_name_as_header()
 static void test_trailer_name_split()
 {
     std::cout << "[test_trailer_name_split]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_pieces(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_pieces(parser, req,
         {"POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
          "5\r\nhello\r\n0\r\nX-Traile",
          "r: v\r\n\r\n"});
@@ -230,16 +229,15 @@ static void test_trailer_name_split()
 static void test_trailer_done_after_empty_line()
 {
     std::cout << "[test_trailer_done_after_empty_line]\n";
-    request_parser p;
-    request req;
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
     lcy::system::error_code ec;
     const char* s =
         "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
         "5\r\nhello\r\n0\r\nX-T: v\r\n\r\n";
-    p.parse(s, std::strlen(s), req, ec);
+    parser.parse(s, std::strlen(s), req, ec);
     expect_true(!ec, "success");
-    // done 后 parse_body 应 invalid_state
-    p.parse_body("x", 1, req, ec);
+    parser.parse_body("x", 1, req, ec);
     expect_ec(ec, lcy::bytra::http::error::invalid_state, "done -> invalid_state");
     std::cout << "  ok\n";
 }
@@ -247,9 +245,9 @@ static void test_trailer_done_after_empty_line()
 static void test_trailer_empty()
 {
     std::cout << "[test_trailer_empty]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
         "5\r\nhello\r\n0\r\n\r\n");
     expect_true(!ec, "success");
@@ -260,9 +258,9 @@ static void test_trailer_empty()
 static void test_response_chunked_trailer()
 {
     std::cout << "[test_response_chunked_trailer]\n";
-    response_parser p;
-    response res;
-    auto ec = feed_all(p, res,
+    response_parser<lcy::bytra::flat_buffer> parser;
+    response<lcy::bytra::flat_buffer> res;
+    auto ec = feed_all(parser, res,
         "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n"
         "3\r\nabc\r\n0\r\nX-T: v\r\n\r\n");
     expect_true(!ec, "success");
@@ -276,9 +274,9 @@ static void test_response_chunked_trailer()
 static void test_trailer_value_with_colon_ows()
 {
     std::cout << "[test_trailer_value_with_colon_ows]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
         "5\r\nhello\r\n0\r\nX-T:   a:b:c   \r\n\r\n");
     expect_true(!ec, "success");
@@ -291,9 +289,9 @@ static void test_trailer_value_with_colon_ows()
 static void test_request_chunk_extension()
 {
     std::cout << "[test_request_chunk_extension]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
         "5;name=value\r\nhello\r\n0\r\n\r\n");
     expect_true(!ec, "ec success");
@@ -305,9 +303,9 @@ static void test_request_chunk_extension()
 static void test_request_multiple_chunks()
 {
     std::cout << "[test_request_multiple_chunks]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
         "3\r\nabc\r\n2\r\nde\r\n0\r\n\r\n");
     expect_true(!ec, "ec success");
@@ -319,9 +317,9 @@ static void test_request_multiple_chunks()
 static void test_request_http10()
 {
     std::cout << "[test_request_http10]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req, "GET / HTTP/1.0\r\n\r\n");
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req, "GET / HTTP/1.0\r\n\r\n");
     expect_true(!ec, "ec success");
     expect_true(req.get_version() == version::http_1_0, "version 1.0");
     std::cout << "  ok\n";
@@ -330,9 +328,9 @@ static void test_request_http10()
 static void test_response_minimal_200()
 {
     std::cout << "[test_response_minimal_200]\n";
-    response_parser p;
-    response res;
-    auto ec = feed_all(p, res, "HTTP/1.1 200 OK\r\n\r\n");
+    response_parser<lcy::bytra::flat_buffer> parser;
+    response<lcy::bytra::flat_buffer> res;
+    auto ec = feed_all(parser, res, "HTTP/1.1 200 OK\r\n\r\n");
     expect_true(!ec, "ec success");
     expect_true(res.get_status() == status::ok, "status ok");
     expect_str(res.get_reason(), "OK", "reason OK");
@@ -342,9 +340,9 @@ static void test_response_minimal_200()
 static void test_response_no_reason()
 {
     std::cout << "[test_response_no_reason]\n";
-    response_parser p;
-    response res;
-    auto ec = feed_all(p, res, "HTTP/1.1 200\r\n\r\n");
+    response_parser<lcy::bytra::flat_buffer> parser;
+    response<lcy::bytra::flat_buffer> res;
+    auto ec = feed_all(parser, res, "HTTP/1.1 200\r\n\r\n");
     expect_true(!ec, "ec success");
     expect_true(res.get_status() == status::ok, "status ok");
     expect_str(res.get_reason(), "", "reason empty");
@@ -354,9 +352,9 @@ static void test_response_no_reason()
 static void test_response_with_body()
 {
     std::cout << "[test_response_with_body]\n";
-    response_parser p;
-    response res;
-    auto ec = feed_all(p, res,
+    response_parser<lcy::bytra::flat_buffer> parser;
+    response<lcy::bytra::flat_buffer> res;
+    auto ec = feed_all(parser, res,
         "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nhi");
     expect_true(!ec, "ec success");
     expect_size(res.body_container().size(), 2, "body size 2");
@@ -367,9 +365,9 @@ static void test_response_with_body()
 static void test_response_chunked()
 {
     std::cout << "[test_response_chunked]\n";
-    response_parser p;
-    response res;
-    auto ec = feed_all(p, res,
+    response_parser<lcy::bytra::flat_buffer> parser;
+    response<lcy::bytra::flat_buffer> res;
+    auto ec = feed_all(parser, res,
         "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n"
         "5\r\nhello\r\n0\r\n\r\n");
     expect_true(!ec, "ec success");
@@ -380,9 +378,9 @@ static void test_response_chunked()
 static void test_response_unknown_status_rejected()
 {
     std::cout << "[test_response_unknown_status_rejected]\n";
-    response_parser p;
-    response res;
-    auto ec = feed_all(p, res, "HTTP/1.1 299 X\r\n\r\n");
+    response_parser<lcy::bytra::flat_buffer> parser;
+    response<lcy::bytra::flat_buffer> res;
+    auto ec = feed_all(parser, res, "HTTP/1.1 299 X\r\n\r\n");
     expect_ec(ec, lcy::bytra::http::error::invalid_header, "299 rejected");
     std::cout << "  ok\n";
 }
@@ -390,9 +388,9 @@ static void test_response_unknown_status_rejected()
 static void test_split_first_line()
 {
     std::cout << "[test_split_first_line]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_pieces(p, req, {"GET / HTT", "P/1.1\r\n\r\n"});
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_pieces(parser, req, {"GET / HTT", "P/1.1\r\n\r\n"});
     expect_true(!ec, "ec success");
     expect_true(req.get_method() == method::get, "method get");
     expect_str(req.get_target(), "/", "target /");
@@ -403,9 +401,9 @@ static void test_split_first_line()
 static void test_split_crlf()
 {
     std::cout << "[test_split_crlf]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_pieces(p, req, {"GET / HTTP/1.1\r", "\n\r\n"});
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_pieces(parser, req, {"GET / HTTP/1.1\r", "\n\r\n"});
     expect_true(!ec, "ec success");
     expect_true(req.get_version() == version::http_1_1, "version 1.1");
     std::cout << "  ok\n";
@@ -414,9 +412,9 @@ static void test_split_crlf()
 static void test_split_header_line()
 {
     std::cout << "[test_split_header_line]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_pieces(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_pieces(parser, req,
         {"GET / HTTP/1.1\r\nHost: exa", "mple.com\r\n\r\n"});
     expect_true(!ec, "ec success");
     auto it = req.get_field("Host");
@@ -428,9 +426,9 @@ static void test_split_header_line()
 static void test_split_name_value()
 {
     std::cout << "[test_split_name_value]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_pieces(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_pieces(parser, req,
         {"POST / HTTP/1.1\r\nContent-Le", "ngth: 5\r\n\r\nhello"});
     expect_true(!ec, "ec success");
     expect_size(req.body_container().size(), 5, "body size 5");
@@ -440,9 +438,9 @@ static void test_split_name_value()
 static void test_split_header_end()
 {
     std::cout << "[test_split_header_end]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_pieces(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_pieces(parser, req,
         {"GET / HTTP/1.1\r\nHost: a\r\n", "\r\n"});
     expect_true(!ec, "ec success");
     std::cout << "  ok\n";
@@ -451,12 +449,12 @@ static void test_split_header_end()
 static void test_split_body_byte_by_byte()
 {
     std::cout << "[test_split_body_byte_by_byte]\n";
-    request_parser p;
-    request req;
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
     std::string s = "POST / HTTP/1.1\r\nContent-Length: 5\r\n\r\nhello";
     std::vector<std::string> pieces;
     for ( char c : s ) pieces.push_back(std::string(1, c));
-    auto ec = feed_pieces(p, req, pieces);
+    auto ec = feed_pieces(parser, req, pieces);
     expect_true(!ec, "ec success");
     expect_str(buf_to_string(req.body_container()), "hello", "body hello");
     std::cout << "  ok\n";
@@ -465,9 +463,9 @@ static void test_split_body_byte_by_byte()
 static void test_split_chunk_size_line()
 {
     std::cout << "[test_split_chunk_size_line]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_pieces(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_pieces(parser, req,
         {"POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r",
          "\nhello\r\n0\r\n\r\n"});
     expect_true(!ec, "ec success");
@@ -478,9 +476,9 @@ static void test_split_chunk_size_line()
 static void test_split_chunk_data()
 {
     std::cout << "[test_split_chunk_data]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_pieces(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_pieces(parser, req,
         {"POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhe",
          "llo\r\n0\r\n\r\n"});
     expect_true(!ec, "ec success");
@@ -491,9 +489,9 @@ static void test_split_chunk_data()
 static void test_split_chunk_data_crlf()
 {
     std::cout << "[test_split_chunk_data_crlf]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_pieces(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_pieces(parser, req,
         {"POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r",
          "\n0\r\n\r\n"});
     expect_true(!ec, "ec success");
@@ -504,9 +502,9 @@ static void test_split_chunk_data_crlf()
 static void test_split_chunk0_trailer()
 {
     std::cout << "[test_split_chunk0_trailer]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_pieces(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_pieces(parser, req,
         {"POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\n",
          "X-T: v\r\n",
          "\r\n"});
@@ -520,9 +518,9 @@ static void test_split_chunk0_trailer()
 static void test_split_trailer_empty_line()
 {
     std::cout << "[test_split_trailer_empty_line]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_pieces(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_pieces(parser, req,
         {"POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\nX-T: v\r",
          "\n\r\n"});
     expect_true(!ec, "ec success");
@@ -534,14 +532,14 @@ static void test_split_trailer_empty_line()
 static void test_split_whole_message_byte_by_byte()
 {
     std::cout << "[test_split_whole_message_byte_by_byte]\n";
-    request_parser p;
-    request req;
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
     std::string s =
         "POST /p HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n"
         "3\r\nabc\r\n2\r\nde\r\n0\r\nX-T: v\r\n\r\n";
     std::vector<std::string> pieces;
     for ( char c : s ) pieces.push_back(std::string(1, c));
-    auto ec = feed_pieces(p, req, pieces);
+    auto ec = feed_pieces(parser, req, pieces);
     expect_true(!ec, "ec success");
     expect_true(req.get_method() == method::post, "method post");
     expect_str(req.get_target(), "/p", "target /p");
@@ -554,9 +552,9 @@ static void test_split_whole_message_byte_by_byte()
 static void test_header_case_insensitive()
 {
     std::cout << "[test_header_case_insensitive]\n";
-    request_parser p;
-    request req;
-    feed_all(p, req, "POST / HTTP/1.1\r\ncontent-length: 5\r\n\r\nhello");
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    feed_all(parser, req, "POST / HTTP/1.1\r\ncontent-length: 5\r\n\r\nhello");
     expect_size(req.count("Content-Length"), 1, "count CL mixed");
     expect_size(req.count("content-length"), 1, "count cl lower");
     expect_size(req.count("CONTENT-LENGTH"), 1, "count CL upper");
@@ -566,9 +564,9 @@ static void test_header_case_insensitive()
 static void test_duplicate_fields()
 {
     std::cout << "[test_duplicate_fields]\n";
-    request_parser p;
-    request req;
-    feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    feed_all(parser, req,
         "GET / HTTP/1.1\r\nSet-Cookie: a=1\r\nSet-Cookie: b=2\r\n\r\n");
     expect_size(req.count("set-cookie"), 2, "count set-cookie");
     std::vector<std::string> values;
@@ -584,9 +582,9 @@ static void test_duplicate_fields()
 static void test_duplicate_different_case()
 {
     std::cout << "[test_duplicate_different_case]\n";
-    request_parser p;
-    request req;
-    feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    feed_all(parser, req,
         "GET / HTTP/1.1\r\nSet-Cookie: a=1\r\nset-cookie: b=2\r\n\r\n");
     expect_size(req.count("set-cookie"), 2, "count mixed case");
     std::cout << "  ok\n";
@@ -599,12 +597,12 @@ static void test_te_case_variants()
         "chunked", "Chunked", "CHUNKED", "gzip, chunked", "GZIP, CHUNKED"
     };
     for ( const char* v : values ) {
-        request_parser p;
-        request req;
+        request_parser<lcy::bytra::flat_buffer> parser;
+        request<lcy::bytra::flat_buffer> req;
         std::string s =
             std::string("POST / HTTP/1.1\r\nTransfer-Encoding: ") + v +
             "\r\n\r\n5\r\nhello\r\n0\r\n\r\n";
-        auto ec = feed_all(p, req, s);
+        auto ec = feed_all(parser, req, s);
         expect_true(!ec, "ec success");
         expect_str(buf_to_string(req.body_container()), "hello", "body hello");
     }
@@ -614,9 +612,9 @@ static void test_te_case_variants()
 static void test_te_beats_content_length()
 {
     std::cout << "[test_te_beats_content_length]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n"
         "Content-Length: 999\r\n\r\n5\r\nhello\r\n0\r\n\r\n");
     expect_true(!ec, "ec success");
@@ -627,9 +625,9 @@ static void test_te_beats_content_length()
 static void test_err_missing_space()
 {
     std::cout << "[test_err_missing_space]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req, "GET/\r\n\r\n");
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req, "GET/\r\n\r\n");
     expect_ec(ec, lcy::bytra::http::error::invalid_header, "invalid_header");
     std::cout << "  ok\n";
 }
@@ -637,9 +635,9 @@ static void test_err_missing_space()
 static void test_err_unknown_method()
 {
     std::cout << "[test_err_unknown_method]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req, "FOO / HTTP/1.1\r\n\r\n");
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req, "FOO / HTTP/1.1\r\n\r\n");
     expect_ec(ec, lcy::bytra::http::error::invalid_header, "invalid_header");
     std::cout << "  ok\n";
 }
@@ -653,9 +651,9 @@ static void test_err_invalid_version()
         "GET / XYZ/1.1\r\n\r\n",
     };
     for ( const char* l : lines ) {
-        request_parser p;
-        request req;
-        auto ec = feed_all(p, req, l);
+        request_parser<lcy::bytra::flat_buffer> parser;
+        request<lcy::bytra::flat_buffer> req;
+        auto ec = feed_all(parser, req, l);
         expect_ec(ec, lcy::bytra::http::error::invalid_header, l);
     }
     std::cout << "  ok\n";
@@ -664,9 +662,9 @@ static void test_err_invalid_version()
 static void test_err_status_not_number()
 {
     std::cout << "[test_err_status_not_number]\n";
-    response_parser p;
-    response res;
-    auto ec = feed_all(p, res, "HTTP/1.1 abc X\r\n\r\n");
+    response_parser<lcy::bytra::flat_buffer> parser;
+    response<lcy::bytra::flat_buffer> res;
+    auto ec = feed_all(parser, res, "HTTP/1.1 abc X\r\n\r\n");
     expect_ec(ec, lcy::bytra::http::error::invalid_header, "invalid_header");
     std::cout << "  ok\n";
 }
@@ -679,9 +677,9 @@ static void test_err_status_out_of_range()
         "HTTP/1.1 600 X\r\n\r\n",
     };
     for ( const char* l : lines ) {
-        response_parser p;
-        response res;
-        auto ec = feed_all(p, res, l);
+        response_parser<lcy::bytra::flat_buffer> parser;
+        response<lcy::bytra::flat_buffer> res;
+        auto ec = feed_all(parser, res, l);
         expect_ec(ec, lcy::bytra::http::error::invalid_header, l);
     }
     std::cout << "  ok\n";
@@ -690,9 +688,9 @@ static void test_err_status_out_of_range()
 static void test_err_header_no_colon()
 {
     std::cout << "[test_err_header_no_colon]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req, "GET / HTTP/1.1\r\nHost a\r\n\r\n");
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req, "GET / HTTP/1.1\r\nHost a\r\n\r\n");
     expect_ec(ec, lcy::bytra::http::error::invalid_header, "invalid_header");
     std::cout << "  ok\n";
 }
@@ -700,9 +698,9 @@ static void test_err_header_no_colon()
 static void test_err_header_empty_name()
 {
     std::cout << "[test_err_header_empty_name]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req, "GET / HTTP/1.1\r\n: v\r\n\r\n");
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req, "GET / HTTP/1.1\r\n: v\r\n\r\n");
     expect_ec(ec, lcy::bytra::http::error::invalid_header, "invalid_header");
     std::cout << "  ok\n";
 }
@@ -710,9 +708,9 @@ static void test_err_header_empty_name()
 static void test_err_content_length_not_number()
 {
     std::cout << "[test_err_content_length_not_number]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nContent-Length: abc\r\n\r\n");
     expect_ec(ec, lcy::bytra::http::error::invalid_header, "invalid_header");
     std::cout << "  ok\n";
@@ -721,9 +719,9 @@ static void test_err_content_length_not_number()
 static void test_err_content_length_overflow()
 {
     std::cout << "[test_err_content_length_overflow]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nContent-Length: 999999999999999999999999\r\n\r\n");
     expect_ec(ec, lcy::bytra::http::error::invalid_header, "invalid_header");
     std::cout << "  ok\n";
@@ -732,9 +730,9 @@ static void test_err_content_length_overflow()
 static void test_err_chunk_size_not_hex()
 {
     std::cout << "[test_err_chunk_size_not_hex]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\nzz\r\n");
     expect_ec(ec, lcy::bytra::http::error::invalid_body, "invalid_body");
     std::cout << "  ok\n";
@@ -743,9 +741,9 @@ static void test_err_chunk_size_not_hex()
 static void test_err_chunk_data_no_crlf()
 {
     std::cout << "[test_err_chunk_data_no_crlf]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
         "5\r\nhelloXX0\r\n\r\n");
     expect_ec(ec, lcy::bytra::http::error::invalid_body, "invalid_body");
@@ -755,9 +753,9 @@ static void test_err_chunk_data_no_crlf()
 static void test_err_chunked_not_terminated()
 {
     std::cout << "[test_err_chunked_not_terminated]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n");
     expect_ec(ec, lcy::bytra::http::error::wait_more, "wait_more");
     std::cout << "  ok\n";
@@ -766,9 +764,9 @@ static void test_err_chunked_not_terminated()
 static void test_err_trailer_no_colon()
 {
     std::cout << "[test_err_trailer_no_colon]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
         "5\r\nhello\r\n0\r\nBadLine\r\n\r\n");
     expect_ec(ec, lcy::bytra::http::error::invalid_body, "invalid_body");
@@ -778,13 +776,13 @@ static void test_err_trailer_no_colon()
 static void test_err_parse_header_in_body()
 {
     std::cout << "[test_err_parse_header_in_body]\n";
-    request_parser p;
-    request req;
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
     lcy::system::error_code ec;
     const char* h = "POST / HTTP/1.1\r\nContent-Length: 5\r\n\r\n";
-    p.parse(h, std::strlen(h), req, ec);
+    parser.parse(h, std::strlen(h), req, ec);
     expect_ec(ec, lcy::bytra::http::error::wait_more, "header done, wait body");
-    p.parse_header("hello", 5, req, ec);
+    parser.parse_header("hello", 5, req, ec);
     expect_ec(ec, lcy::bytra::http::error::invalid_state, "invalid_state");
     std::cout << "  ok\n";
 }
@@ -792,10 +790,10 @@ static void test_err_parse_header_in_body()
 static void test_err_parse_body_in_header()
 {
     std::cout << "[test_err_parse_body_in_header]\n";
-    request_parser p;
-    request req;
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
     lcy::system::error_code ec;
-    p.parse_body("x", 1, req, ec);
+    parser.parse_body("x", 1, req, ec);
     expect_ec(ec, lcy::bytra::http::error::invalid_state, "invalid_state");
     std::cout << "  ok\n";
 }
@@ -803,14 +801,14 @@ static void test_err_parse_body_in_header()
 static void test_parse_after_done()
 {
     std::cout << "[test_parse_after_done]\n";
-    request_parser p;
-    request req;
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
     lcy::system::error_code ec;
     const char* s = "GET / HTTP/1.1\r\n\r\n";
-    p.parse(s, std::strlen(s), req, ec);
+    parser.parse(s, std::strlen(s), req, ec);
     expect_true(!ec, "first parse success");
     ec = lcy::system::error_code();
-    p.parse("X", 1, req, ec);
+    parser.parse("X", 1, req, ec);
     expect_true(!ec, "parse after done success");
     std::cout << "  ok\n";
 }
@@ -818,11 +816,11 @@ static void test_parse_after_done()
 static void test_limit_header_too_large()
 {
     std::cout << "[test_limit_header_too_large]\n";
-    request_parser p;
-    p.set_header_limit(100);
-    request req;
+    request_parser<lcy::bytra::flat_buffer> parser;
+    parser.set_header_limit(100);
+    request<lcy::bytra::flat_buffer> req;
     std::string garbage(200, 'x');
-    auto ec = feed_all(p, req, garbage);
+    auto ec = feed_all(parser, req, garbage);
     expect_ec(ec, lcy::bytra::http::error::header_too_large, "header_too_large");
     std::cout << "  ok\n";
 }
@@ -830,10 +828,10 @@ static void test_limit_header_too_large()
 static void test_limit_header_within()
 {
     std::cout << "[test_limit_header_within]\n";
-    request_parser p;
-    p.set_header_limit(100);
-    request req;
-    auto ec = feed_all(p, req, "GET / HTTP/1.1\r\nHost: a\r\n\r\n");
+    request_parser<lcy::bytra::flat_buffer> parser;
+    parser.set_header_limit(100);
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req, "GET / HTTP/1.1\r\nHost: a\r\n\r\n");
     expect_true(!ec, "within limit");
     std::cout << "  ok\n";
 }
@@ -841,10 +839,10 @@ static void test_limit_header_within()
 static void test_limit_body_fixed()
 {
     std::cout << "[test_limit_body_fixed]\n";
-    request_parser p;
-    p.set_body_limit(10);
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    parser.set_body_limit(10);
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nContent-Length: 20\r\n\r\n");
     expect_ec(ec, lcy::bytra::http::error::body_too_large, "body_too_large");
     std::cout << "  ok\n";
@@ -853,10 +851,10 @@ static void test_limit_body_fixed()
 static void test_limit_body_chunked()
 {
     std::cout << "[test_limit_body_chunked]\n";
-    request_parser p;
-    p.set_body_limit(10);
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    parser.set_body_limit(10);
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
         "14\r\naaaaaaaaaaaaaaaaaaaa\r\n0\r\n\r\n");
     expect_ec(ec, lcy::bytra::http::error::body_too_large, "body_too_large");
@@ -866,10 +864,10 @@ static void test_limit_body_chunked()
 static void test_limit_body_exact()
 {
     std::cout << "[test_limit_body_exact]\n";
-    request_parser p;
-    p.set_body_limit(10);
-    request req;
-    auto ec = feed_all(p, req,
+    request_parser<lcy::bytra::flat_buffer> parser;
+    parser.set_body_limit(10);
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
         "POST / HTTP/1.1\r\nContent-Length: 10\r\n\r\n0123456789");
     expect_true(!ec, "exact limit ok");
     expect_size(req.body_container().size(), 10, "body 10");
@@ -879,12 +877,12 @@ static void test_limit_body_exact()
 static void test_limit_header_not_triggered_by_body()
 {
     std::cout << "[test_limit_header_not_triggered_by_body]\n";
-    request_parser p;
-    p.set_header_limit(100);
-    request req;
+    request_parser<lcy::bytra::flat_buffer> parser;
+    parser.set_header_limit(100);
+    request<lcy::bytra::flat_buffer> req;
     std::string body(1000, 'a');
     std::string s = "POST / HTTP/1.1\r\nContent-Length: 1000\r\n\r\n" + body;
-    auto ec = feed_all(p, req, s);
+    auto ec = feed_all(parser, req, s);
     expect_true(!ec, "body doesn't trigger header limit");
     expect_size(req.body_container().size(), 1000, "body 1000");
     std::cout << "  ok\n";
@@ -893,16 +891,16 @@ static void test_limit_header_not_triggered_by_body()
 static void test_reset_after_complete()
 {
     std::cout << "[test_reset_after_complete]\n";
-    request_parser p;
-    request req;
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
     lcy::system::error_code ec;
     const char* s1 = "GET / HTTP/1.1\r\n\r\n";
-    p.parse(s1, std::strlen(s1), req, ec);
+    parser.parse(s1, std::strlen(s1), req, ec);
     expect_true(!ec, "first success");
-    p.reset();
-    request req2;
+    parser.reset();
+    request<lcy::bytra::flat_buffer> req2;
     const char* s2 = "POST /x HTTP/1.1\r\n\r\n";
-    p.parse(s2, std::strlen(s2), req2, ec);
+    parser.parse(s2, std::strlen(s2), req2, ec);
     expect_true(!ec, "second success");
     expect_true(req2.get_method() == method::post, "method post");
     expect_str(req2.get_target(), "/x", "target /x");
@@ -912,15 +910,15 @@ static void test_reset_after_complete()
 static void test_reset_after_error()
 {
     std::cout << "[test_reset_after_error]\n";
-    request_parser p;
-    request req;
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
     lcy::system::error_code ec;
-    p.parse("BAD\r\n\r\n", 7, req, ec);
+    parser.parse("BAD\r\n\r\n", 7, req, ec);
     expect_ec(ec, lcy::bytra::http::error::invalid_header, "err first");
-    p.reset();
-    request req2;
+    parser.reset();
+    request<lcy::bytra::flat_buffer> req2;
     const char* s = "GET / HTTP/1.1\r\n\r\n";
-    p.parse(s, std::strlen(s), req2, ec);
+    parser.parse(s, std::strlen(s), req2, ec);
     expect_true(!ec, "after reset success");
     std::cout << "  ok\n";
 }
@@ -928,17 +926,17 @@ static void test_reset_after_error()
 static void test_reset_clears_body()
 {
     std::cout << "[test_reset_clears_body]\n";
-    request_parser p;
-    request req;
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
     lcy::system::error_code ec;
     const char* s1 = "POST / HTTP/1.1\r\nContent-Length: 2\r\n\r\nhi";
-    p.parse(s1, std::strlen(s1), req, ec);
+    parser.parse(s1, std::strlen(s1), req, ec);
     expect_true(!ec, "first success");
     expect_size(req.body_container().size(), 2, "body 2");
-    p.reset();
-    request req2;
+    parser.reset();
+    request<lcy::bytra::flat_buffer> req2;
     const char* s2 = "GET / HTTP/1.1\r\n\r\n";
-    p.parse(s2, std::strlen(s2), req2, ec);
+    parser.parse(s2, std::strlen(s2), req2, ec);
     expect_true(!ec, "second success");
     expect_size(req2.body_container().size(), 0, "body 0");
     std::cout << "  ok\n";
@@ -947,25 +945,23 @@ static void test_reset_clears_body()
 static void test_reset_parsed_bytes()
 {
     std::cout << "[test_reset_parsed_bytes]\n";
-    request_parser p;
-    request req;
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
     lcy::system::error_code ec;
-   
-    
     const char* s = "GET / HTTP/1.1\r\n\r\n";
-    p.parse(s, std::strlen(s), req, ec);
+    parser.parse(s, std::strlen(s), req, ec);
     expect_true(!ec, "success");
-    expect_size(p.get_parsed_bytes(), std::strlen(s), "parsed_bytes");
-    p.reset();
-    expect_size(p.get_parsed_bytes(), 0, "parsed_bytes after reset");
+    expect_size(parser.get_parsed_bytes(), std::strlen(s), "parsed_bytes");
+    parser.reset();
+    expect_size(parser.get_parsed_bytes(), 0, "parsed_bytes after reset");
     std::cout << "  ok\n";
 }
 
 static void test_incremental_consume()
 {
     std::cout << "[test_incremental_consume]\n";
-    request_parser p;
-    request req;
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
     flat_buffer buf;
     lcy::system::error_code ec;
 
@@ -975,18 +971,18 @@ static void test_incremental_consume()
     auto v1 = buf.prepare(s1.size());
     std::memcpy(v1.data(), s1.data(), s1.size());
     buf.commit(s1.size());
-    p.parse(static_cast<const char*>(buf.data()), buf.size(), req, ec);
+    parser.parse(static_cast<const char*>(buf.data()), buf.size(), req, ec);
     expect_ec(ec, lcy::bytra::http::error::wait_more, "first wait_more");
-    std::size_t d1 = p.get_parsed_bytes();
+    std::size_t d1 = parser.get_parsed_bytes();
     buf.consume(d1);
     expect_size(buf.size(), s1.size() - d1, "buffer remaining after first");
 
     auto v2 = buf.prepare(s2.size());
     std::memcpy(v2.data(), s2.data(), s2.size());
     buf.commit(s2.size());
-    p.parse(static_cast<const char*>(buf.data()), buf.size(), req, ec);
+    parser.parse(static_cast<const char*>(buf.data()), buf.size(), req, ec);
     expect_true(!ec, "second success");
-    std::size_t d2 = p.get_parsed_bytes() - d1;
+    std::size_t d2 = parser.get_parsed_bytes() - d1;
     buf.consume(d2);
     expect_size(buf.size(), 0, "buffer empty");
     auto it = req.get_field("Host");
@@ -998,14 +994,14 @@ static void test_incremental_consume()
 static void test_boundary_empty_input()
 {
     std::cout << "[test_boundary_empty_input]\n";
-    request_parser p;
-    request req;
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
     lcy::system::error_code ec;
-    p.parse(nullptr, 0, req, ec);
+    parser.parse(nullptr, 0, req, ec);
     expect_ec(ec, lcy::bytra::http::error::wait_more, "null 0 wait_more");
 
     ec = lcy::system::error_code();
-    p.parse("", 0, req, ec);
+    parser.parse("", 0, req, ec);
     expect_ec(ec, lcy::bytra::http::error::wait_more, "empty wait_more");
     std::cout << "  ok\n";
 }
@@ -1013,10 +1009,10 @@ static void test_boundary_empty_input()
 static void test_boundary_one_byte()
 {
     std::cout << "[test_boundary_one_byte]\n";
-    request_parser p;
-    request req;
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
     lcy::system::error_code ec;
-    p.parse("G", 1, req, ec);
+    parser.parse("G", 1, req, ec);
     expect_ec(ec, lcy::bytra::http::error::wait_more, "one byte wait_more");
     std::cout << "  ok\n";
 }
@@ -1024,9 +1020,9 @@ static void test_boundary_one_byte()
 static void test_boundary_empty_first_line()
 {
     std::cout << "[test_boundary_empty_first_line]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req, "\r\n\r\n");
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req, "\r\n\r\n");
     expect_ec(ec, lcy::bytra::http::error::invalid_header, "invalid_header");
     std::cout << "  ok\n";
 }
@@ -1034,9 +1030,9 @@ static void test_boundary_empty_first_line()
 static void test_boundary_header_value_with_colon()
 {
     std::cout << "[test_boundary_header_value_with_colon]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req, "GET / HTTP/1.1\r\nX: a:b:c\r\n\r\n");
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req, "GET / HTTP/1.1\r\nX: a:b:c\r\n\r\n");
     expect_true(!ec, "success");
     auto it = req.get_field("X");
     expect_true(it != req.field_end(), "X found");
@@ -1047,9 +1043,9 @@ static void test_boundary_header_value_with_colon()
 static void test_boundary_header_value_ows()
 {
     std::cout << "[test_boundary_header_value_ows]\n";
-    request_parser p;
-    request req;
-    auto ec = feed_all(p, req, "GET / HTTP/1.1\r\nX:   v   \r\n\r\n");
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req, "GET / HTTP/1.1\r\nX:   v   \r\n\r\n");
     expect_true(!ec, "success");
     auto it = req.get_field("X");
     expect_true(it != req.field_end(), "X found");
@@ -1060,8 +1056,8 @@ static void test_boundary_header_value_ows()
 static void test_independent_instances()
 {
     std::cout << "[test_independent_instances]\n";
-    request_parser p1, p2;
-    request r1, r2;
+    request_parser<lcy::bytra::flat_buffer> p1, p2;
+    request<lcy::bytra::flat_buffer> r1, r2;
     lcy::system::error_code ec1, ec2;
     const char* s1 = "GET /a HTTP/1.1\r\n\r\n";
     const char* s2 = "POST /b HTTP/1.1\r\nContent-Length: 2\r\n\r\nhi";
@@ -1078,13 +1074,13 @@ static void test_independent_instances()
 static void test_roundtrip_request()
 {
     std::cout << "[test_roundtrip_request]\n";
-    request req(method::post, "/p", version::http_1_1);
+    request<lcy::bytra::flat_buffer> req(method::post, "/p", version::http_1_1);
     req.set_field("Host", "a");
     std::string s = req.header_to_string();
 
-    request_parser p;
-    request parsed;
-    auto ec = feed_all(p, parsed, s);
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> parsed;
+    auto ec = feed_all(parser, parsed, s);
     expect_true(!ec, "success");
     expect_true(parsed.get_method() == method::post, "method post");
     expect_str(parsed.get_target(), "/p", "target /p");
@@ -1098,13 +1094,13 @@ static void test_roundtrip_request()
 static void test_roundtrip_response()
 {
     std::cout << "[test_roundtrip_response]\n";
-    response res(status::ok, version::http_1_1);
+    response<lcy::bytra::flat_buffer> res(status::ok, version::http_1_1);
     res.set_field("X", "y");
     std::string s = res.header_to_string();
 
-    response_parser p;
-    response parsed;
-    auto ec = feed_all(p, parsed, s);
+    response_parser<lcy::bytra::flat_buffer> parser;
+    response<lcy::bytra::flat_buffer> parsed;
+    auto ec = feed_all(parser, parsed, s);
     expect_true(!ec, "success");
     expect_true(parsed.get_status() == status::ok, "status ok");
     expect_str(parsed.get_reason(), "OK", "reason OK");
@@ -1117,18 +1113,18 @@ static void test_roundtrip_response()
 static void test_parse_header_then_body()
 {
     std::cout << "[test_parse_header_then_body]\n";
-    request_parser p;
-    request req;
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
     lcy::system::error_code ec;
 
     const char* h = "POST /p HTTP/1.1\r\nContent-Length: 5\r\n\r\n";
-    p.parse_header(h, std::strlen(h), req, ec);
+    parser.parse_header(h, std::strlen(h), req, ec);
     expect_true(!ec, "header success");
     expect_true(req.get_method() == method::post, "method post");
     expect_str(req.get_target(), "/p", "target /p");
     expect_size(req.count("Content-Length"), 1, "CL present");
 
-    p.parse_body("hello", 5, req, ec);
+    parser.parse_body("hello", 5, req, ec);
     expect_true(!ec, "body success");
     expect_str(buf_to_string(req.body_container()), "hello", "body hello");
 
@@ -1146,36 +1142,41 @@ static void test_parser_returns_consumed_bytes()
         "\r\n"
         "world";
 
-    request_parser parser;
-    request msg;
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> msg;
     lcy::system::error_code ec;
 
     const std::size_t first = 10;
     std::size_t used1 = parser.parse_header(req.data(), first, msg, ec);
 
-    assert(ec == make_http_error_code(lcy::bytra::http::error::wait_more));
-    assert(used1 == 0);
+    expect_ec(ec, lcy::bytra::http::error::wait_more, "first wait_more");
+    expect_size(used1, 0, "first consumed 0");
 
     const std::size_t header_end = req.find("\r\n\r\n") + 4;
     std::size_t used2 = parser.parse_header(req.data(), header_end, msg, ec);
-    assert(!ec || ec == make_http_error_code(lcy::bytra::http::error::success));
-    assert(used2 == header_end);
-    assert(parser.get_parsed_bytes() == header_end);
+
+    expect_true(!ec || ec == static_cast<int>(lcy::bytra::http::error::success),
+        "header success");
+    expect_size(used2, header_end, "header consumed header_end");
+    expect_size(parser.get_parsed_bytes(), header_end, "parsed == header_end");
 
     const char* body = req.data() + header_end;
     std::size_t used3 = parser.parse_body(body, 3, msg, ec);
-    assert(ec == make_http_error_code(lcy::bytra::http::error::wait_more));
-    assert(used3 == 3);
+
+    expect_ec(ec, lcy::bytra::http::error::wait_more, "body first wait_more");
+    expect_size(used3, 3, "body consumed 3");
 
     std::size_t used4 = parser.parse_body(body + 3, 2, msg, ec);
-    assert(!ec);
-    assert(used4 == 2);
-    assert(msg.body_container().size() == 5);
-    assert(parser.get_parsed_bytes() == header_end + 5);
+
+    expect_true(!ec, "body second success");
+    expect_size(used4, 2, "body consumed 2");
+    expect_size(msg.body_container().size(), 5, "body size 5");
+    expect_size(parser.get_parsed_bytes(), header_end + 5, "parsed == header_end + 5");
 
     std::size_t used5 = parser.parse_body(body, 1, msg, ec);
-    assert(ec == make_http_error_code(lcy::bytra::http::error::invalid_state));
-    assert(used5 == 0);
+
+    expect_ec(ec, lcy::bytra::http::error::invalid_state, "done -> invalid_state");
+    expect_size(used5, 0, "used5 0");
 
     std::cout << "  ok\n";
 }

@@ -1,4 +1,3 @@
-// test_response.cc
 #include <cassert>
 #include <cstring>
 #include <iostream>
@@ -65,14 +64,14 @@ static void expect_true(bool cond, const char* msg)
 static void test_default_construct()
 {
     std::cout << "[test_default_construct]\n";
-    response res;
+    response<lcy::bytra::flat_buffer> res;
 
     expect_true(res.get_status() == status::ok, "default status ok");
 
     std::string s = res.header_to_string();
-    expect_starts_with(s, "200 ", "default status line starts with 200");
+    expect_starts_with(s, "HTTP/1.1 200 ", "default status line starts with HTTP/1.1 200");
     expect_contains(s, "OK", "default reason OK");
-    expect_contains(s, "HTTP/1.", "version present");
+    expect_contains(s, "HTTP/1.1", "version present");
     expect_contains(s, "\r\n\r\n", "empty header terminator");
 
     std::cout << "  default construct ok\n";
@@ -81,13 +80,13 @@ static void test_default_construct()
 static void test_construct_status_version()
 {
     std::cout << "[test_construct_status_version]\n";
-    response res(status::not_found, version::http_1_1);
+    response<lcy::bytra::flat_buffer> res(status::not_found, version::http_1_1);
 
     expect_true(res.get_status() == status::not_found, "status not_found");
     expect_str_eq(res.get_reason(), "Not Found", "reason Not Found");
 
     std::string s = res.header_to_string();
-    expect_starts_with(s, "404 Not Found HTTP/1.1\r\n", "status line");
+    expect_starts_with(s, "HTTP/1.1 404 Not Found\r\n", "status line");
 
     std::cout << "  construct status/version ok\n";
 }
@@ -95,14 +94,14 @@ static void test_construct_status_version()
 static void test_construct_custom_reason()
 {
     std::cout << "[test_construct_custom_reason]\n";
-    response res(
+    response<lcy::bytra::flat_buffer> res(
         status::ok, "Everything Fine", version::http_1_1);
 
     expect_true(res.get_status() == status::ok, "status ok");
     expect_str_eq(res.get_reason(), "Everything Fine", "custom reason");
 
     std::string s = res.header_to_string();
-    expect_starts_with(s, "200 Everything Fine HTTP/1.1\r\n", "status line");
+    expect_starts_with(s, "HTTP/1.1 200 Everything Fine\r\n", "status line");
 
     std::cout << "  construct custom reason ok\n";
 }
@@ -110,7 +109,7 @@ static void test_construct_custom_reason()
 static void test_set_status_resets_reason()
 {
     std::cout << "[test_set_status_resets_reason]\n";
-    response res;
+    response<lcy::bytra::flat_buffer> res;
     res.set_reason("Custom");
     expect_str_eq(res.get_reason(), "Custom", "reason before set_status");
 
@@ -120,7 +119,7 @@ static void test_set_status_resets_reason()
                   "reason reset by set_status");
 
     std::string s = res.header_to_string();
-    expect_starts_with(s, "500 Internal Server Error ",
+    expect_starts_with(s, "HTTP/1.1 500 Internal Server Error\r\n",
                        "status line after set_status");
 
     std::cout << "  set_status resets reason ok\n";
@@ -129,14 +128,14 @@ static void test_set_status_resets_reason()
 static void test_set_reason()
 {
     std::cout << "[test_set_reason]\n";
-    response res(status::ok, version::http_1_1);
+    response<lcy::bytra::flat_buffer> res(status::ok, version::http_1_1);
 
     res.set_reason("All Good");
     expect_str_eq(res.get_reason(), "All Good", "reason override");
     expect_true(res.get_status() == status::ok, "status unchanged");
 
     std::string s = res.header_to_string();
-    expect_starts_with(s, "200 All Good HTTP/1.1\r\n", "status line");
+    expect_starts_with(s, "HTTP/1.1 200 All Good\r\n", "status line");
 
     std::cout << "  set_reason ok\n";
 }
@@ -144,7 +143,7 @@ static void test_set_reason()
 static void test_single_header()
 {
     std::cout << "[test_single_header]\n";
-    response res(status::ok, version::http_1_1);
+    response<lcy::bytra::flat_buffer> res(status::ok, version::http_1_1);
     res.set_field("Content-Type", "text/plain");
 
     std::string s = res.header_to_string();
@@ -156,7 +155,7 @@ static void test_single_header()
 static void test_multi_headers_order()
 {
     std::cout << "[test_multi_headers_order]\n";
-    response res(status::ok, version::http_1_1);
+    response<lcy::bytra::flat_buffer> res(status::ok, version::http_1_1);
     res.set_field("A", "1");
     res.set_field("B", "2");
     res.set_field("C", "3");
@@ -177,7 +176,7 @@ static void test_multi_headers_order()
 static void test_duplicate_header()
 {
     std::cout << "[test_duplicate_header]\n";
-    response res(status::ok, version::http_1_1);
+    response<lcy::bytra::flat_buffer> res(status::ok, version::http_1_1);
     res.set_field("Set-Cookie", "a=1");
     res.set_field("Set-Cookie", "b=2");
 
@@ -192,7 +191,7 @@ static void test_duplicate_header()
 static void test_field_accessors()
 {
     std::cout << "[test_field_accessors]\n";
-    response res(status::ok, version::http_1_1);
+    response<lcy::bytra::flat_buffer> res(status::ok, version::http_1_1);
     res.set_field("X-A", "va");
     res.set_field("X-B", "vb");
     res.set_field("X-A", "va2");
@@ -217,7 +216,7 @@ static void test_field_accessors()
 static void test_common_statuses()
 {
     std::cout << "[test_common_statuses]\n";
-    response res;
+    response<lcy::bytra::flat_buffer> res;
 
     struct { status s; const char* reason_prefix; } cases[] = {
         { status::ok,                     "200" },
@@ -240,7 +239,7 @@ static void test_common_statuses()
     for ( auto& c : cases ) {
         res.set_status(c.s);
         std::string s = res.header_to_string();
-        expect_starts_with(s, std::string(c.reason_prefix) + " ",
+        expect_starts_with(s, std::string("HTTP/1.1 ") + c.reason_prefix + " ",
                            c.reason_prefix);
         expect_true(!res.get_reason().empty(), "reason not empty");
     }
@@ -251,7 +250,7 @@ static void test_common_statuses()
 static void test_versions()
 {
     std::cout << "[test_versions]\n";
-    response res;
+    response<lcy::bytra::flat_buffer> res;
 
     res.set_version(version::http_1_0);
     expect_contains(res.header_to_string(), "HTTP/1.0", "http_1_0");
@@ -265,7 +264,7 @@ static void test_versions()
 static void test_body()
 {
     std::cout << "[test_body]\n";
-    response res(status::ok, version::http_1_1);
+    response<lcy::bytra::flat_buffer> res(status::ok, version::http_1_1);
     res.set_field("Content-Length", "5");
 
     auto buf = res.body_container().prepare(5);
@@ -286,13 +285,13 @@ static void test_body()
 static void test_format_strict()
 {
     std::cout << "[test_format_strict]\n";
-    response res(status::ok, version::http_1_1);
+    response<lcy::bytra::flat_buffer> res(status::ok, version::http_1_1);
     res.set_field("A", "1");
     res.set_field("B", "2");
 
     std::string got = res.header_to_string();
     std::string want =
-        "200 OK HTTP/1.1\r\n"
+        "HTTP/1.1 200 OK\r\n"
         "A: 1\r\n"
         "B: 2\r\n"
         "\r\n";

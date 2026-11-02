@@ -11,14 +11,17 @@ namespace bytra
 namespace http
 {
 
+template <typename DynamicBuffer>
 class response :
     public detail::message<
-        detail::response_tag
+        detail::response_tag,
+        DynamicBuffer
     >
 {
 public:
     typedef detail::message<
-        detail::response_tag
+        detail::response_tag,
+        DynamicBuffer
     > base_type;
 
 public:

@@ -3,7 +3,6 @@
 #include <cstring>
 #include <string>
 
-#include "lcy/bytra/flat_buffer.hpp"
 #include "lcy/bytra/http/method.hpp"
 #include "lcy/bytra/http/status.hpp"
 #include "lcy/bytra/http/version.hpp"

@@ -11,9 +11,10 @@ namespace bytra
 namespace http
 {
 
-typedef detail::basic_parser<
-    request
-> request_parser;
+template <typename DynamicBuffer>
+using request_parser = detail::basic_parser<
+    request<DynamicBuffer>
+>;
 
 }   // namespace http
 }   // namespace bytra

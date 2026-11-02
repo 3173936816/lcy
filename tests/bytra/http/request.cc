@@ -34,7 +34,7 @@ static void expect_starts_with(const std::string& s, const std::string& prefix,
 static void test_default_construct()
 {
     std::cout << "[test_default_construct]\n";
-    request req;
+    request<lcy::bytra::flat_buffer> req;
 
     assert(req.get_method() == method::get);
     assert(req.get_target() == "/");
@@ -50,7 +50,7 @@ static void test_default_construct()
 static void test_construct_with_args()
 {
     std::cout << "[test_construct_with_args]\n";
-    request req(
+    request<lcy::bytra::flat_buffer> req(
         method::post, "/api/v1/users", version::http_1_1);
 
     assert(req.get_method() == method::post);
@@ -66,7 +66,7 @@ static void test_construct_with_args()
 static void test_setters()
 {
     std::cout << "[test_setters]\n";
-    request req;
+    request<lcy::bytra::flat_buffer> req;
 
     req.set_method(method::put);
     req.set_target("/update");
@@ -85,7 +85,7 @@ static void test_setters()
 static void test_single_header()
 {
     std::cout << "[test_single_header]\n";
-    request req;
+    request<lcy::bytra::flat_buffer> req;
     req.set_field("Host", "example.com");
 
     std::string s = req.header_to_string();
@@ -98,7 +98,7 @@ static void test_single_header()
 static void test_multi_headers()
 {
     std::cout << "[test_multi_headers]\n";
-    request req;
+    request<lcy::bytra::flat_buffer> req;
     req.set_field("A", "1");
     req.set_field("B", "2");
     req.set_field("C", "3");
@@ -118,7 +118,7 @@ static void test_multi_headers()
 static void test_duplicate_header()
 {
     std::cout << "[test_duplicate_header]\n";
-    request req;
+    request<lcy::bytra::flat_buffer> req;
     req.set_field("Set-Cookie", "a=1");
     req.set_field("Set-Cookie", "b=2");
 
@@ -133,7 +133,7 @@ static void test_duplicate_header()
 static void test_field_accessors()
 {
     std::cout << "[test_field_accessors]\n";
-    request req;
+    request<lcy::bytra::flat_buffer> req;
     req.set_field("X-A", "va");
     req.set_field("X-B", "vb");
     req.set_field("X-A", "va2");
@@ -160,7 +160,7 @@ static void test_field_accessors()
 static void test_special_target()
 {
     std::cout << "[test_special_target]\n";
-    request req;
+    request<lcy::bytra::flat_buffer> req;
     req.set_target("/a/b?x=1&y=2#frag");
 
     std::string s = req.header_to_string();
@@ -176,7 +176,7 @@ static void test_special_target()
 static void test_all_methods()
 {
     std::cout << "[test_all_methods]\n";
-    request req;
+    request<lcy::bytra::flat_buffer> req;
 
     struct { method m; const char* name; } cases[] = {
         { method::get,     "GET" },
@@ -199,7 +199,7 @@ static void test_all_methods()
 static void test_versions()
 {
     std::cout << "[test_versions]\n";
-    request req;
+    request<lcy::bytra::flat_buffer> req;
 
     req.set_version(version::http_1_0);
     expect_contains(req.header_to_string(), "HTTP/1.0", "http_1_0");
@@ -213,7 +213,7 @@ static void test_versions()
 static void test_body()
 {
     std::cout << "[test_body]\n";
-    request req;
+    request<lcy::bytra::flat_buffer> req;
     req.set_field("Content-Length", "5");
 
     auto buf = req.body_container().prepare(5);
@@ -235,7 +235,7 @@ static void test_body()
 static void test_format_strict()
 {
     std::cout << "[test_format_strict]\n";
-    request req(
+    request<lcy::bytra::flat_buffer> req(
         method::get, "/", version::http_1_1);
     req.set_field("A", "1");
     req.set_field("B", "2");

@@ -12,14 +12,19 @@
 
 namespace {
 
+typedef lcy::bytra::flat_buffer flat_buf;
+typedef lcy::bytra::http::request<flat_buf> req_t;
+typedef lcy::bytra::http::response<flat_buf> res_t;
+typedef lcy::bytra::http::request_parser<flat_buf> req_parser_t;
+
 class http_connection :
     public std::enable_shared_from_this<http_connection>
 {
 public:
     typedef std::function<
         void (
-            const lcy::bytra::http::request& request,
-            lcy::bytra::http::response& response
+            const req_t& request,
+            res_t& response
         )
     > func_type;
 
@@ -29,9 +34,10 @@ public:
     void start()
     {
         parser_.reset();
+        read_buffer_.clear();
 
         auto self = shared_from_this();
-        auto request = std::make_shared<lcy::bytra::http::request>();
+        auto request = std::make_shared<req_t>();
 
         lcy::bytra::http::async_read(socket_, read_buffer_, parser_, *request,
                 [self, this, request](lcy::system::error_code ec, std::size_t){
@@ -42,7 +48,7 @@ public:
 
             std::cout << "async_read ok" << std::endl;
 
-            auto response = std::make_shared<lcy::bytra::http::response>();
+            auto response = std::make_shared<res_t>();
             func_(*request, *response);
 
             lcy::bytra::http::async_write(socket_, *response,
@@ -66,8 +72,8 @@ public:
 
 private:
     lcy::asio::ip::tcp::socket socket_;
-    lcy::bytra::flat_buffer read_buffer_;
-    lcy::bytra::http::request_parser parser_;
+    flat_buf read_buffer_;
+    req_parser_t parser_;
     func_type func_;
 };
 
@@ -79,7 +85,9 @@ public:
     http_server(lcy::asio::io_context& ioc,
                 lcy::asio::ip::tcp::endpoint ep,
                 func_type func)
-        : ioc_(ioc), acceptor_(ioc, ep, lcy::asio::ip::socket_option::reuse_address(1)), func_(std::move(func)) {}
+        : ioc_(ioc),
+          acceptor_(ioc, ep, lcy::asio::ip::socket_option::reuse_address(1)),
+          func_(std::move(func)) {}
 
     void do_accept()
     {
@@ -122,10 +130,10 @@ int main()
         lcy::asio::ip::tcp::v4(), 9950);
 
     http_server server(ioc, ep,
-        [](const lcy::bytra::http::request& request,
-           lcy::bytra::http::response& response)
+        [](const req_t& request, res_t& response)
         {
-            std::cout << "request header : " << request.header_to_string() << std::endl;
+            std::cout << "request header : " << request.header_to_string()
+                      << std::endl;
 
             response.set_status(lcy::bytra::http::status::ok);
             response.set_version(lcy::bytra::http::version::http_1_1);
