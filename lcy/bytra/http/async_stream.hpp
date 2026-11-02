@@ -55,7 +55,7 @@ public:
         message_(&message),
         func_(std::move(func)),
         mode_(m),
-        start_parsed_(parser.get_parsed_bytes()) {}
+        parse_bytes_(0) {}
 
     void do_parse()
     {
@@ -87,17 +87,18 @@ public:
                 if ( consumed > 0 ) {
                     buffer_->consume(consumed);
                 }
+                parse_bytes_ += consumed;
 
                 if ( pec ) {
                     if ( pec == lcy::bytra::http::error::wait_more ) {
                         do_parse();
                         return;
                     }
-                    func_(pec, parser_->get_parsed_bytes());
+                    func_(pec, parse_bytes_);
                     return;
                 }
 
-                func_(pec, parser_->get_parsed_bytes());
+                func_(pec, parse_bytes_);
             });
     }
 
@@ -108,7 +109,7 @@ private:
     Message* message_;
     Function func_;
     mode mode_;
-    std::size_t start_parsed_;
+    std::size_t parse_bytes_;
 };
 
 }   // namespace detail

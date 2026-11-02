@@ -87,6 +87,9 @@ target_include_directories(http_response_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR
 add_executable(http_parser_test tests/bytra/http/parser.cc)
 target_include_directories(http_parser_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
+add_executable(http_async_stream_test tests/bytra/http/async_stream.cc)
+target_include_directories(http_async_stream_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
 
 ####### server
 add_executable(http_server_test tests/server/http_server.cc)

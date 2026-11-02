@@ -125,6 +125,8 @@ int main()
         [](const lcy::bytra::http::request& request,
            lcy::bytra::http::response& response)
         {
+            std::cout << "request header : " << request.header_to_string() << std::endl;
+
             response.set_status(lcy::bytra::http::status::ok);
             response.set_version(lcy::bytra::http::version::http_1_1);
             response.set_field("Content-Type", "text/plain; charset=utf-8");
