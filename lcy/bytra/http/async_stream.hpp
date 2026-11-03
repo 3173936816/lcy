@@ -63,43 +63,43 @@ public:
 
         auto view = buffer_->prepare(4096);
         stream_socket_->async_read_some(view,
-            [this, self](lcy::system::error_code ec, std::size_t bytes_transferred) {
-                if ( ec ) {
-                    func_(ec, parser_->get_parsed_bytes());
+                [this, self](lcy::system::error_code ec, std::size_t bytes_transferred) {
+            if ( ec ) {
+                func_(ec, parse_bytes_);
+                return;
+            }
+
+            buffer_->commit(bytes_transferred);
+
+            std::size_t consumed = 0;
+            lcy::system::error_code pec;
+            const char* data = static_cast<const char*>(buffer_->data());
+            const std::size_t size = buffer_->size();
+
+            if ( mode_ == mode::header ) {
+                consumed = parser_->parse_header(data, size, *message_, pec);
+            } else if ( mode_ == mode::body ) {
+                consumed = parser_->parse_body(data, size, *message_, pec);
+            } else {
+                consumed = parser_->parse(data, size, *message_, pec);
+            }
+
+            if ( consumed > 0 ) {
+                buffer_->consume(consumed);
+            }
+            parse_bytes_ += consumed;
+
+            if ( pec ) {
+                if ( pec == lcy::bytra::http::error::wait_more ) {
+                    do_parse();
                     return;
                 }
-
-                buffer_->commit(bytes_transferred);
-
-                lcy::system::error_code pec;
-                const char* data = static_cast<const char*>(buffer_->data());
-                const std::size_t size = buffer_->size();
-
-                std::size_t consumed = 0;
-                if ( mode_ == mode::header ) {
-                    consumed = parser_->parse_header(data, size, *message_, pec);
-                } else if ( mode_ == mode::body ) {
-                    consumed = parser_->parse_body(data, size, *message_, pec);
-                } else {
-                    consumed = parser_->parse(data, size, *message_, pec);
-                }
-
-                if ( consumed > 0 ) {
-                    buffer_->consume(consumed);
-                }
-                parse_bytes_ += consumed;
-
-                if ( pec ) {
-                    if ( pec == lcy::bytra::http::error::wait_more ) {
-                        do_parse();
-                        return;
-                    }
-                    func_(pec, parse_bytes_);
-                    return;
-                }
-
                 func_(pec, parse_bytes_);
-            });
+                return;
+            }
+
+            func_(pec, parse_bytes_);
+        });
     }
 
 private:
