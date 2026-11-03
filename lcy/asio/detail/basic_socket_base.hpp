@@ -48,11 +48,6 @@ public:
 		service_.destroy(impl_);
 	}
 
-	native_handle_type native_handle()
-	{
-		return service_.native_handle(impl_);
-	}
-
 	bool is_open() const
 	{
 		return service_.is_open(impl_);
@@ -249,6 +244,11 @@ public:
 	executor_type& get_executor()
 	{
 		return executor_;
+	}
+
+	native_handle_type native_handle()
+	{
+		return service_.native_handle(impl_);
 	}
 
 protected:
