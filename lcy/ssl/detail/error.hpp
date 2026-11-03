@@ -4,6 +4,7 @@
 #include <openssl/err.h>
 
 #include "lcy/system/error.hpp"
+#include "lcy/ssl/error.hpp"
 
 namespace lcy
 {
@@ -12,13 +13,13 @@ namespace ssl
 namespace detail
 {
 
-class ssl_error_category :
+class ssl_category :
     public lcy::system::error_category
 {
 private:
     friend const lcy::system::error_category& fetch_ssl_category();
 
-    ssl_error_category() {}
+    ssl_category() {}
 
 public:
     const char* name() const override
@@ -28,35 +29,27 @@ public:
 
     const char* message(int errnum) const override
     {
-        const char* msg = ::ERR_reason_error_string(
-            static_cast<unsigned long>(errnum));
-
-        return msg ? msg : "unknown ssl error";
+        switch ( errnum ) {
+        #define XX(xx_errnum, xx_custom_num, xx_errmsg) \
+                case xx_errnum : { return #xx_errmsg; break; }
+            LCY_SSL_ERROR_NUMBER_MAP(XX)
+        #undef XX
+            default : {
+                return "Unknown error";
+            }
+        }
     }
 };
 
 inline const lcy::system::error_category& fetch_ssl_category()
 {
-    static ssl_error_category m;
+    static ssl_category m;
     return m;
 }
 
-inline lcy::system::error_code make_ssl_error_code()
+inline lcy::system::error_code make_ssl_error_code(int errnum = error::success)
 {
-    unsigned long prev_error = 0;
-    unsigned long last_error = 0;
-
-    do {
-        last_error = prev_error;
-        prev_error = ::ERR_get_error();
-    } while ( prev_error );
-
-    if ( last_error == 0 ) {
-        return lcy::system::error_code();
-    }
-
-    return lcy::system::error_code(
-        ERR_GET_REASON(last_error), fetch_ssl_category());
+    return lcy::system::error_code(errnum, fetch_ssl_category());
 }
 
 }   // namespace detail
