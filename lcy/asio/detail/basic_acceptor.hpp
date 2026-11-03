@@ -59,53 +59,6 @@ public:
         return stream_socket_.is_open();
     }
 
-    void open(protocol_type proto)
-    {
-        stream_socket_.open(proto);
-    }
-
-    void close()
-    {
-        stream_socket_.close();
-    }
-
-    void bind(endpoint_type endpoint)
-    {
-        stream_socket_.bind(endpoint);
-    }
-
-    void listen(int backlog)
-    {
-        stream_socket_.listen(backlog);
-    }
-
-    void accept(stream_socket_type& target_socket, endpoint_type& endpoint)
-    {
-        stream_socket_.accept(target_socket, endpoint);
-    }
-
-    template <typename SocketOption>
-    void set_option(SocketOption opt)
-    {
-        stream_socket_.set_option(opt);
-    }
-
-    template <typename SocketOption>
-    void get_option(SocketOption& opt)
-    {
-        stream_socket_.get_option(opt);
-    }
-
-    void local_endpoint(endpoint_type& endpoint)
-    {
-        stream_socket_.local_endpoint(endpoint);
-    }
-
-    void cancel()
-    {
-        stream_socket_.cancel();
-    }
-
     void open(protocol_type proto, lcy::system::error_code& ec)
     {
         stream_socket_.open(proto, ec);
@@ -152,6 +105,53 @@ public:
     void cancel(lcy::system::error_code& ec)
     {
         stream_socket_.cancel(ec);
+    }
+
+    void open(protocol_type proto)
+    {
+        stream_socket_.open(proto);
+    }
+
+    void close()
+    {
+        stream_socket_.close();
+    }
+
+    void bind(endpoint_type endpoint)
+    {
+        stream_socket_.bind(endpoint);
+    }
+
+    void listen(int backlog)
+    {
+        stream_socket_.listen(backlog);
+    }
+
+    void accept(stream_socket_type& target_socket, endpoint_type& endpoint)
+    {
+        stream_socket_.accept(target_socket, endpoint);
+    }
+
+    template <typename SocketOption>
+    void set_option(SocketOption opt)
+    {
+        stream_socket_.set_option(opt);
+    }
+
+    template <typename SocketOption>
+    void get_option(SocketOption& opt)
+    {
+        stream_socket_.get_option(opt);
+    }
+
+    void local_endpoint(endpoint_type& endpoint)
+    {
+        stream_socket_.local_endpoint(endpoint);
+    }
+
+    void cancel()
+    {
+        stream_socket_.cancel();
     }
 
     void async_accept(stream_socket_type& target_socket,
