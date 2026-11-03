@@ -40,7 +40,7 @@ public:
 	{
 		auto self = this->shared_from_this();
 		stream_socket_->async_read_some(buffer_view_,
-				[this, self](const system::error_code& ec, std::size_t bytes_transferred) {
+				[this, self](lcy::system::error_code ec, std::size_t bytes_transferred) {
 			if ( ec ) {
 				func_(ec, total_bytes_transferred_);
 				return;
@@ -92,7 +92,7 @@ public:
 	{
 		auto self = this->shared_from_this();
 		stream_socket_->async_write_some(buffer_view_,
-				[this, self](const system::error_code& ec, std::size_t bytes_transferred) {
+				[this, self](lcy::system::error_code ec, std::size_t bytes_transferred) {
 			if ( ec ) {
 				func_(ec, total_bytes_transferred_);
 				return;
