@@ -308,6 +308,8 @@ public:
 
 		reactor_->cancel_ops(impl.sockfd_,
 			impl.data_, reactor::event_type::read | reactor::event_type::write);
+
+		ec = lcy::system::error_code();
 	}
 
 	template <typename Endpoint>
