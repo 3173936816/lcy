@@ -89,11 +89,6 @@ public:
 		this->close(impl, ignore_ec);
 	}
 
-	native_handle_type native_handle(socket_impl& impl)
-	{
-		return impl.sockfd_;
-	}
-
 	bool is_open(const socket_impl& impl) const
 	{
 		return impl.sockfd_ != -1;
@@ -378,6 +373,11 @@ public:
 		reactor_->start_op(impl.sockfd_,
 			impl.data_, reactor::event_type::write,
 				operation(std::move(send_op)), true);
+	}
+
+	native_handle_type native_handle(socket_impl& impl)
+	{
+		return impl.sockfd_;
 	}
 
 protected:
