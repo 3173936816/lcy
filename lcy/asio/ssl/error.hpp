@@ -13,7 +13,7 @@ namespace ssl
     XX(handshake_failed,            1,  Handshake failed)          \
     XX(certificate_verify_failed,   2,  Certificate verify failed) \
     XX(certificate_expired,         3,  Certificate has expired)   \
-    XX(self_signed_certificate,     4,  Self-signed certificate)   \
+    XX(self_signed_certificate,     4,  Self-Signed certificate)   \
     XX(unable_to_get_issuer,        5,  Unable to get issuer cert) \
     XX(no_certificate,              6,  No certificate)            \
     XX(no_private_key,              7,  No private key)            \
