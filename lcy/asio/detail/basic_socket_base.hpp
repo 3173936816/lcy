@@ -210,7 +210,7 @@ public:
 		lcy::system::error_code ec;
 		service_.local_endpoint(impl_, endpoint, ec);
 		if ( ec ) {
-			throw_asio_exception(ec, "basic_socket_base::remote_endpoint");
+			throw_asio_exception(ec, "basic_socket_base::local_endpoint");
 		}
 	}
 
