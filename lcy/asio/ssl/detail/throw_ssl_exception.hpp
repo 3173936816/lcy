@@ -1,5 +1,5 @@
-#ifndef __LCY_SSL_DETAIL_THROW_SSL_EXCEPTION_HPP__
-#define __LCY_SSL_DETAIL_THROW_SSL_EXCEPTION_HPP__
+#ifndef __LCY_ASIO_SSL_DETAIL_THROW_SSL_EXCEPTION_HPP__
+#define __LCY_ASIO_SSL_DETAIL_THROW_SSL_EXCEPTION_HPP__
 
 #include <string>
 #include <exception>
@@ -7,6 +7,8 @@
 #include "lcy/ssl/detail/error.hpp"
 
 namespace lcy
+{
+namespace asio
 {
 namespace ssl
 {
@@ -31,12 +33,13 @@ private:
 
 inline void throw_ssl_exception(lcy::system::error_code ec, std::string usermsg)
 {
-	std::string msg = "ssl:{" + usermsg + "}: " + ec.message();
+	std::string msg = "asio.ssl:{" + usermsg + "}: " + ec.message();
 	throw ssl_exception(std::move(msg));
 }
 
 }	// namespace detail
 }	// namespace ssl
+}	// namespace asio
 }	// namespace lcy
 
-#endif	// __LCY_SSL_DETAIL_THROW_SSL_EXCEPTION_HPP__
+#endif	// __LCY_ASIO_SSL_DETAIL_THROW_SSL_EXCEPTION_HPP__

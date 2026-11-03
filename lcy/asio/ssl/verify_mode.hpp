@@ -1,7 +1,9 @@
-#ifndef __LCY_SSL_VERIFY_MODE_HPP__
-#define __LCY_SSL_VERIFY_MODE_HPP__
+#ifndef __LCY_ASIO_SSL_VERIFY_MODE_HPP__
+#define __LCY_ASIO_SSL_VERIFY_MODE_HPP__
 
 namespace lcy
+{
+namespace asio
 {
 namespace ssl
 {
@@ -15,6 +17,7 @@ enum verify_mode
 };
 
 }   // namespace ssl
+}   // namespace asio
 }   // namespace lcy
 
-#endif  // __LCY_SSL_VERIFY_MODE_HPP__
+#endif  // __LCY_ASIO_SSL_VERIFY_MODE_HPP__

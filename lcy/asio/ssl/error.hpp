@@ -1,7 +1,9 @@
-#ifndef __LCY_SSL_ERROR_HPP__
-#define __LCY_SSL_ERROR_HPP__
+#ifndef __LCY_ASIO_SSL_ERROR_HPP__
+#define __LCY_ASIO_SSL_ERROR_HPP__
 
 namespace lcy
+{
+namespace asio
 {
 namespace ssl
 {
@@ -32,6 +34,7 @@ enum error
 };
 
 }   // namespace ssl
+}   // namespace asio
 }   // namespace lcy
 
-#endif  // __LCY_SSL_ERROR_HPP__
+#endif  // __LCY_ASIO_SSL_ERROR_HPP__

@@ -1,5 +1,5 @@
-#ifndef __LCY_SSL_DETAIL_ERROR_HPP__
-#define __LCY_SSL_DETAIL_ERROR_HPP__
+#ifndef __LCY_ASIO_SSL_DETAIL_ERROR_HPP__
+#define __LCY_ASIO_SSL_DETAIL_ERROR_HPP__
 
 #include <openssl/err.h>
 
@@ -7,6 +7,8 @@
 #include "lcy/ssl/error.hpp"
 
 namespace lcy
+{
+namespace asio
 {
 namespace ssl
 {
@@ -24,7 +26,7 @@ private:
 public:
     const char* name() const override
     {
-        return "ssl";
+        return "asio.ssl";
     }
 
     const char* message(int errnum) const override
@@ -133,6 +135,7 @@ inline unsigned long last_openssl_error()
 
 }   // namespace detail
 }   // namespace ssl
+}   // namespace asio
 }   // namespace lcy
 
-#endif  // __LCY_SSL_DETAIL_ERROR_HPP__
+#endif  // __LCY_ASIO_SSL_DETAIL_ERROR_HPP__

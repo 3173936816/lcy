@@ -1,5 +1,5 @@
-#ifndef __LCY_SSL_CONTEXT_HPP__
-#define __LCY_SSL_CONTEXT_HPP__
+#ifndef __LCY_ASIO_SSL_CONTEXT_HPP__
+#define __LCY_ASIO_SSL_CONTEXT_HPP__
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -14,6 +14,8 @@
 #include "lcy/ssl/detail/throw_ssl_exception.hpp"
 
 namespace lcy
+{
+namespace asio
 {
 namespace ssl
 {
@@ -169,6 +171,7 @@ private:
 };
 
 }   // namespace ssl
+}   // namespace asio
 }   // namespace lcy
 
-#endif  // __LCY_SSL_CONTEXT_HPP__
+#endif  // __LCY_ASIO_SSL_CONTEXT_HPP__
