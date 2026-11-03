@@ -44,6 +44,11 @@ public:
 		service_.destroy(impl_);
 	}
 
+	void wait(lcy::system::error_code& ec)
+	{
+		service_.wait(impl_, ec);
+	}
+
 	void wait()
 	{
 		lcy::system::error_code ec;
@@ -51,11 +56,6 @@ public:
 		if ( ec ) {
 			detail::throw_asio_exception(ec, "basic_waitable_timer::wait");
 		}
-	}
-
-	void wait(lcy::system::error_code& ec)
-	{
-		service_.wait(impl_, ec);
 	}
 
 	void async_wait(timer_func_type func)
