@@ -7,7 +7,6 @@
 
 #include "lcy/asio/detail/error.hpp"
 #include "lcy/asio/detail/reactor.hpp"
-#include "lcy/asio/detail/throw_asio_exception.hpp"
 #include "lcy/asio/detail/service_registry_base.hpp"
 
 namespace lcy
