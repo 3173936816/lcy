@@ -14,9 +14,10 @@ static void test_construct_destroy()
     std::cout << "[test_construct_destroy]\n";
     scheduler sch(1);
     signal_set_service service(sch.get_reactor());
-
+    
+    lcy::system::error_code ec;
     signal_set_service::signal_set_impl impl;
-    service.construct(impl, { SIGINT });
+    service.construct(impl, { SIGINT }, ec);
     assert(impl.data_ != nullptr);
     service.destroy(impl);
     assert(impl.data_ == nullptr);
@@ -29,8 +30,9 @@ static void test_single_fire()
     scheduler sch(1);
     signal_set_service service(sch.get_reactor());
 
+    lcy::system::error_code ec;
     signal_set_service::signal_set_impl impl;
-    service.construct(impl, { SIGINT });
+    service.construct(impl, { SIGINT }, ec);
 
     bool fired = false;
     int got_signum = -1;
@@ -53,9 +55,10 @@ static void test_two_fire()
     scheduler sch(1);
     signal_set_service service(sch.get_reactor());
 
+    lcy::system::error_code ec;
     signal_set_service::signal_set_impl impl1, impl2;
-    service.construct(impl1, { SIGINT });
-    service.construct(impl2, { SIGINT });
+    service.construct(impl1, { SIGINT }, ec);
+    service.construct(impl2, { SIGINT }, ec);
 
     bool fired1 = false, fired2 = false;
     service.async_wait(impl1, [&](lcy::system::error_code ec, int s) {
@@ -81,9 +84,10 @@ static void test_multi_signals()
     scheduler sch(1);
     signal_set_service service(sch.get_reactor());
 
+    lcy::system::error_code ec;
     signal_set_service::signal_set_impl impl1, impl2;
-    service.construct(impl1, { SIGINT });
-    service.construct(impl2, { SIGTERM });
+    service.construct(impl1, { SIGINT }, ec);
+    service.construct(impl2, { SIGTERM }, ec);
 
     bool fired1 = false, fired2 = false;
     service.async_wait(impl1, [&](lcy::system::error_code ec, int) {
@@ -111,8 +115,9 @@ static void test_cancel()
     scheduler sch(1);
     signal_set_service service(sch.get_reactor());
 
+    lcy::system::error_code ec;
     signal_set_service::signal_set_impl impl;
-    service.construct(impl, { SIGINT });
+    service.construct(impl, { SIGINT }, ec);
 
     bool cancelled = false;
     bool fired = false;
@@ -136,8 +141,9 @@ static void test_multi_mask()
     scheduler sch(1);
     signal_set_service service(sch.get_reactor());
 
+    lcy::system::error_code ec;
     signal_set_service::signal_set_impl impl;
-    service.construct(impl, { SIGINT, SIGHUP });
+    service.construct(impl, { SIGINT, SIGHUP }, ec);
 
     bool fired = false;
     int got = -1;
@@ -161,8 +167,9 @@ static void test_destroy_without_fire()
     signal_set_service service(sch.get_reactor());
 
     {
+        lcy::system::error_code ec;
         signal_set_service::signal_set_impl impl;
-        service.construct(impl, { SIGINT });
+        service.construct(impl, { SIGINT }, ec);
         service.async_wait(impl, [](lcy::system::error_code, int) {});
         service.destroy(impl);
     }
@@ -175,15 +182,12 @@ static void test_invalid_signum()
     scheduler sch(1);
     signal_set_service service(sch.get_reactor());
 
+    lcy::system::error_code ec;
     signal_set_service::signal_set_impl impl;
-    bool thrown = false;
-    try {
-        service.construct(impl, { 0 });
-    } catch ( const std::exception& e ) {
-        thrown = true;
-        std::cout << "  expected throw: " << e.what() << "\n";
-    }
-    assert(thrown);
+    service.construct(impl, { 0 }, ec);
+    
+    std::cout << "  expected error: " << ec.message() << "\n";
+    assert(ec);
 }
 
 int main()

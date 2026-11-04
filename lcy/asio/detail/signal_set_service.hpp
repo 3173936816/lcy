@@ -60,7 +60,8 @@ public:
 	explicit signal_set_service(reactor& r) :
 		reactor_(&r) {}
 
-	void construct(signal_set_impl& impl, std::initializer_list<int> signums)
+	void construct(signal_set_impl& impl,
+		std::initializer_list<int> signums, lcy::system::error_code& ec)
 	{
 		sigset_t mask;
 		sigemptyset(&mask);
@@ -68,9 +69,8 @@ public:
 
 		for ( auto signum : signums ) {
 			if ( signum < SIGHUP || signum > SIGRTMAX ) {
-				lcy::system::error_code ec(
-					lcy::system::error::invalid_argument);
-				throw_asio_exception(ec, "signal_set_service::construct");
+				ec = lcy::system::error_code(lcy::system::error::invalid_argument);
+				return;
 			}
 
 			sigaddset(&mask, signum);

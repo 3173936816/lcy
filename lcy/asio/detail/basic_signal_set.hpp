@@ -23,7 +23,11 @@ public:
 	basic_signal_set(Executor& executor, std::initializer_list<int> signums) :
 		executor_(executor), service_(use_service<signal_set_service>(executor))
 	{
-		service_.construct(impl_, signums);
+		lcy::system::error_code ec;
+		service_.construct(impl_, signums, ec);
+		if ( ec ) {
+			throw_asio_exception(ec, "basic_signal_set::basic_signal_set");
+		}
 	}
 
 	~basic_signal_set()
