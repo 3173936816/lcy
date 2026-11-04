@@ -146,6 +146,21 @@ public:
         ec = lcy::system::error_code();
     }
 
+    void set_verify_depth(int depth)
+    {
+        ::SSL_CTX_set_verify_depth(ssl_ctx_, depth);
+    }
+
+    void set_min_proto_version(int version)
+    {
+        ::SSL_CTX_set_min_proto_version(ssl_ctx_, version);
+    }
+    
+    void set_max_proto_version(int version)
+    {
+        ::SSL_CTX_set_max_proto_version(ssl_ctx_, version);
+    }
+
     void set_verify_mode(verify_mode mode)
     {
         ::SSL_CTX_set_verify(ssl_ctx_, mode, 0);
