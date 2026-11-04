@@ -30,6 +30,12 @@ class basic_ssl_stream_socket :
 public:
     typedef Context context_type;
 
+    enum handshake_type
+    { 
+        client,
+        server 
+    };
+
 public:
     basic_ssl_stream_socket(lcy::asio::io_context& ioc, context_type& context) :
         context_(context), stream_socket_(ioc)
@@ -43,14 +49,16 @@ public:
 
     ~basic_ssl_stream_socket()
     {
-        if ( ssl_ ) {
-            SSL_free(ssl_);
-        }
     }
 
-    void handshake(lcy::system::error_code& ec)
+    void client_handshake(lcy::system::error_code& ec)
     {
         
+    }
+
+    void server_handshake(lcy::system::error_code& ec)
+    {
+
     }
 
     void close(lcy::system::error_code& ec)
@@ -70,9 +78,14 @@ public:
 
     }
 
-    void handshake()
+    void client_handshake()
     {
+        
+    }
 
+    void server_handshake()
+    {
+        
     }
 
     void close()
@@ -92,9 +105,14 @@ public:
 
     }
 
-    void async_handshake(handshake_func_type func)
+    void async_client_handshake(handshake_func_type func)
     {
 
+    }
+
+    void async_server_handshake(handshake_func_type func)
+    {
+        
     }
 
     template <typename MutableBufferView>
