@@ -1,6 +1,8 @@
 #ifndef __LCY_ASIO_SSL_VERIFY_MODE_HPP__
 #define __LCY_ASIO_SSL_VERIFY_MODE_HPP__
 
+#include <openssl/ssl.h>
+
 namespace lcy
 {
 namespace asio
@@ -10,10 +12,10 @@ namespace ssl
 
 enum verify_mode
 {
-    verify_none = 0x0000,
-    verify_peer = 0x0001,
-    verify_fail_if_no_peer_cert = 0x0010,
-    verify_client_once = 0x0100
+    verify_none = SSL_VERIFY_NONE,
+    verify_peer = SSL_VERIFY_PEER,
+    verify_fail_if_no_peer_cert = SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+    verify_client_once = SSL_VERIFY_CLIENT_ONCE
 };
 
 }   // namespace ssl
