@@ -24,10 +24,10 @@ class reactor :
 public:
 	enum event_type
 	{
-		null = 0x0000,
-		read = 0x0001,
-		write = 0x0010,
-		error = 0x0100
+		null = 0x00,
+		read = 0x01,
+		write = 0x02,
+		error = 0x04,
 	};
 
 	struct internal_descriptor_state
