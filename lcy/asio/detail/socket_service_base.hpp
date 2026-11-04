@@ -114,21 +114,25 @@ public:
 
 	void close(socket_impl& impl, lcy::system::error_code& ec)
 	{
-		if ( is_open(impl) ) {
-			reactor_->cancel_ops(impl.sockfd_,
-				impl.data_, reactor::event_type::read | reactor::event_type::write);
-			reactor_->remove_internal_descriptor_state(impl.sockfd_, impl.data_);
-			reactor_->free_internal_descriptor_state(impl.data_);
-			socket_ops::close(impl.sockfd_, ec);
+		if ( !is_open(impl) ) {
+			ec = lcy::system::error_code(
+				lcy::system::error::bad_file_descriptor);
+			return;
 		}
+		
+		reactor_->cancel_ops(impl.sockfd_,
+			impl.data_, reactor::event_type::read | reactor::event_type::write);
+		reactor_->remove_internal_descriptor_state(impl.sockfd_, impl.data_);
+		reactor_->free_internal_descriptor_state(impl.data_);
+		socket_ops::close(impl.sockfd_, ec);
 
 		impl.sockfd_ = -1;
 		impl.data_ = 0;
 	}
 
 	template <typename Endpoint>
-	void bind(socket_impl& impl, Endpoint endpoint,
-		lcy::system::error_code& ec)
+	void bind(socket_impl& impl,
+		Endpoint endpoint, lcy::system::error_code& ec)
 	{
 		if ( !is_open(impl) ) {
 			ec = lcy::system::error_code(
