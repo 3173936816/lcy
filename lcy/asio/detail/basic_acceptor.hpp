@@ -109,49 +109,79 @@ public:
 
     void open(protocol_type proto)
     {
-        stream_socket_.open(proto);
+        lcy::system::error_code ec;
+        stream_socket_.open(proto, ec);
+        if ( ec ) {
+            throw_asio_exception(ec, "basic_acceptor::open");
+        }
     }
 
     void close()
     {
-        stream_socket_.close();
+        lcy::system::error_code ignore_ec;
+        stream_socket_.close(ignore_ec);
     }
 
     void bind(endpoint_type endpoint)
     {
-        stream_socket_.bind(endpoint);
+        lcy::system::error_code ec;
+        stream_socket_.bind(endpoint, ec);
+        if ( ec ) {
+            throw_asio_exception(ec, "basic_acceptor::bind");
+        }
     }
 
     void listen(int backlog)
     {
-        stream_socket_.listen(backlog);
+        lcy::system::error_code ec;
+        stream_socket_.listen(backlog, ec);
+        if ( ec ) {
+            throw_asio_exception(ec, "basic_acceptor::listen");
+        }
     }
 
     void accept(stream_socket_type& target_socket, endpoint_type& endpoint)
     {
-        stream_socket_.accept(target_socket, endpoint);
+        lcy::system::error_code ec;
+        stream_socket_.accept(target_socket, endpoint, ec);
+        if ( ec ) {
+            throw_asio_exception(ec, "basic_acceptor::accept");
+        }
     }
 
     template <typename SocketOption>
     void set_option(SocketOption opt)
     {
-        stream_socket_.set_option(opt);
+        lcy::system::error_code ec;
+        stream_socket_.set_option(opt, ec);
+        if ( ec ) {
+            throw_asio_exception(ec, "basic_acceptor::set_option");
+        }
     }
 
     template <typename SocketOption>
     void get_option(SocketOption& opt)
     {
-        stream_socket_.get_option(opt);
+        lcy::system::error_code ec;
+        stream_socket_.get_option(opt, ec);
+        if ( ec ) {
+            throw_asio_exception(ec, "basic_acceptor::get_option");
+        }
     }
 
     void local_endpoint(endpoint_type& endpoint)
     {
-        stream_socket_.local_endpoint(endpoint);
+        lcy::system::error_code ec;
+        stream_socket_.local_endpoint(endpoint, ec);
+        if ( ec ) {
+            throw_asio_exception(ec, "basic_acceptor::local_endpoint");
+        }
     }
 
     void cancel()
     {
-        stream_socket_.cancel();
+        lcy::system::error_code ignore_ec;
+        stream_socket_.cancel(ignore_ec);
     }
 
     void async_accept(stream_socket_type& target_socket,
