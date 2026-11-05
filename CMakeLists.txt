@@ -96,3 +96,7 @@ target_include_directories(http_async_stream_test PRIVATE ${CMAKE_CURRENT_SOURCE
 ####### server
 add_executable(http_server_test tests/server/http_server.cc)
 target_include_directories(http_server_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+####### epoll
+add_executable(epoll_behavior_test tests/epoll/epoll_behavior.cc)
+target_include_directories(epoll_behavior_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
