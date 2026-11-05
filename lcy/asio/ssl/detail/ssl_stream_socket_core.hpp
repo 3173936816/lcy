@@ -123,6 +123,14 @@ public:
         lcy::asio::ip::tcp::socket& stream_socket,
         lcy::system::error_code& ec)
     {
+        if ( impl.ssl_ ) {
+            ::SSL_shutdown(impl.ssl_);
+        }
+
+        lcy::system::error_code ignore_ec;
+        flush_write_bio(impl, stream_socket, ignore_ec);
+
+        stream_socket.close(ec);
     }
 
     template <typename MutableBufferView>
@@ -178,7 +186,7 @@ private:
     {
         for ( ;; ) {
             int ret = is_client ? ::SSL_connect(impl.ssl_)
-                :SSL_accept(impl.ssl_);
+                ::SSL_accept(impl.ssl_);
 
             if ( ret == 1 ) {
                 ec = lcy::system::error_code();
@@ -188,50 +196,75 @@ private:
             int ssl_error = ::SSL_get_error(impl.ssl_, ret);
 
             if ( ssl_error == SSL_ERROR_WANT_READ ) {
-                auto view = lcy::asio::buffer_view(impl.buffer_, impl.length_);
-                std::size_t n = stream_socket.read_some(view, ec);
-                if ( ec ) {
+                if ( !fill_read_bio(impl, stream_socket, ec) ) {
                     return;
                 }
-
-                if ( n == 0 ) {
-                    ec = make_ssl_error_code(lcy::asio::ssl::error::stream_truncated);
-                    return;
-                }
-
-                ::BIO_write(impl.read_bio_, impl.buffer_, static_cast<int>(n));
-
                 continue;
             }
 
             if ( ssl_error == SSL_ERROR_WANT_WRITE ) {
-                int n = ::BIO_read(impl.write_bio_, impl.buffer_, impl.length_);
-                if ( n <= 0 ) {
-                    ec = make_ssl_error_code(lcy::asio::ssl::error::openssl_error);
+                if ( !flush_write_bio(impl, stream_socket, ec) ) {
                     return;
                 }
-
-                auto view = lcy::asio::buffer_view(impl.buffer_, n);
-                for ( ;; ) {
-                    std::size_t nsend = stream_socket.write_some(view, ec);
-                    if ( ec ) {
-                        return;
-                    }
-
-                    if ( nsend < view.length() ) {
-                        view = view + nsend;
-                        continue;
-                    }
-
-                    break;
-                }
-
                 continue;
             }
 
             ec = map_ssl_error(impl.ssl_, ret);
             return;
         }
+    }
+
+    bool fill_read_bio(ssl_socket_impl& impl,
+        lcy::asio::ip::tcp::socket& stream_socket,
+        lcy::system::error_code& ec)
+    {
+        auto view = lcy::asio::buffer_view(impl.buffer_, impl.length_);
+        std::size_t n = stream_socket.read_some(view, ec);
+        if ( ec ) {
+            return false;
+        }
+
+        if ( n == 0 ) {
+            ec = make_ssl_error_code(lcy::asio::ssl::error::stream_truncated);
+            return false;
+        }
+
+        ::BIO_write(impl.read_bio_, impl.buffer_, static_cast<int>(n));
+
+        return true;
+    }
+
+    bool flush_write_bio(ssl_socket_impl& impl,
+        lcy::asio::ip::tcp::socket& stream_socket,
+        lcy::system::error_code& ec)
+    {
+        for ( ;; ) {
+            int n = ::BIO_read(impl.write_bio_, impl.buffer_, impl.length_);
+            if ( n <= 0 ) {
+                break;
+            }
+
+            auto view = lcy::asio::buffer_view(impl.buffer_, static_cast<std::size_t>(n));
+            for ( ;; ) {
+                std::size_t nsend = stream_socket.write_some(view, ec);
+                if ( ec ) {
+                    return false;
+                }
+
+                if ( nsend == 0 ) {
+                    ec = make_ssl_error_code(lcy::asio::ssl::error::stream_truncated);
+                    return false;
+                }
+
+                if ( nsend == view.length() ) {
+                    break;
+                }
+
+                view = view + nsend;
+            }
+        }
+
+        return true;
     }
 };
 
