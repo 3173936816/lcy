@@ -105,6 +105,34 @@ public:
         impl.length_ = 0;
     }
 
+    void set_hostname(ssl_socket_impl& impl,
+        const std::string& hostname, lcy::system::error_code& ec)
+    {
+        int ret = ::SSL_set_tlsext_host_name(impl.ssl_, hostname.c_str());
+        if ( ret != 1 ) {
+            ec = map_ssl_error(impl.ssl_, ret);
+            return;
+        }
+
+        ec = lcy::system::error_code();
+
+        return true;
+    }
+
+    void set_verify_hostname(ssl_socket_impl& impl,
+        const std::string& hostname, lcy::system::error_code& ec)
+    {
+        int ret = ::SSL_set1_host(impl.ssl_, hostname.c_str());
+        if ( ret != 1 ) {
+            ec = make_ssl_error_code(lcy::asio::ssl::error::openssl_error);
+            return;
+        }
+
+        ec = lcy::system::error_code();
+
+        return true;
+    }
+
     void client_handshake(ssl_socket_impl& impl,
         lcy::asio::ip::tcp::socket& stream_socket,
         lcy::system::error_code& ec)
@@ -138,7 +166,35 @@ public:
         lcy::asio::ip::tcp::socket& stream_socket,
         MutableBufferView buffer_view, lcy::system::error_code& ec)
     {
+		for ( ;; ) {
+			int n = ::SSL_read(impl.ssl_, buffer_view.data(),
+                static_cast<int>(buffer_view.length()));
 
+			if ( n > 0 ) {
+				ec = lcy::system::error_code();
+				return n;
+			}
+
+			int ssl_error = ::SSL_get_error(impl.ssl_, n);
+
+			if ( ssl_error == SSL_ERROR_WANT_READ ) {
+				if ( !fill_read_bio(impl, stream_socket, ec) ) {
+					return 0;
+				}
+				continue;
+			}
+
+			if ( ssl_error == SSL_ERROR_WANT_WRITE ) {
+				if ( !flush_write_bio(impl, stream_socket, ec) ) {
+					return 0;
+				}
+				continue;
+			}
+
+            ec = map_ssl_error(impl.ssl_, ret);
+
+			return 0;
+		}
     }
 
     template <typename ConstBufferView>
@@ -146,7 +202,38 @@ public:
         lcy::asio::ip::tcp::socket& stream_socket,
         ConstBufferView buffer_view, lcy::system::error_code& ec)
     {
+        for ( ;; ) {
+            int ret = ::SSL_write(impl.ssl_, buffer_view.data(),
+                static_cast<int>(buffer_view.length()));
 
+            if ( ret > 0 ) {
+                if ( !flush_write_bio(impl, stream_socket, ec) ) {
+                    return 0;
+                }
+
+                ec = lcy::system::error_code();
+                return static_cast<std::size_t>(ret);
+            }
+
+            int ssl_error = ::SSL_get_error(impl.ssl_, ret);
+
+            if ( ssl_error == SSL_ERROR_WANT_READ ) {
+                if ( !fill_read_bio(impl, stream_socket, ec) ) {
+                    return 0;
+                }
+                continue;
+            }
+            if ( ssl_error == SSL_ERROR_WANT_WRITE ) {
+                if ( !flush_write_bio(impl, stream_socket, ec) ) {
+                    return 0;
+                }
+                continue;
+            }
+
+            ec = map_ssl_error(impl.ssl_, ret);
+
+            return 0;
+        }
     }
 
     void async_server_handshake(ssl_socket_impl& impl,
@@ -210,6 +297,7 @@ private:
             }
 
             ec = map_ssl_error(impl.ssl_, ret);
+
             return;
         }
     }
