@@ -122,6 +122,18 @@ target_include_directories(http_async_stream_test PRIVATE ${CMAKE_CURRENT_SOURCE
 add_executable(http_server_test tests/server/http_server.cc)
 target_include_directories(http_server_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
+add_executable(ssl_http_server_test tests/server/ssl_http_server.cc)
+target_include_directories(ssl_http_server_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_include_directories(ssl_http_server_test PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(ssl_http_server_test PRIVATE
+    OpenSSL::SSL
+    OpenSSL::Crypto
+)
+
 ####### epoll
 add_executable(epoll_behavior_test tests/epoll/epoll_behavior.cc)
 target_include_directories(epoll_behavior_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
