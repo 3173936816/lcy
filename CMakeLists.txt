@@ -69,6 +69,31 @@ target_include_directories(async_stream_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 add_executable(func_type_test tests/asio/func_type.cc)
 target_include_directories(func_type_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
+## ssl
+add_executable(ssl_stream_socket tests/asio/ssl/stream_socket.cc)
+find_package(OpenSSL REQUIRED)
+
+target_include_directories(ssl_stream_socket PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(ssl_stream_socket PRIVATE
+    OpenSSL::SSL
+    OpenSSL::Crypto
+)
+
+add_executable(ssl_c_client tests/asio/ssl/ssl_c_client.cc)
+find_package(OpenSSL REQUIRED)
+
+target_include_directories(ssl_c_client PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(ssl_c_client PRIVATE
+    OpenSSL::SSL
+    OpenSSL::Crypto
+)
+
 ####### bytra
 
 add_executable(flat_buffer_test tests/bytra/flat_buffer.cc)

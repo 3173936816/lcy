@@ -8,10 +8,10 @@
 
 #include "lcy/noncopyable.hpp"
 #include "lcy/system/error.hpp"
-#include "lcy/ssl/error.hpp"
-#include "lcy/ssl/verify_mode.hpp"
-#include "lcy/ssl/detail/error.hpp"
-#include "lcy/ssl/detail/throw_ssl_exception.hpp"
+#include "lcy/asio/ssl/error.hpp"
+#include "lcy/asio/ssl/verify_mode.hpp"
+#include "lcy/asio/ssl/detail/error.hpp"
+#include "lcy/asio/ssl/detail/throw_ssl_exception.hpp"
 
 namespace lcy
 {

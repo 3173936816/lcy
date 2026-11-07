@@ -4,7 +4,7 @@
 #include <openssl/err.h>
 
 #include "lcy/system/error.hpp"
-#include "lcy/ssl/error.hpp"
+#include "lcy/asio/ssl/error.hpp"
 
 namespace lcy
 {
@@ -110,7 +110,6 @@ inline lcy::system::error_code map_ssl_error(SSL* ssl, int ret)
                     case SSL_R_NO_SHARED_CIPHER:
                     case SSL_R_UNKNOWN_PROTOCOL:
                     case SSL_R_UNKNOWN_SSL_VERSION:
-                    case SSL_R_UNKNOWN_CIPHER:
                         return make_ssl_error_code(error::unknown_protocol);
                     case SSL_R_UNEXPECTED_EOF_WHILE_READING:
                         return make_ssl_error_code(error::stream_truncated);

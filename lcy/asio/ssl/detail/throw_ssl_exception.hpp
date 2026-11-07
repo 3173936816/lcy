@@ -4,7 +4,7 @@
 #include <string>
 #include <exception>
 
-#include "lcy/ssl/detail/error.hpp"
+#include "lcy/asio/ssl/detail/error.hpp"
 
 namespace lcy
 {
