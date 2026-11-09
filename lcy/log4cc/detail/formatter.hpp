@@ -1,0 +1,23 @@
+#ifndef __LCY_LOG4CC_DETAIL_FORMATTER_HPP__
+#define __LCY_LOG4CC_DETAIL_FORMATTER_HPP__
+
+namespace lcy
+{
+namespace log4cc
+{
+namespace detail
+{
+
+class formatter
+{
+public:
+
+private:
+
+};
+
+}   // namespace detail
+}   // namespace log4cc
+}   // namespace lcy
+
+#endif  // __LCY_LOG4CC_DETAIL_FORMATTER_HPP__
