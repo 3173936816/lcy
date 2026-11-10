@@ -30,7 +30,7 @@ class level :
 public:
     void get_item(event& e, std::ostringstream& oss) const override
     {
-        oss << level_to_string(e.level_, "<error_fromat>");
+        oss << level_to_string(e.level_);
     }
 };
 
@@ -186,46 +186,46 @@ void formatter::parse_pattern()
         char spec = pattern_[++i];
 
         switch ( spec ) {
-            case '%': {
+            case '%' : {
                 literal.push_back('%');
                 break;
             }
-            case 'l': {
+            case 'l' : {
                 flush_literal();
                 items_.push_back(new items::level());
                 break;
             }
-            case 'p': {
+            case 'p' : {
                 flush_literal();
                 items_.push_back(new items::pid());
                 break;
             }
-            case 't': {
+            case 't' : {
                 flush_literal();
                 items_.push_back(new items::thread_id());
                 break;
             }
-            case 'd': {
+            case 'd' : {
                 flush_literal();
                 items_.push_back(new items::time());
                 break;
             }
-            case 'f': {
+            case 'f' : {
                 flush_literal();
                 items_.push_back(new items::file());
                 break;
             }
-            case 'n': {
+            case 'n' : {
                 flush_literal();
                 items_.push_back(new items::line());
                 break;
             }
-            case 'c': {
+            case 'c' : {
                 flush_literal();
                 items_.push_back(new items::logger_name());
                 break;
             }
-            case 'm': {
+            case 'm' : {
                 flush_literal();
                 items_.push_back(new items::message());
                 break;
