@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/types.h>
+#include <sys/syscall.h>
 
 #include "lcy/log4cc/level.hpp"
 
@@ -18,15 +19,19 @@ namespace log4cc
 namespace detail
 {
 
-inline pid_t current_pid() {
+namespace internal {
+
+inline pid_t pid() {
     thread_local pid_t pid = ::getpid();
     return pid;
 }
 
-inline pthread_t current_thread_id() {
-    thread_local pthread_t tid = ::pthread_self();
+inline pid_t thread_id() {
+    thread_local pid_t tid = ::syscall(SYS_gettid);
     return tid;
 }
+
+}   // namespace internal
 
 struct event
 {
@@ -39,10 +44,13 @@ struct event
     std::string logger_name_;
     std::ostringstream oss_;
 
-    event(level l, std::string file_name, std::size_t file_line, std::string logger_name) :
+    event(level l,
+          std::string file_name,
+          std::size_t file_line,
+          std::string logger_name) :
         level_(l),
-        pid_(current_pid()),
-        thread_id_(current_thread_id()),
+        pid_(internal::pid()),
+        thread_id_(internal::thread_id()),
         timestamp_(std::time(0)),
         file_name_(std::move(file_name)),
         file_line_(file_line),

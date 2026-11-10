@@ -18,7 +18,8 @@ namespace log4cc
 
 enum level
 {
-#define XX(xx_num, xx_name, xx_str) xx_name = xx_num,
+#define XX(xx_num, xx_name, xx_str) \
+        xx_name = xx_num,
     LCY_LOG4CC_LEVEL_MAP(XX)
 #undef XX
 };
@@ -27,7 +28,7 @@ inline std::string level_to_string(level l, const std::string& default_value = "
 {
     switch ( l ) {
     #define XX(xx_num, xx_name, xx_str) \
-            case name : { return #str };
+            case xx_name : { return #xx_str; }
         LCY_LOG4CC_LEVEL_MAP(XX)
     #undef XX
         default: {
@@ -39,7 +40,7 @@ inline std::string level_to_string(level l, const std::string& default_value = "
 inline bool level_from_string(const std::string& s, level& outl)
 {
 #define XX(xx_num, xx_name, xx_str) \
-        if ( s == #xx_str ) { outl = level::xx_name, return true; }
+        if ( s == #xx_str ) { outl = level::xx_name; return true; }
     LCY_LOG4CC_LEVEL_MAP(XX)
 #undef XX
     return false;
