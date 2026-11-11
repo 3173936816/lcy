@@ -110,7 +110,3 @@ target_link_libraries(ssl_http_server_test PRIVATE
 
 add_executable(epoll_behavior_test epoll/epoll_behavior.cc)
 target_include_directories(epoll_behavior_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
-
-####### log4cc
-add_executable(log4cc_formatter_test log4cc/formatter.cc)
-target_include_directories(log4cc_formatter_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)

@@ -131,22 +131,19 @@ public:
     }
 
     void client_handshake(ssl_socket_impl& impl,
-        lcy::asio::ip::tcp::socket& stream_socket,
-        lcy::system::error_code& ec)
+        lcy::asio::ip::tcp::socket& stream_socket, lcy::system::error_code& ec)
     {
         handshake(impl, stream_socket, ec, true);
     }
 
     void server_handshake(ssl_socket_impl& impl,
-        lcy::asio::ip::tcp::socket& stream_socket,
-        lcy::system::error_code& ec)
+        lcy::asio::ip::tcp::socket& stream_socket, lcy::system::error_code& ec)
     {
         handshake(impl, stream_socket, ec, false);
     }
 
     void close(ssl_socket_impl& impl,
-        lcy::asio::ip::tcp::socket& stream_socket,
-        lcy::system::error_code& ec)
+        lcy::asio::ip::tcp::socket& stream_socket, lcy::system::error_code& ec)
     {
         if ( impl.ssl_ ) {
             ::SSL_shutdown(impl.ssl_);
@@ -247,15 +244,13 @@ public:
     }
 
     void async_client_handshake(ssl_socket_impl& impl,
-        lcy::asio::ip::tcp::socket& stream_socket,
-        handshake_func_type func)
+        lcy::asio::ip::tcp::socket& stream_socket, handshake_func_type func)
     {
         async_handshake(impl, stream_socket, true, std::move(func));
     }
 
     void async_server_handshake(ssl_socket_impl& impl,
-        lcy::asio::ip::tcp::socket& stream_socket,
-        handshake_func_type func)
+        lcy::asio::ip::tcp::socket& stream_socket, handshake_func_type func)
     {
         async_handshake(impl, stream_socket, false, std::move(func));
     }
@@ -268,10 +263,12 @@ public:
         if ( !stream_socket.is_open() ) {
             lcy::system::error_code ec(
                 lcy::system::error::bad_file_descriptor);
+
             lcy::asio::post(stream_socket.get_executor(),
                 [func, ec]() {
                     func(ec, 0);
                 });
+
             return;
         }
 
@@ -297,14 +294,14 @@ public:
                 [&impl, &stream_socket, buffer_view, func, this]() {
                     async_read_some(impl, stream_socket, buffer_view, func);
                 });
+
             return;
         }
 
         lcy::system::error_code ec = map_ssl_error(impl.ssl_, ret);
-        lcy::asio::post(stream_socket.get_executor(),
-            [func, ec]() {
-                func(ec, 0);
-            });
+        lcy::asio::post(stream_socket.get_executor(), [func, ec]() {
+        	func(ec, 0);
+        });
     }
 
     template <typename ConstBufferView>
@@ -315,10 +312,12 @@ public:
         if ( !stream_socket.is_open() ) {
             lcy::system::error_code ec(
                 lcy::system::error::bad_file_descriptor);
+
             lcy::asio::post(stream_socket.get_executor(),
                 [func, ec]() {
                     func(ec, 0);
                 });
+
             return;
         }
 
@@ -334,6 +333,7 @@ public:
                     lcy::system::error_code ec;
                     func(ec, static_cast<std::size_t>(ret));
                 });
+
             return;
         }
 
@@ -347,14 +347,14 @@ public:
                 [&impl, &stream_socket, buffer_view, func, this]() {
                     async_write_some(impl, stream_socket, buffer_view, func);
                 });
+
             return;
         }
 
         lcy::system::error_code ec = map_ssl_error(impl.ssl_, ret);
-        lcy::asio::post(stream_socket.get_executor(),
-            [func, ec]() {
-                func(ec, 0);
-            });
+        lcy::asio::post(stream_socket.get_executor(), [func, ec]() {
+        	func(ec, 0);
+        });
     }
 
 private:
@@ -367,8 +367,7 @@ private:
     typedef std::function<void()> next_func_type;
 
     bool fill_read_bio(ssl_socket_impl& impl,
-        lcy::asio::ip::tcp::socket& stream_socket,
-        lcy::system::error_code& ec)
+        lcy::asio::ip::tcp::socket& stream_socket, lcy::system::error_code& ec)
     {
         auto view = lcy::asio::buffer_view(impl.buffer_, impl.length_);
         std::size_t n = stream_socket.read_some(view, ec);
@@ -387,8 +386,7 @@ private:
     }
 
     bool flush_write_bio(ssl_socket_impl& impl,
-        lcy::asio::ip::tcp::socket& stream_socket,
-        lcy::system::error_code& ec)
+        lcy::asio::ip::tcp::socket& stream_socket, lcy::system::error_code& ec)
     {
         for ( ;; ) {
             int n = ::BIO_read(impl.write_bio_, impl.buffer_, impl.length_);
@@ -491,18 +489,18 @@ private:
     {
         int n = ::BIO_read(impl.write_bio_, impl.buffer_, impl.length_);
         if ( n <= 0 ) {
-            lcy::asio::post(stream_socket.get_executor(),
-                [next_func]() {
-                    next_func();
-                });
+            lcy::asio::post(stream_socket.get_executor(), [next_func]() {
+            	next_func();
+            });
+
             return;
         }
 
         auto view = lcy::asio::buffer_view(impl.buffer_, static_cast<std::size_t>(n));
         async_write_loop(impl, stream_socket, view, static_cast<std::size_t>(n), 0, error_func,
-            [&impl, &stream_socket, error_func, next_func, this]() {
-                async_flush_write_bio(impl, stream_socket, error_func, next_func);
-            });
+            	[&impl, &stream_socket, error_func, next_func, this]() {
+        	async_flush_write_bio(impl, stream_socket, error_func, next_func);
+        });
     }
 
     template <typename ConstBufferView>
@@ -512,10 +510,10 @@ private:
         error_func_type error_func, next_func_type next_func)
     {
         if ( written == total ) {
-            lcy::asio::post(stream_socket.get_executor(),
-                [next_func]() {
-                    next_func();
-                });
+            lcy::asio::post(stream_socket.get_executor(), [next_func]() {
+            	next_func();
+            });
+
             return;
         }
 
@@ -546,7 +544,7 @@ private:
         error_func_type error_func, next_func_type next_func)
     {
         async_flush_write_bio(impl, stream_socket, error_func,
-            [&impl, &stream_socket, error_func, next_func, this]() {
+            	[&impl, &stream_socket, error_func, next_func, this]() {
             async_fill_read_bio(impl, stream_socket, error_func, next_func);
         });
     }
@@ -571,10 +569,11 @@ private:
         if ( !stream_socket.is_open() ) {
             lcy::system::error_code ec(
                 lcy::system::error::bad_file_descriptor);
-            lcy::asio::post(stream_socket.get_executor(),
-                [func, ec]() {
-                    func(ec);
-                });
+
+            lcy::asio::post(stream_socket.get_executor(), [func, ec]() {
+            	func(ec);
+            });
+
             return;
         }
 
@@ -582,11 +581,11 @@ private:
             : ::SSL_accept(impl.ssl_);
 
         if ( ret == 1 ) {
-            lcy::asio::post(stream_socket.get_executor(),
-                [func]() {
-                    lcy::system::error_code ec;
-                    func(ec);
-                });
+            lcy::asio::post(stream_socket.get_executor(), [func]() {
+            	lcy::system::error_code ec;
+                func(ec);
+            });
+
             return;
         }
 
@@ -601,10 +600,9 @@ private:
         }
 
         lcy::system::error_code ec = map_ssl_error(impl.ssl_, ret);
-        lcy::asio::post(stream_socket.get_executor(),
-            [func, ec]() {
-                func(ec);
-            });
+        lcy::asio::post(stream_socket.get_executor(), [func, ec]() {
+        	func(ec);
+        });
     }
 };
 

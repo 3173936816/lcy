@@ -98,7 +98,8 @@ public:
             ret = ::SSL_CTX_use_certificate_file(ssl_ctx_, file.c_str(), SSL_FILETYPE_ASN1);
         }
         if ( ret != 1 ) {
-            ec = detail::make_ssl_error_code(lcy::asio::ssl::error::bad_certificate);
+            ec = detail::make_ssl_error_code(
+				lcy::asio::ssl::error::bad_certificate);
             return;
         }
 
@@ -110,14 +111,17 @@ public:
     {
         int type = (fmt == file_format::pem)
             ? SSL_FILETYPE_PEM : SSL_FILETYPE_ASN1;
+
         int ret = ::SSL_CTX_use_PrivateKey_file(ssl_ctx_, file.c_str(), type);
         if ( ret != 1 ) {
-            ec = detail::make_ssl_error_code(lcy::asio::ssl::error::no_private_key);
+            ec = detail::make_ssl_error_code(
+				lcy::asio::ssl::error::no_private_key);
             return;
         }
 
         if ( ::SSL_CTX_check_private_key(ssl_ctx_) != 1 ) {
-            ec = detail::make_ssl_error_code(lcy::asio::ssl::error::no_private_key);
+            ec = detail::make_ssl_error_code(
+				lcy::asio::ssl::error::no_private_key);
             return;
         }
 
@@ -128,7 +132,8 @@ public:
     {
         int ret = ::SSL_CTX_load_verify_locations(ssl_ctx_, file.c_str(), 0);
         if ( ret != 1 ) {
-            ec = detail::make_ssl_error_code(lcy::asio::ssl::error::certificate_verify_failed);
+            ec = detail::make_ssl_error_code(
+				lcy::asio::ssl::error::certificate_verify_failed);
             return;
         }
 
@@ -139,7 +144,8 @@ public:
     {
         int ret = ::SSL_CTX_set_default_verify_paths(ssl_ctx_);
         if ( ret != 1 ) {
-            ec = detail::make_ssl_error_code(lcy::asio::ssl::error::certificate_verify_failed);
+            ec = detail::make_ssl_error_code(
+				lcy::asio::ssl::error::certificate_verify_failed);
             return;
         }
 

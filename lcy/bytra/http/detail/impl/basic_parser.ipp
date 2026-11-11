@@ -21,7 +21,8 @@ namespace
 
 inline char ascii_lower(char c)
 {
-    return ( c >= 'A' && c <= 'Z' ) ? static_cast<char>(c - 'A' + 'a') : c;
+    return ( c >= 'A' && c <= 'Z' ) ?
+		static_cast<char>(c - 'A' + 'a') : c;
 }
 
 inline bool iequals(const char* b, const char* e, const char* lit)

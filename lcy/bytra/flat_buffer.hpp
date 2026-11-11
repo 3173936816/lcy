@@ -93,7 +93,7 @@ private:
     std::vector<char> buffer_;
 };
 
-}   // namespace bytra
+}	// namespace bytra
 }	// namespace lcy
 
-#endif  // __LCY_BYTRA_FLAT_BUFFER_HPP__
+#endif	// __LCY_BYTRA_FLAT_BUFFER_HPP__
