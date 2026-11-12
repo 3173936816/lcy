@@ -264,10 +264,9 @@ public:
             lcy::system::error_code ec(
                 lcy::system::error::bad_file_descriptor);
 
-            lcy::asio::post(stream_socket.get_executor(),
-                [func, ec]() {
-                    func(ec, 0);
-                });
+            lcy::asio::post(stream_socket.get_executor(), [func, ec]() {
+                func(ec, 0);
+            });
 
             return;
         }
@@ -313,10 +312,9 @@ public:
             lcy::system::error_code ec(
                 lcy::system::error::bad_file_descriptor);
 
-            lcy::asio::post(stream_socket.get_executor(),
-                [func, ec]() {
-                    func(ec, 0);
-                });
+            lcy::asio::post(stream_socket.get_executor(), [func, ec]() {
+                func(ec, 0);
+            });
 
             return;
         }
