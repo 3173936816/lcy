@@ -1,10 +1,63 @@
 #ifndef __LCY_LOG4CC_FORMATTER_HPP__
 #define __LCY_LOG4CC_FORMATTER_HPP__
 
+#include <list>
+#include <memory>
+#include <sstream>
+#include <string>
+
+#include "lcy/noncopyable.hpp"
+#include "lcy/log4cc/detail/items.hpp"
+
 namespace lcy
 {
 namespace log4cc
 {
+
+template <typename RecordSptr>
+class formatter :
+    private noncopyable
+{
+public:
+    typedef std::shared_ptr<formatter> sptr_type;
+
+public:
+    formatter() :
+        pattern_("[%d{%Y-%m-%d %H:%M:%S}] [%l] [pid:%p] [tid:%t] [%f:%n] [%c] %m%E")
+    {
+        detail::parse_pattern<RecordSptr>(pattern_, items_);
+    }
+
+    explicit formatter(std::string pattern) :
+        pattern_(std::move(pattern))
+    {
+        detail::parse_pattern<RecordSptr>(pattern_, items_);
+    }
+
+    const std::string& get_pattern() const
+    {
+        return pattern_;
+    }
+
+    std::string format(RecordSptr rsptr) const
+    {
+        std::ostringstream oss;
+
+        for ( const auto& item : items_ ) {
+            item->format(rsptr, oss);
+        }
+
+        return oss.str();
+    }
+
+private:
+    typedef typename detail::item_base<
+        RecordSptr
+    >::sptr_type item_sptr_type;
+
+    std::string pattern_;
+    std::list<item_sptr_type> items_;
+};
 
 }   // namespace log4cc
 }   // namespace lcy

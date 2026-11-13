@@ -78,7 +78,7 @@ public:
         return oss_.str();
     }
 
-    const std::ostringstream& get_oss() const
+    std::ostringstream& get_oss()
     {
         return oss_;
     }

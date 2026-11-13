@@ -25,7 +25,25 @@ public:
     virtual void format(RecordSptr rsptr, std::ostringstream& oss) = 0;
 };
 
-void parse_pattern(const std::string& pattern, std::list<item_base::sptr_type>& items);
+/*
+ *    %l	level
+ *    %p	pid
+ *    %t	thread_id
+ *    %d	timestamp
+ *    %f	file_name
+ *    %n	file_line
+ *    %c	logger_name
+ *    %m	message
+ *    %T	tab
+ *    %E	enter
+ *    %%	literal
+ * 
+ * default: "[%d{%Y-%m-%d %H:%M:%S}] [%l] [pid:%p] [tid:%t] [%f:%n] [%c] %m%E"
+ */
+
+template <typename RecordSptr>
+void parse_pattern(const std::string& pattern,
+    std::list<typename item_base<RecordSptr>::sptr_type>& items);
 
 }   // namespace detail
 }   // namespace log4cc
