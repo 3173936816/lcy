@@ -7,6 +7,7 @@
 #include <string>
 
 #include "lcy/noncopyable.hpp"
+#include "lcy/log4cc/record.hpp"
 #include "lcy/log4cc/detail/items.hpp"
 
 namespace lcy
@@ -14,7 +15,6 @@ namespace lcy
 namespace log4cc
 {
 
-template <typename RecordSptr>
 class formatter :
     private noncopyable
 {
@@ -25,13 +25,13 @@ public:
     formatter() :
         pattern_("[%d{%Y-%m-%d %H:%M:%S}] [%l] [pid:%p] [tid:%t] [%f:%n] [%c] %m%E")
     {
-        detail::parse_pattern<RecordSptr>(pattern_, items_);
+        detail::parse_pattern<record::sptr_type>(pattern_, items_);
     }
 
     explicit formatter(std::string pattern) :
         pattern_(std::move(pattern))
     {
-        detail::parse_pattern<RecordSptr>(pattern_, items_);
+        detail::parse_pattern<record::sptr_type>(pattern_, items_);
     }
 
     const std::string& get_pattern() const
@@ -39,7 +39,7 @@ public:
         return pattern_;
     }
 
-    std::string format(RecordSptr rsptr) const
+    std::string format(record::sptr_type rsptr) const
     {
         std::ostringstream oss;
 
@@ -52,7 +52,7 @@ public:
 
 private:
     typedef typename detail::item_base<
-        RecordSptr
+        record::sptr_type
     >::sptr_type item_sptr_type;
 
     std::string pattern_;

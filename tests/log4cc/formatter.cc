@@ -15,7 +15,6 @@ namespace
 {
 
 typedef std::shared_ptr<record> record_sptr;
-typedef formatter<record_sptr> record_formatter;
 
 record_sptr make_record(level l,
                         const char* file,
@@ -36,7 +35,7 @@ void print(const char* title, const std::string& out)
 
 void test_default_pattern()
 {
-    record_formatter f;
+    formatter f;
 
     assert(f.get_pattern() ==
            "[%d{%Y-%m-%d %H:%M:%S}] [%l] [pid:%p] [tid:%t] [%f:%n] [%c] %m%E");
@@ -60,7 +59,7 @@ void test_default_pattern()
 
 void test_custom_pattern()
 {
-    record_formatter f("%l %m");
+    formatter f("%l %m");
 
     auto rsptr = make_record(level::warn, "x.cpp", 7, "lg", "msg");
 
@@ -73,7 +72,7 @@ void test_custom_pattern()
 
 void test_timestamp_custom_format()
 {
-    record_formatter f("%d{%Y/%m/%d}");
+    formatter f("%d{%Y/%m/%d}");
 
     auto rsptr = make_record(level::info, "a.cpp", 1, "lg", "");
 
@@ -87,7 +86,7 @@ void test_timestamp_custom_format()
 
 void test_timestamp_default_format()
 {
-    record_formatter f("%d");
+    formatter f("%d");
 
     auto rsptr = make_record(level::info, "a.cpp", 1, "lg", "");
 
@@ -101,7 +100,7 @@ void test_timestamp_default_format()
 
 void test_literal_only()
 {
-    record_formatter f("hello world");
+    formatter f("hello world");
 
     auto rsptr = make_record(level::info, "a.cpp", 1, "lg", "");
 
@@ -114,7 +113,7 @@ void test_literal_only()
 
 void test_all_placeholders()
 {
-    record_formatter f("[%d{%H:%M:%S}] [%l] [pid:%p] [tid:%t] [%f:%n] [%c] %m%E");
+    formatter f("[%d{%H:%M:%S}] [%l] [pid:%p] [tid:%t] [%f:%n] [%c] %m%E");
 
     auto rsptr = make_record(level::fatal, "file.cpp", 99, "app", "boom");
 
@@ -132,7 +131,7 @@ void test_all_placeholders()
 
 void test_tab_and_enter()
 {
-    record_formatter f("%l%T%m%E");
+    formatter f("%l%T%m%E");
 
     auto rsptr = make_record(level::info, "a.cpp", 1, "lg", "ok");
 
@@ -145,7 +144,7 @@ void test_tab_and_enter()
 
 void test_percent_escape()
 {
-    record_formatter f("100%% done: %m");
+    formatter f("100%% done: %m");
 
     auto rsptr = make_record(level::info, "a.cpp", 1, "lg", "ok");
 
@@ -158,7 +157,7 @@ void test_percent_escape()
 
 void test_unknown_placeholder()
 {
-    record_formatter f("%x %m");
+    formatter f("%x %m");
 
     auto rsptr = make_record(level::info, "a.cpp", 1, "lg", "ok");
 
@@ -171,7 +170,7 @@ void test_unknown_placeholder()
 
 void test_trailing_percent()
 {
-    record_formatter f("end%");
+    formatter f("end%");
 
     auto rsptr = make_record(level::info, "a.cpp", 1, "lg", "");
 
@@ -184,7 +183,7 @@ void test_trailing_percent()
 
 void test_empty_pattern()
 {
-    record_formatter f("");
+    formatter f("");
 
     auto rsptr = make_record(level::info, "a.cpp", 1, "lg", "ignored");
 
@@ -197,7 +196,7 @@ void test_empty_pattern()
 
 void test_empty_message()
 {
-    record_formatter f("[%l] %m");
+    formatter f("[%l] %m");
 
     auto rsptr = make_record(level::info, "a.cpp", 1, "lg", "");
 
@@ -210,7 +209,7 @@ void test_empty_message()
 
 void test_repeated_format()
 {
-    record_formatter f("[%l] %m");
+    formatter f("[%l] %m");
 
     auto r1 = make_record(level::info, "a.cpp", 1, "lg", "one");
     auto r2 = make_record(level::warn, "a.cpp", 2, "lg", "two");
@@ -228,7 +227,7 @@ void test_default_format_output()
         level::info, "main.cpp", 42, "root");
     rsptr->get_oss() << "hello webcc";
 
-    record_formatter f;
+    formatter f;
 
     std::string out = f.format(rsptr);
 
