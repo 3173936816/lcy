@@ -67,6 +67,13 @@ public:
         }
     }
 
+    void reload()
+    {
+        for ( const auto& appender : appenders_ ) {
+            appender->reload();
+        }
+    }
+
     void log(record::sptr_type rsptr)
     {
         if ( !should_log(rsptr->get_level()) ) {
