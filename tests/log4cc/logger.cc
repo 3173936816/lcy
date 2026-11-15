@@ -315,12 +315,12 @@ void test_logger_dispatch()
 
 int main()
 {
-    // test_level();
-    // test_record();
-    // test_formatter();
-    // test_logger();
-    // test_file_appender();
-    // test_rotating_file_appender();
+    test_level();
+    test_record();
+    test_formatter();
+    test_logger();
+    test_file_appender();
+    test_rotating_file_appender();
     test_logger_dispatch();
 
     std::cout << "passed: " << g_passed
