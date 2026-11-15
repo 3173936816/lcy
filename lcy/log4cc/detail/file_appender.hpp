@@ -46,6 +46,8 @@ public:
 
     void flush() override
     {
+        std::lock_guard<mutex_type> locker(mutex_);
+
         if ( ofs_.is_open() ) {
             ofs_ << std::flush;
         }

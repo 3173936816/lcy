@@ -32,6 +32,7 @@ public:
 
     void flush() override
     {
+        std::lock_guard<mutex_type> locker(mutex_);
         std::cout << std::flush;
     }
 
