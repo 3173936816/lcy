@@ -115,3 +115,6 @@ target_include_directories(epoll_behavior_test PRIVATE ${CMAKE_CURRENT_SOURCE_DI
 ###### log4cc
 add_executable(log4cc_formatter_test log4cc/formatter.cc)
 target_include_directories(log4cc_formatter_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
+add_executable(log4cc_logger_test log4cc/logger.cc)
+target_include_directories(log4cc_logger_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)

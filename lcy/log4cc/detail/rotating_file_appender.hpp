@@ -60,6 +60,13 @@ public:
         written_ = file_ops::file_size(full_path_);
     }
 
+    void flush() override
+    {
+        if ( ofs_.is_open() ) {
+            ofs_ << std::flush;
+        }
+    }
+
     void log(record::sptr_type rsptr) override
     {
         std::string archived_file_name;

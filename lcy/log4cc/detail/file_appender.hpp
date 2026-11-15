@@ -44,6 +44,13 @@ public:
         open_file();
     }
 
+    void flush() override
+    {
+        if ( ofs_.is_open() ) {
+            ofs_ << std::flush;
+        }
+    }
+
     void log(record::sptr_type rsptr) override
     {
         if ( base_type::formatter_ ) {

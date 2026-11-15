@@ -30,6 +30,7 @@ public:
     }
 
     virtual void reload() = 0;
+    virtual void flush() = 0;
     virtual void log(record::sptr_type rsptr) = 0;
 
 protected:

@@ -104,7 +104,8 @@ inline std::size_t scan_file_index(const std::string& full_path)
 inline void renamefile(const std::string& from, const std::string& to)
 {
     if ( ::rename(from.c_str(), to.c_str()) != 0 ) {
-        throw_log4cc_exception("renamefile rename "
+        lcy::system::error_code ec(errno);
+        throw_log4cc_exception(ec, "renamefile rename "
             + from + " -> " + to + " error");
     }
 }

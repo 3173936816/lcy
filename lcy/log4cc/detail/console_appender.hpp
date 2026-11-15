@@ -30,6 +30,11 @@ public:
         // nothing to do
     }
 
+    void flush() override
+    {
+        std::cout << std::flush;
+    }
+
     void log(record::sptr_type rsptr) override
     {
         if ( base_type::formatter_ ) {
