@@ -19,18 +19,6 @@ namespace detail
 namespace file_ops
 {
 
-inline std::string file_stem(const std::string& full_path)
-{
-    std::string base = filename(full_path);
-    std::size_t dot = base.find_last_of('.');
-
-    if ( dot == std::string::npos || dot == 0 ) {
-        return base;
-    }
-
-    return base.substr(0, dot);
-}
-
 inline std::string filename(const std::string& full_path)
 {
     std::size_t slash = full_path.find_last_of('/');

@@ -49,7 +49,7 @@ public:
         if ( base_type::formatter_ ) {
             std::string message = base_type::formatter_->format(rsptr);
 
-            std::lock_guard<Mutex> locker(mutex_);
+            std::lock_guard<mutex_type> locker(mutex_);
             ofs_ << message;
         }
     }
@@ -57,7 +57,7 @@ public:
 private:
     void open_file()
     {
-        ofs_.open(file_name_, std::io_base::app);
+        ofs_.open(file_name_, std::ios_base::app);
         if ( !ofs_.is_open() ) {
             lcy::system::error_code ec(errno);
             throw_log4cc_exception(ec, "file_appender::open_file");

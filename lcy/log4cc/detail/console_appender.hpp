@@ -40,7 +40,7 @@ public:
         }
     }
 
-public:
+private:
     mutex_type mutex_;
 };
 

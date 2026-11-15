@@ -7,7 +7,7 @@
 
 namespace lcy
 {
-namespace lo4cc
+namespace log4cc
 {
 
 typedef detail::console_appender<

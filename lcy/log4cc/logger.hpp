@@ -76,7 +76,7 @@ public:
 
     void log(record::sptr_type rsptr)
     {
-        if ( !should_log(rsptr->get_level()) ) {
+        if ( !rsptr || !should_log(rsptr->get_level()) ) {
             return;
         }
 

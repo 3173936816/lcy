@@ -11,7 +11,7 @@ namespace detail
 {
 
 class null_mutex :
-    public noncopyable
+    private noncopyable
 {
 public:
     void lock() {}
