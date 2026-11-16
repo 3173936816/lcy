@@ -34,14 +34,14 @@ public:
         return name_;
     }
 
-    void set_level(level l)
-    {
-        level_ = l;
-    }
-
     level get_level() const
     {
         return level_;
+    }
+
+    void set_level(level l)
+    {
+        level_ = l;
     }
 
     bool should_log(level l) const
@@ -49,15 +49,15 @@ public:
         return l >= level_;
     }
 
+    formatter::sptr_type get_formatter()
+	{
+		return formatter_;
+	}
+
     void set_formatter(formatter::sptr_type f)
     {
 		formatter_ = f;
     }
-
-	formatter::sptr_type get_formatter()
-	{
-		return formatter_;
-	}
 
     void add_appender(appender_base::sptr_type appender)
     {
