@@ -64,7 +64,9 @@ public:
     void add_appender(appender_base::sptr_type appender)
     {
         if ( appender ) {
-            appender->set_formatter(formatter_);
+            if ( !appender->get_formatter() ) {
+                appender->set_formatter(formatter_);
+            }
             appenders_.push_back(std::move(appender));
         }
     }
