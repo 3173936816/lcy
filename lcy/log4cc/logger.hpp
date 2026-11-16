@@ -24,6 +24,8 @@ public:
         appender_base::sptr_type
     > appender_list_type;
 
+    typedef std::shared_ptr<logger> sptr_type;
+
 public:
     explicit logger(std::string name, level l = level::debug) :
         name_(std::move(name)), level_(l),
