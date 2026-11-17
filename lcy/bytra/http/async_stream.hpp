@@ -60,10 +60,10 @@ public:
     void do_parse()
     {
         auto self = this->shared_from_this();
-
         auto view = buffer_->prepare(4096);
-        stream_socket_->async_read_some(view,
-                [this, self](lcy::system::error_code ec, std::size_t bytes_transferred) {
+        auto lambda_func = [this, self](lcy::system::error_code ec,
+            std::size_t bytes_transferred)
+        {
             if ( ec ) {
                 func_(ec, parse_bytes_);
                 return;
@@ -99,7 +99,9 @@ public:
             }
 
             func_(pec, parse_bytes_);
-        });
+        };
+
+        stream_socket_->async_read_some(view, std::move(lambda_func));
     }
 
 private:
@@ -205,7 +207,8 @@ void async_write_header(StreamSocket& stream_socket, Message& message, Function 
     auto header_sptr = std::make_shared<std::string>(message.header_to_string());
     auto buffer_view = lcy::asio::buffer_view(header_sptr->c_str(), header_sptr->size());
     auto func_wrapper = [header_sptr, func](
-            lcy::system::error_code ec, std::size_t bytes_transferred){
+        lcy::system::error_code ec, std::size_t bytes_transferred)
+    {
         func(ec, bytes_transferred);
     };
 
@@ -233,7 +236,8 @@ template <
 void async_write(StreamSocket& stream_socket, Message& message, Function func)
 {
     auto func_wrapper = [&stream_socket, &message, func](
-            lcy::system::error_code ec, std::size_t bytes_transferred){
+        lcy::system::error_code ec, std::size_t bytes_transferred)
+    {
         if ( ec ) {
             func(ec, bytes_transferred);
             return;
