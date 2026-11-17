@@ -25,6 +25,7 @@ public:
     typedef Mutex mutex_type;
     typedef SinkBase base_type;
     typedef std::shared_ptr<basic_single_file_sink> sptr_type;
+    typedef typename base_type::record_sptr_type record_sptr_type;
 
 public:
     basic_single_file_sink(std::string file_name) :
@@ -53,7 +54,7 @@ public:
         }
     }
 
-    void log(record::sptr_type rsptr) override
+    void log(record_sptr_type rsptr) override
     {
         if ( base_type::formatter_ ) {
             std::string message = base_type::formatter_->format(rsptr);

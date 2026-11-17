@@ -23,6 +23,7 @@ public:
     typedef Mutex mutex_type;
     typedef SinkBase base_type;
     typedef std::shared_ptr<basic_console_sink> sptr_type;
+    typedef typename base_type::record_sptr_type record_sptr_type;
 
 public:
     void reload() override
@@ -36,7 +37,7 @@ public:
         std::cout << std::flush;
     }
 
-    void log(record::sptr_type rsptr) override
+    void log(record_sptr_type rsptr) override
     {
         if ( base_type::formatter_ ) {
             std::string message = base_type::formatter_->format(rsptr);

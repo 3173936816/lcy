@@ -16,6 +16,7 @@ class sink_base :
     private noncopyable
 {
 public:
+    typedef record::sptr_type record_sptr_type;
     typedef std::shared_ptr<sink_base> sptr_type;
 
 public:
@@ -31,7 +32,7 @@ public:
 
     virtual void reload() = 0;
     virtual void flush() = 0;
-    virtual void log(record::sptr_type rsptr) = 0;
+    virtual void log(record_sptr_type rsptr) = 0;
 
 protected:
     formatter::sptr_type formatter_;
