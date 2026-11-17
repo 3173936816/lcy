@@ -23,15 +23,32 @@ class basic_tcp_sink :
     public SinkBase
 {
 public:
+    typedef std::function<
+        void (
+            lcy::system::error_code& ec
+        )
+    > error_func_type;
+
+    typedef std::function<
+        void (
+            std::string& format_message
+        )
+    > per_record_func_type;
+
     typedef TcpSocket socket_type;
     typedef SinkBase base_type;
+
     typedef std::shared_ptr<basic_tcp_sink> sptr_type;
     typedef typename base_type::record_sptr_type record_sptr_type;
 
+    typedef typename socket_type::endpoint_type endpoint_type;
+
 public:
-    basic_tcp_sink(lcy::asio::io_context& ioc) :
-        state_(state::disconnected), ioc_(ioc), strand_(ioc), tcp_socket_(ioc)
+    basic_tcp_sink(lcy::asio::io_context& ioc, endpoint_type endpoint) :
+        state_(state::disconnected), ioc_(ioc),
+        endpoint_(endpoint), strand_(ioc), tcp_socket_(ioc)
     {
+        execute_state_machine(0);
     }
 
     void reload() override
@@ -52,11 +69,12 @@ private:
         connecting,
         connected,
         sending,
+        idle,
         closing,
         disconnected,
     };
 
-    void sink_state_machine(record_sptr_type rsptr)
+    void execute_state_machine(record_sptr_type rsptr)
     {
         switch ( state_ ) {
             case state::connecting : {
@@ -68,22 +86,35 @@ private:
             case state::sending : {
                 break;
             }
+            case state::idle : {
+                break;
+            }
             case state::closing : {
                 break;
             }
             case state::disconnected : {
+                state_ = state::connecting;
+                do_async_connect();
                 break;
             }
         }
     }
 
+    void do_async_connect()
+    {
+    }
+
 private:
     state state_;
     lcy::asio::io_context& ioc_;
-    lcy::asio::strand strand_;
+    endpoint_type endpoint_;
     socket_type tcp_socket_;
+    lcy::asio::strand strand_;
     std::size_t max_deque_length_;
     std::list<std::string> message_deque_;
+
+    error_func_type error_func_;
+    per_record_func_type per_record_func_;
 };
 
 }   // namespace detail

@@ -24,6 +24,7 @@ class basic_single_file_sink :
 public:
     typedef Mutex mutex_type;
     typedef SinkBase base_type;
+
     typedef std::shared_ptr<basic_single_file_sink> sptr_type;
     typedef typename base_type::record_sptr_type record_sptr_type;
 
