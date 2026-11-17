@@ -39,8 +39,9 @@ public:
 	void do_read()
 	{
 		auto self = this->shared_from_this();
-		stream_socket_->async_read_some(buffer_view_,
-				[this, self](lcy::system::error_code ec, std::size_t bytes_transferred) {
+		auto lambda_func = [this, self](lcy::system::error_code ec,
+			std::size_t bytes_transferred)
+		{
 			if ( ec ) {
 				func_(ec, total_bytes_transferred_);
 				return;
@@ -55,7 +56,9 @@ public:
 
 			buffer_view_ = buffer_view_ + bytes_transferred;
 			do_read();
-		});
+		};
+
+		stream_socket_->async_read_some(buffer_view_, lambda_func);
 	}
 
 private:
