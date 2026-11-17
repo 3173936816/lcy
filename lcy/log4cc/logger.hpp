@@ -9,7 +9,7 @@
 #include "lcy/log4cc/level.hpp"
 #include "lcy/log4cc/record.hpp"
 #include "lcy/log4cc/formatter.hpp"
-#include "lcy/log4cc/appender_base.hpp"
+#include "lcy/log4cc/sink_base.hpp"
 
 namespace lcy
 {
@@ -21,8 +21,8 @@ class logger :
 {
 public:
     typedef std::list<
-        appender_base::sptr_type
-    > appender_list_type;
+        sink_base::sptr_type
+    > sink_list_type;
 
     typedef std::shared_ptr<logger> sptr_type;
 
@@ -61,27 +61,27 @@ public:
 		formatter_ = f;
     }
 
-    void add_appender(appender_base::sptr_type appender)
+    void add_sink(sink_base::sptr_type sink)
     {
-        if ( appender ) {
-            if ( !appender->get_formatter() ) {
-                appender->set_formatter(formatter_);
+        if ( sink ) {
+            if ( !sink->get_formatter() ) {
+                sink->set_formatter(formatter_);
             }
-            appenders_.push_back(std::move(appender));
+            sinks_.push_back(std::move(sink));
         }
     }
 
     void reload()
     {
-        for ( const auto& appender : appenders_ ) {
-            appender->reload();
+        for ( const auto& sink : sinks_ ) {
+            sink->reload();
         }
     }
 
     void flush()
     {
-        for ( const auto& appender : appenders_ ) {
-            appender->flush();
+        for ( const auto& sink : sinks_ ) {
+            sink->flush();
         }
     }
 
@@ -91,8 +91,8 @@ public:
             return;
         }
 
-        for ( const auto& appender : appenders_ ) {
-            appender->log(rsptr);
+        for ( const auto& sink : sinks_ ) {
+            sink->log(rsptr);
         }
     }
 
@@ -100,7 +100,7 @@ private:
     std::string name_;
     level level_;
     formatter::sptr_type formatter_;
-    appender_list_type appenders_;
+    sink_list_type sinks_;
 };
 
 }   // namespace log4cc

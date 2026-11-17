@@ -189,32 +189,32 @@ void test_logger()
     CHECK(lg.should_log(level::debug));
 }
 
-void test_file_appender()
+void test_file_sink()
 {
     std::string dir = make_temp_dir();
     std::string path = dir + "/app.log";
 
     {
-        file_appender_st appender(path);
+        single_sink_mt sink(path);
         formatter::sptr_type f = std::make_shared<formatter>("%l %m%E");
-        appender.set_formatter(f);
+        sink.set_formatter(f);
 
         record::sptr_type r1 = std::make_shared<record>(
             level::info, "a.cpp", 1, "lg");
         r1->get_oss() << "one";
-        appender.log(r1);
+        sink.log(r1);
 
         record::sptr_type r2 = std::make_shared<record>(
             level::warn, "a.cpp", 2, "lg");
         r2->get_oss() << "two";
-        appender.log(r2);
+        sink.log(r2);
 
-        appender.reload();
+        sink.reload();
 
         record::sptr_type r3 = std::make_shared<record>(
             level::error, "a.cpp", 3, "lg");
         r3->get_oss() << "three";
-        appender.log(r3);
+        sink.log(r3);
     }
 
     {
@@ -230,30 +230,30 @@ void test_file_appender()
     ::rmdir(dir.c_str());
 }
 
-void test_rotating_file_appender()
+void test_rotating_file_sink()
 {
     std::string dir = make_temp_dir();
     std::string path = dir + "/app.log";
 
     {
-        rotating_file_appender_st appender(path, 20);
+        rotating_file_sink_mt sink(path, 20);
         formatter::sptr_type f = std::make_shared<formatter>("%m%E");
-        appender.set_formatter(f);
+        sink.set_formatter(f);
 
         record::sptr_type r1 = std::make_shared<record>(
             level::info, "a.cpp", 1, "lg");
         r1->get_oss() << "aaaaaaaaaa";
-        appender.log(r1);
+        sink.log(r1);
 
         record::sptr_type r2 = std::make_shared<record>(
             level::info, "a.cpp", 2, "lg");
         r2->get_oss() << "bbbbbbbbbb";
-        appender.log(r2);
+        sink.log(r2);
 
         record::sptr_type r3 = std::make_shared<record>(
             level::info, "a.cpp", 3, "lg");
         r3->get_oss() << "cccccccccc";
-        appender.log(r3);
+        sink.log(r3);
     }
 
     struct stat st;
@@ -276,10 +276,10 @@ void test_logger_dispatch()
     logger lg("dispatch", level::info);
     lg.set_formatter(std::make_shared<formatter>("%l %m%E"));
 
-    appender_base::sptr_type appender =
-        std::make_shared<file_appender_st>(path);
+    sink_base::sptr_type sink =
+        std::make_shared<single_sink_mt>(path);
 
-    lg.add_appender(appender);
+    lg.add_sink(sink);
 
     record::sptr_type r1 = std::make_shared<record>(
         level::info, "a.cpp", 1, "dispatch");
@@ -319,8 +319,8 @@ int main()
     test_record();
     test_formatter();
     test_logger();
-    test_file_appender();
-    test_rotating_file_appender();
+    test_file_sink();
+    test_rotating_file_sink();
     test_logger_dispatch();
 
     std::cout << "passed: " << g_passed

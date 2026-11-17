@@ -1,5 +1,5 @@
-#ifndef __LCY_LOG4CC_DETAIL_FILE_APPENDER_HPP__
-#define __LCY_LOG4CC_DETAIL_FILE_APPENDER_HPP__
+#ifndef __LCY_LOG4CC_DETAIL_BASIC_SINGLE_FILE_SINK_HPP__
+#define __LCY_LOG4CC_DETAIL_BASIC_SINGLE_FILE_SINK_HPP__
 
 #include <mutex>
 #include <memory>
@@ -16,18 +16,18 @@ namespace detail
 
 template <
     typename Mutex,
-    typename AppenderBase
+    typename SinkBase
 >
-class file_appender :
-    public AppenderBase
+class basic_single_file_sink :
+    public SinkBase
 {
 public:
     typedef Mutex mutex_type;
-    typedef AppenderBase base_type;
-    typedef std::shared_ptr<file_appender> sptr_type;
+    typedef SinkBase base_type;
+    typedef std::shared_ptr<basic_single_file_sink> sptr_type;
 
 public:
-    file_appender(std::string file_name) :
+    basic_single_file_sink(std::string file_name) :
         file_name_(std::move(file_name))
     {
         open_file();
@@ -69,7 +69,7 @@ private:
         ofs_.open(file_name_, std::ios_base::app);
         if ( !ofs_.is_open() ) {
             lcy::system::error_code ec(errno);
-            throw_log4cc_exception(ec, "file_appender::open_file");
+            throw_log4cc_exception(ec, "basic_single_file_sink::open_file");
         }
     }
 
@@ -83,4 +83,4 @@ private:
 }   // namespace log4cc
 }   // namespace lcy
 
-#endif  // __LCY_LOG4CC_DETAIL_FILE_APPENDER_HPP__
+#endif  // __LCY_LOG4CC_DETAIL_BASIC_SINGLE_FILE_SINK_HPP__

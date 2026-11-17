@@ -1,5 +1,5 @@
-#ifndef __LCY_LOG4CC_DETAIL_CONSOLE_APPENDER_HPP__
-#define __LCY_LOG4CC_DETAIL_CONSOLE_APPENDER_HPP__
+#ifndef __LCY_LOG4CC_DETAIL_BASIC_CONSOLE_SINK_HPP__
+#define __LCY_LOG4CC_DETAIL_BASIC_CONSOLE_SINK_HPP__
 
 #include <mutex>
 #include <memory>
@@ -14,15 +14,15 @@ namespace detail
 
 template <
     typename Mutex,
-    typename AppenderBase
+    typename SinkBase
 >
-class console_appender :
-    public AppenderBase
+class basic_console_sink :
+    public SinkBase
 {
 public:
     typedef Mutex mutex_type;
-    typedef AppenderBase base_type;
-    typedef std::shared_ptr<console_appender> sptr_type;
+    typedef SinkBase base_type;
+    typedef std::shared_ptr<basic_console_sink> sptr_type;
 
 public:
     void reload() override
@@ -54,4 +54,4 @@ private:
 }   // namespace log4cc
 }   // namespace lcy
 
-#endif  //  __LCY_LOG4CC_DETAIL_CONSOLE_APPENDER_HPP__
+#endif  //  __LCY_LOG4CC_DETAIL_BASIC_CONSOLE_SINK_HPP__

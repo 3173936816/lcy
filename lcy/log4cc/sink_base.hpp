@@ -1,5 +1,5 @@
-#ifndef __LCY_LOG4CC_APPENDER_BASE_HPP__
-#define __LCY_LOG4CC_APPENDER_BASE_HPP__
+#ifndef __LCY_LOG4CC_SINK_BASE_HPP__
+#define __LCY_LOG4CC_SINK_BASE_HPP__
 
 #include <memory>
 
@@ -12,11 +12,11 @@ namespace lcy
 namespace log4cc
 {
 
-class appender_base :
+class sink_base :
     private noncopyable
 {
 public:
-    typedef std::shared_ptr<appender_base> sptr_type;
+    typedef std::shared_ptr<sink_base> sptr_type;
 
 public:
     formatter::sptr_type get_formatter()
@@ -40,4 +40,4 @@ protected:
 }   // namespace log4cc
 }   // namespace lcy
 
-#endif  // __LCY_LOG4CC_APPENDER_BASE_HPP__
+#endif  // __LCY_LOG4CC_SINK_BASE_HPP__
