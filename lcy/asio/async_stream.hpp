@@ -39,7 +39,7 @@ public:
 	void do_read()
 	{
 		auto self = this->shared_from_this();
-		auto lambda_func = [this, self](lcy::system::error_code ec,
+		auto on_read_func = [this, self](lcy::system::error_code ec,
 			std::size_t bytes_transferred)
 		{
 			if ( ec ) {
@@ -58,7 +58,7 @@ public:
 			do_read();
 		};
 
-		stream_socket_->async_read_some(buffer_view_, lambda_func);
+		stream_socket_->async_read_some(buffer_view_, std::move(on_read_func));
 	}
 
 private:
@@ -94,7 +94,7 @@ public:
 	void do_write()
 	{
 		auto self = this->shared_from_this();
-		auto lambda_func = [this, self](lcy::system::error_code ec,
+		auto on_write_func = [this, self](lcy::system::error_code ec,
 			std::size_t bytes_transferred)
 		{
 			if ( ec ) {
@@ -113,7 +113,7 @@ public:
 			do_write();
 		};
 
-		stream_socket_->async_write_some(buffer_view_, std::move(lambda_func));
+		stream_socket_->async_write_some(buffer_view_, std::move(on_write_func));
 	}
 
 private:
