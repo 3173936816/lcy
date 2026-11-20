@@ -14,7 +14,7 @@ namespace lcy
 {
 namespace asio
 {
-namespace unix
+namespace local
 {
 
 class stream
