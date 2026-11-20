@@ -123,7 +123,7 @@ private:
 	signal_set_queue ss_queue_;
 
 	conditionally_mutex ds_cond_mutex_;
-	object_pool<internal_descriptor_state> descriptor_datas_;
+	object_pool<internal_descriptor_state> descriptor_state_datas_;
 };
 
 }	// namespace detail

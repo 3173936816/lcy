@@ -123,13 +123,13 @@ void reactor::post_to_scheduler(operation op)
 reactor::internal_descriptor_state* reactor::alloc_internal_descriptor_state()
 {
 	std::lock_guard<conditionally_mutex> locker(ds_cond_mutex_);
-	return descriptor_datas_.alloc(scheduler_->concurrency_hint_ != 1);
+	return descriptor_state_datas_.alloc(scheduler_->concurrency_hint_ != 1);
 }
 
 void reactor::free_internal_descriptor_state(internal_descriptor_state* ds)
 {
 	std::lock_guard<conditionally_mutex> locker(ds_cond_mutex_);
-	descriptor_datas_.free(ds);
+	descriptor_state_datas_.free(ds);
 }
 
 int reactor::register_internal_descriptor_state(int sockfd,
@@ -505,7 +505,7 @@ void reactor::cleanup()
 	std::list<internal_descriptor_state*> descriptor_state_list;
 	{
 		std::lock_guard<conditionally_mutex> ds_locker(ds_cond_mutex_);
-		descriptor_datas_.get_live_objects(descriptor_state_list);
+		descriptor_state_datas_.get_live_objects(descriptor_state_list);
 	}
 	for ( auto ds : descriptor_state_list ) {
 		std::lock_guard<conditionally_mutex> ss_locker(ds->cond_mutex_);
