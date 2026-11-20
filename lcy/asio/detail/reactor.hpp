@@ -53,7 +53,7 @@ public:
 	inline ~reactor();
 
 	inline void wake_up();
-	inline void run(int timeout, std::list<operation>& ops);
+	inline void run(int timeout, std::list<operation>& op_list);
 
 	inline void post_to_scheduler(operation op);
 
