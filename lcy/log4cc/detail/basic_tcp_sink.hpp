@@ -46,7 +46,7 @@ public:
 
 public:
     basic_tcp_sink(lcy::asio::io_context& ioc, endpoint_type endpoint, std::size_t max_deque_length) :
-        state_(state::initstate), ioc_(ioc), endpoint_(endpoint),
+        state_(state::initstate), epoch_(0), ioc_(ioc), endpoint_(endpoint),
         strand_(ioc), tcp_socket_(ioc), max_deque_length_(max_deque_length)
     {
         strand_.post([this]() {
@@ -56,10 +56,20 @@ public:
 
     void reload() override
     {
+        auto do_reload_func = [this]() {
+            ++epoch_;
+            tcp_socket_.close();
+
+            state_ = state::initstate;
+            execute_state_machine();
+        };
+
+        strand_.post(std::move(do_reload_func));
     }
 
     void flush() override
     {
+        // nothing to do
     }
 
     void log(record_sptr_type rsptr) override
@@ -82,7 +92,8 @@ public:
                 message_deque_.push_back(std::move(message));
 
                 if ( state_ == state::idle ) {
-                    do_async_send();
+                    state_ = state::sending;
+                    execute_state_machine();
                 };
             };
 
@@ -98,7 +109,6 @@ private:
         connected,
         sending,
         idle,
-        closing,
     };
 
     void execute_state_machine()
@@ -123,9 +133,6 @@ private:
             case state::idle : {
                 break;
             }
-            case state::closing : {
-                break;
-            }
         }
     }
 
@@ -134,15 +141,16 @@ private:
         auto do_sink_init_func = [this]() {
             lcy::system::error_code ec;
             tcp_socket_.open(endpoint_.protocol(), ec);
-            tcp_socket_.set_option(lcy::asio::ip::socket_option::keep_alive(1));
-            tcp_socket_.set_option(lcy::asio::ip::socket_option::tcp_nodelay(1));
 
             if ( ec ) {
                 if ( error_func_ ) {
-                    error_func_(ec)
+                    error_func_(ec);
                 }
                 return;
             }
+
+            tcp_socket_.set_option(lcy::asio::ip::socket_option::keep_alive(1));
+            tcp_socket_.set_option(lcy::asio::ip::socket_option::tcp_nodelay(1));
 
             state_ = state::connecting;
             execute_state_machine();
@@ -153,7 +161,15 @@ private:
 
     void do_async_connect()
     {
-        auto on_connected_func = [](lcy::system::error_code ec) {
+        std::size_t epoch = epoch_;
+
+        auto on_connected_func = [this, epoch](
+            lcy::system::error_code ec)
+        {
+            if ( epoch != epoch_ ) {
+                return;
+            }
+
             if ( ec ) {
                 if ( error_func_ ) {
                     error_func_(ec);
@@ -187,7 +203,15 @@ private:
 
     void do_async_send()
     {
-        auto on_one_message_send_completed = [this](lcy::system::error_code ec, std::size_t) {
+        std::size_t epoch = epoch_;
+
+        auto on_one_message_send_completed = [this, epoch](
+            lcy::system::error_code ec, std::size_t)
+        {
+            if ( epoch != epoch_ ) {
+                return;
+            }
+
             if ( ec ) {
                 if ( error_func_ ) {
                     error_func_(ec);
@@ -216,6 +240,7 @@ private:
 
 private:
     state state_;
+    std::size_t epoch_;
     lcy::asio::io_context& ioc_;
     endpoint_type endpoint_;
     socket_type tcp_socket_;
