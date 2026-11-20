@@ -12,8 +12,8 @@
 #include "lcy/asio/ip/udp.hpp"
 #include "lcy/asio/ip/socket_option.hpp"
 
-#include "lcy/asio/unix/stream.hpp"
-#include "lcy/asio/unix/datagram.hpp"
+#include "lcy/asio/local/stream.hpp"
+#include "lcy/asio/local/datagram.hpp"
 
 #include "lcy/asio/signal_set.hpp"
 #include "lcy/asio/steady_timer.hpp"

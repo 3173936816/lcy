@@ -33,7 +33,7 @@ public:
 	{
 		::memset(&addr_, 0x00, sizeof(addr_));
 
-		if ( path.length() > UNIX_PATH_MAX ) {
+		if ( path.length() > sizeof(((struct sockaddr_un *)0)->sun_path) ) {
 			lcy::system::error_code ec(
 				lcy::system::error::filename_too_long);
 			throw_asio_exception(ec, "unix_endpoint::unix_endpoint[path]");
