@@ -11,4 +11,7 @@
 #include "lcy/log4cc/single_file_sink.hpp"
 #include "lcy/log4cc/rotating_file_sink.hpp"
 
+#include "lcy/log4cc/tcp_sink.hpp"
+#include "lcy/log4cc/unix_tcp_sink.hpp"
+
 #endif  // __LCY_LOG4CC_LOG4CC_HPP__

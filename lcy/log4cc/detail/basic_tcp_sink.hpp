@@ -7,7 +7,9 @@
 
 #include "lcy/asio/strand.hpp"
 #include "lcy/asio/ip/tcp.hpp"
+#include "lcy/asio/buffer_view.hpp"
 #include "lcy/asio/async_stream.hpp"
+#include "lcy/asio/ip/socket_option.hpp"
 
 namespace lcy
 {
@@ -47,7 +49,7 @@ public:
 public:
     basic_tcp_sink(lcy::asio::io_context& ioc, endpoint_type endpoint, std::size_t max_deque_length) :
         state_(state::initstate), epoch_(0), ioc_(ioc), endpoint_(endpoint),
-        strand_(ioc), tcp_socket_(ioc), max_deque_length_(max_deque_length)
+        tcp_socket_(ioc), strand_(ioc), max_deque_length_(max_deque_length)
     {
         strand_.post([this]() {
             execute_state_machine();
@@ -75,7 +77,7 @@ public:
     void log(record_sptr_type rsptr) override
     {
         if ( base_type::formatter_ ) {
-            auto do_start_send_func = [this](){
+            auto do_start_send_func = [this, rsptr](){
                 if ( message_deque_.size() >= max_deque_length_ ) {
                     lcy::system::error_code ec(lcy::system::error::no_buffer_space);
                     if ( error_func_ ) {
@@ -99,6 +101,16 @@ public:
 
             strand_.post(std::move(do_start_send_func));
         }
+    }
+
+    void set_error_func(error_func_type error_func)
+    {
+        error_func_ = std::move(error_func);
+    }
+
+    void set_per_record_func(per_record_func_type per_record_func)
+    {
+        per_record_func_ = std::move(per_record_func);
     }
 
 private:
@@ -183,7 +195,7 @@ private:
 
         auto do_async_connect_func = [this, on_connected_func]() {
             tcp_socket_.async_connect(endpoint_,
-                lcy::asio::strand_wrapper(std::move(on_connected_func)));
+                lcy::asio::strand_wrapper(strand_, std::move(on_connected_func)));
         };
 
         strand_.post(std::move(do_async_connect_func));
@@ -232,7 +244,7 @@ private:
             auto view = lcy::asio::buffer_view(message.c_str(), message.length());
 
             lcy::asio::async_write(tcp_socket_, view,
-                lcy::asio::strand_wrapper(std::move(on_one_message_send_completed)));
+                lcy::asio::strand_wrapper(strand_, std::move(on_one_message_send_completed)));
         };
 
         strand_.post(std::move(do_async_send_func));
