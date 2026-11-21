@@ -22,7 +22,7 @@ public:
 	typedef signal_set_service::signal_func_type signal_func_type;
 
 public:
-	basic_signal_set(Executor& executor, std::initializer_list<int> signums) :
+	basic_signal_set(executor_type& executor, std::initializer_list<int> signums) :
 		executor_(executor), service_(use_service<signal_set_service>(executor))
 	{
 		lcy::system::error_code ec;
