@@ -13,7 +13,7 @@ static void test_construct_destroy()
 {
     std::cout << "[test_construct_destroy]\n";
     scheduler sch(1);
-    signal_set_service service(sch.get_reactor());
+    signal_set_service service(sch);
     
     lcy::system::error_code ec;
     signal_set_service::signal_set_impl impl;
@@ -28,7 +28,7 @@ static void test_single_fire()
 {
     std::cout << "[test_single_fire]\n";
     scheduler sch(1);
-    signal_set_service service(sch.get_reactor());
+    signal_set_service service(sch);
 
     lcy::system::error_code ec;
     signal_set_service::signal_set_impl impl;
@@ -53,7 +53,7 @@ static void test_two_fire()
 {
     std::cout << "[test_two_fire]\n";
     scheduler sch(1);
-    signal_set_service service(sch.get_reactor());
+    signal_set_service service(sch);
 
     lcy::system::error_code ec;
     signal_set_service::signal_set_impl impl1, impl2;
@@ -82,7 +82,7 @@ static void test_multi_signals()
 {
     std::cout << "[test_multi_signals]\n";
     scheduler sch(1);
-    signal_set_service service(sch.get_reactor());
+    signal_set_service service(sch);
 
     lcy::system::error_code ec;
     signal_set_service::signal_set_impl impl1, impl2;
@@ -113,7 +113,7 @@ static void test_cancel()
 {
     std::cout << "[test_cancel]\n";
     scheduler sch(1);
-    signal_set_service service(sch.get_reactor());
+    signal_set_service service(sch);
 
     lcy::system::error_code ec;
     signal_set_service::signal_set_impl impl;
@@ -139,7 +139,7 @@ static void test_multi_mask()
 {
     std::cout << "[test_multi_mask]\n";
     scheduler sch(1);
-    signal_set_service service(sch.get_reactor());
+    signal_set_service service(sch);
 
     lcy::system::error_code ec;
     signal_set_service::signal_set_impl impl;
@@ -164,7 +164,7 @@ static void test_destroy_without_fire()
 {
     std::cout << "[test_destroy_without_fire]\n";
     scheduler sch(1);
-    signal_set_service service(sch.get_reactor());
+    signal_set_service service(sch);
 
     {
         lcy::system::error_code ec;
@@ -180,7 +180,7 @@ static void test_invalid_signum()
 {
     std::cout << "[test_invalid_signum]\n";
     scheduler sch(1);
-    signal_set_service service(sch.get_reactor());
+    signal_set_service service(sch);
 
     lcy::system::error_code ec;
     signal_set_service::signal_set_impl impl;

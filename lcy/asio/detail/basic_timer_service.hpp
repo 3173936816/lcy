@@ -5,6 +5,7 @@
 #include <sys/select.h>
 
 #include "lcy/asio/detail/reactor.hpp"
+#include "lcy/asio/detail/scheduler.hpp"
 #include "lcy/asio/detail/operation.hpp"
 #include "lcy/asio/detail/basic_timer_set.hpp"
 #include "lcy/asio/detail/service_registry_base.hpp"
@@ -58,8 +59,8 @@ private:
 	};
 
 public:
-	explicit basic_timer_service(reactor& r) :
-		reactor_(&r)
+	explicit basic_timer_service(scheduler& sch) :
+		reactor_(&sch.get_reactor())
 	{
 		reactor_->add_timer_set(&timer_set_);
 	}

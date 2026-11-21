@@ -7,6 +7,7 @@
 
 #include "lcy/asio/detail/error.hpp"
 #include "lcy/asio/detail/reactor.hpp"
+#include "lcy/asio/detail/scheduler.hpp"
 #include "lcy/asio/detail/service_registry_base.hpp"
 
 namespace lcy
@@ -56,8 +57,8 @@ private:
 	};
 
 public:
-	explicit signal_set_service(reactor& r) :
-		reactor_(&r) {}
+	explicit signal_set_service(scheduler& sch) :
+		reactor_(&sch.get_reactor()) {}
 
 	void construct(signal_set_impl& impl,
 		std::initializer_list<int> signums, lcy::system::error_code& ec)

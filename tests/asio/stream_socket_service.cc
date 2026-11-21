@@ -20,7 +20,7 @@ static void test_sync_flow()
     std::cout << "[test_sync_flow]\n";
     lcy::system::error_code ec;
     scheduler sch(1);
-    stream_socket_service service(sch.get_reactor());
+    stream_socket_service service(sch);
     stream_socket_service::socket_impl server, client;
 
     service.construct(server);
@@ -52,7 +52,7 @@ static void test_sync_accept()
     std::cout << "[test_sync_accept]\n";
     lcy::system::error_code ec;
     scheduler sch(1);
-    stream_socket_service service(sch.get_reactor());
+    stream_socket_service service(sch);
     stream_socket_service::socket_impl server, client, accepted;
 
     service.construct(server);
@@ -83,7 +83,7 @@ static void test_sync_send_receive()
     std::cout << "[test_sync_send_receive]\n";
     lcy::system::error_code ec;
     scheduler sch(1);
-    stream_socket_service service(sch.get_reactor());
+    stream_socket_service service(sch);
     stream_socket_service::socket_impl server, client, accepted;
 
     service.construct(server);
@@ -125,7 +125,7 @@ static void test_sync_options()
     std::cout << "[test_sync_options]\n";
     lcy::system::error_code ec;
     scheduler sch(1);
-    stream_socket_service service(sch.get_reactor());
+    stream_socket_service service(sch);
     stream_socket_service::socket_impl s;
     service.construct(s);
     service.open(s, ip::tcp::v4(), ec);
@@ -153,7 +153,7 @@ static void test_async()
     std::cout << "[test_async]\n";
     lcy::system::error_code ec;
     scheduler sch(1);
-    stream_socket_service service(sch.get_reactor());
+    stream_socket_service service(sch);
     stream_socket_service::socket_impl server, client, accepted;
 
     service.construct(server);
@@ -186,7 +186,7 @@ static void test_async_accept()
     std::cout << "[test_async_accept]\n";
     lcy::system::error_code ec;
     scheduler sch(1);
-    stream_socket_service service(sch.get_reactor());
+    stream_socket_service service(sch);
     stream_socket_service::socket_impl server, client, accepted;
 
     service.construct(server);
@@ -225,7 +225,7 @@ static void test_connect_refused()
     std::cout << "[test_connect_refused]\n";
     lcy::system::error_code ec;
     scheduler sch(1);
-    stream_socket_service service(sch.get_reactor());
+    stream_socket_service service(sch);
     stream_socket_service::socket_impl client;
 
     service.construct(client);
@@ -245,7 +245,7 @@ static void test_not_open()
     std::cout << "[test_not_open]\n";
     lcy::system::error_code ec;
     scheduler sch(1);
-    stream_socket_service service(sch.get_reactor());
+    stream_socket_service service(sch);
     stream_socket_service::socket_impl s;
     service.construct(s);
 
@@ -262,7 +262,7 @@ static void test_already_open()
     std::cout << "[test_already_open]\n";
     lcy::system::error_code ec;
     scheduler sch(1);
-    stream_socket_service service(sch.get_reactor());
+    stream_socket_service service(sch);
     stream_socket_service::socket_impl s;
     service.construct(s);
 

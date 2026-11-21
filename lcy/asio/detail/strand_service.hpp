@@ -88,8 +88,8 @@ private:
     };
 
 public:
-    explicit strand_service(reactor& r) :
-        reactor_(&r), strand_cond_mutex_(r.concurrency_hint()) {}
+    explicit strand_service(scheduler& sch) :
+        sch_(&sch), strand_cond_mutex_(sch.concurrency_hint_ != 1) {}
 
     void construct(strand_impl& impl)
     {
@@ -140,7 +140,7 @@ private:
     internal_strand* alloc_internal_strand()
     {
         std::lock_guard<conditionally_mutex> locker(strand_cond_mutex_);
-        return strand_datas_.alloc(reactor_->concurrency_hint() != 1);
+        return strand_datas_.alloc(sch_->concurrency_hint_ != 1);
     }
 
     void free_internal_strand(internal_strand* s)
@@ -152,11 +152,11 @@ private:
     void do_execute(strand_impl& impl)
     {
         strand_operation strand_op(this, impl);
-        reactor_->post_to_scheduler(operation(std::move(strand_op)));
+        sch_->post(operation(std::move(strand_op)));
     }
 
 private:
-    reactor* reactor_;
+    scheduler* sch_;
     conditionally_mutex strand_cond_mutex_;
     object_pool<internal_strand> strand_datas_;
 };

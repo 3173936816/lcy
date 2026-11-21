@@ -43,7 +43,7 @@ public:
 	template <typename Service>
 	friend Service& use_service(io_context& ioc)
 	{
-		return ioc.repository_.use_service<Service>(ioc.sch_.get_reactor());
+		return ioc.repository_.use_service<Service>(ioc.sch_);
 	}
 
 	friend void post(io_context& ioc, task_func_type func)

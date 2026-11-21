@@ -1,6 +1,8 @@
 #ifndef __LCY_ASIO_DETAIL_STREAM_SOCKET_SERVICE_HPP__
 #define __LCY_ASIO_DETAIL_STREAM_SOCKET_SERVICE_HPP__
 
+#include "lcy/asio/detail/reactor.hpp"
+#include "lcy/asio/detail/scheduler.hpp"
 #include "lcy/asio/detail/socket_service_base.hpp"
 #include "lcy/asio/detail/service_registry_base.hpp"
 
@@ -18,8 +20,8 @@ class stream_socket_service :
 	>
 {
 public:
-	explicit stream_socket_service(reactor& r) :
-		socket_service_base(r) {}
+	explicit stream_socket_service(scheduler& sch) :
+		socket_service_base(sch) {}
 
 	void listen(socket_impl& impl,
 		int backlog, lcy::system::error_code& ec)

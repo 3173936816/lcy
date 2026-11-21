@@ -5,6 +5,7 @@
 
 #include "lcy/asio/detail/error.hpp"
 #include "lcy/asio/detail/reactor.hpp"
+#include "lcy/asio/detail/scheduler.hpp"
 #include "lcy/asio/detail/socket_ops.hpp"
 
 namespace lcy
@@ -74,8 +75,8 @@ protected:
 public:
 	typedef int native_handle_type;
 
-	explicit socket_service_base(reactor& r) :
-		reactor_(&r) {}
+	explicit socket_service_base(scheduler& sch) :
+		reactor_(&sch.get_reactor()) {}
 
 	void construct(socket_impl& impl)
 	{
