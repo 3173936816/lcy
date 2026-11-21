@@ -9,7 +9,7 @@
 #include "lcy/asio/ip/tcp.hpp"
 #include "lcy/asio/buffer_view.hpp"
 #include "lcy/asio/async_stream.hpp"
-#include "lcy/asio/ip/socket_option.hpp"
+#include "lcy/asio/socket_option.hpp"
 
 namespace lcy
 {
@@ -161,8 +161,8 @@ private:
                 return;
             }
 
-            tcp_socket_.set_option(lcy::asio::ip::socket_option::keep_alive(1));
-            tcp_socket_.set_option(lcy::asio::ip::socket_option::tcp_nodelay(1));
+            tcp_socket_.set_option(lcy::asio::socket_option::keep_alive(1));
+            tcp_socket_.set_option(lcy::asio::socket_option::tcp_nodelay(1));
 
             state_ = state::connecting;
             execute_state_machine();

@@ -6,7 +6,7 @@
 
 #include "lcy/asio/ip/tcp.hpp"
 #include "lcy/asio/buffer_view.hpp"
-#include "lcy/asio/ip/socket_option.hpp"
+#include "lcy/asio/socket_option.hpp"
 #include "lcy/asio/detail/scheduler.hpp"
 #include "lcy/asio/detail/stream_socket_service.hpp"
 
@@ -131,15 +131,15 @@ static void test_sync_options()
     service.open(s, ip::tcp::v4(), ec);
     assert(!ec);
 
-    lcy::asio::ip::socket_option::tcp_nodelay opt;
+    lcy::asio::socket_option::tcp_nodelay opt;
     service.get_option(s, opt, ec);
     assert(!ec);
 
-    lcy::asio::ip::socket_option::tcp_nodelay opt_set(1);
+    lcy::asio::socket_option::tcp_nodelay opt_set(1);
     service.set_option(s, opt_set, ec);
     assert(!ec);
 
-    lcy::asio::ip::socket_option::tcp_nodelay opt2;
+    lcy::asio::socket_option::tcp_nodelay opt2;
     service.get_option(s, opt2, ec);
     assert(!ec);
     assert(opt2.value() == 1);

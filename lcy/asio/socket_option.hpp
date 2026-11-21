@@ -1,5 +1,5 @@
-#ifndef __LCY_ASIO_IP_SOCKET_OPTION_HPP__
-#define __LCY_ASIO_IP_SOCKET_OPTION_HPP__
+#ifndef __LCY_ASIO_SOCKET_OPTION_HPP__
+#define __LCY_ASIO_SOCKET_OPTION_HPP__
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -10,8 +10,6 @@
 namespace lcy
 {
 namespace asio
-{
-namespace ip
 {
 
 namespace socket_option
@@ -37,8 +35,7 @@ typedef detail::basic_socket_option<IPPROTO_TCP, TCP_NODELAY, int> tcp_nodelay;
 
 }	// namespace socket_option
 
-}	// namespace ip
 }	// namespace asio
 }	// namespace lcy
 
-#endif	// __LCY_ASIO_IP_SOCKET_OPTION_HPP__
+#endif	// __LCY_ASIO_SOCKET_OPTION_HPP__

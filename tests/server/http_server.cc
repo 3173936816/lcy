@@ -5,7 +5,7 @@
 #include "lcy/asio/ip/tcp.hpp"
 #include "lcy/asio/buffer_view.hpp"
 #include "lcy/asio/async_stream.hpp"
-#include "lcy/asio/ip/socket_option.hpp"
+#include "lcy/asio/socket_option.hpp"
 
 #include "lcy/bytra/flat_buffer.hpp"
 #include "lcy/bytra/http/async_stream.hpp"
@@ -86,7 +86,7 @@ public:
                 lcy::asio::ip::tcp::endpoint ep,
                 func_type func)
         : ioc_(ioc),
-          acceptor_(ioc, ep, lcy::asio::ip::socket_option::reuse_address(1)),
+          acceptor_(ioc, ep, lcy::asio::socket_option::reuse_address(1)),
           func_(std::move(func)) {}
 
     void do_accept()

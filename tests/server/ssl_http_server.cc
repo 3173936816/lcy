@@ -7,7 +7,7 @@
 #include "lcy/asio/ssl/ssl.hpp"
 #include "lcy/asio/buffer_view.hpp"
 #include "lcy/asio/async_stream.hpp"
-#include "lcy/asio/ip/socket_option.hpp"
+#include "lcy/asio/socket_option.hpp"
 
 #include "lcy/bytra/flat_buffer.hpp"
 #include "lcy/bytra/http/async_stream.hpp"
@@ -45,7 +45,7 @@ public:
 
         lcy::system::error_code ec;
         socket_.get_next_layer().set_option(
-            lcy::asio::ip::socket_option::keep_alive(1), ec);
+            lcy::asio::socket_option::keep_alive(1), ec);
         if ( ec ) {
             std::cout << "set_option keep_alive ec = " << ec.message() << "\n";
         }
@@ -121,7 +121,7 @@ public:
                     func_type func)
         : ioc_(ioc),
           ssl_ctx_(ssl_ctx),
-          acceptor_(ioc, ep, lcy::asio::ip::socket_option::reuse_address(1)),
+          acceptor_(ioc, ep, lcy::asio::socket_option::reuse_address(1)),
           func_(std::move(func)) {}
 
     void do_accept()

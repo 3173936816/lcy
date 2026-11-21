@@ -4,13 +4,13 @@
 #include "lcy/asio/error.hpp"
 #include "lcy/asio/buffer_view.hpp"
 #include "lcy/asio/io_context.hpp"
+#include "lcy/asio/socket_option.hpp"
 #include "lcy/asio/strand.hpp"
 #include "lcy/asio/work_guard.hpp"
 #include "lcy/asio/async_stream.hpp"
 
 #include "lcy/asio/ip/tcp.hpp"
 #include "lcy/asio/ip/udp.hpp"
-#include "lcy/asio/ip/socket_option.hpp"
 
 #include "lcy/asio/local/stream.hpp"
 #include "lcy/asio/local/datagram.hpp"
