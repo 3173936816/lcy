@@ -56,7 +56,6 @@ public:
 	inline void run(int timeout, std::list<operation>& op_list);
 
 	inline void post_to_scheduler(operation op);
-	inline std::size_t concurrency_hint() const;
 
 
 	inline internal_descriptor_state* alloc_internal_descriptor_state();
@@ -110,7 +109,7 @@ private:
 		int happened_events , std::list<operation>& op_list);
 
 private:
-	scheduler* scheduler_;
+	scheduler* sch_;
 
 	int epoll_fd_;
 	int event_fd_;

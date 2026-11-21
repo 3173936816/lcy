@@ -19,7 +19,7 @@ namespace detail
 {
 
 reactor::reactor(scheduler* sch) :
-	scheduler_(sch),
+	sch_(sch),
 	epoll_fd_(create_epollfd()),
 	event_fd_(create_eventfd()),
 	timer_fd_(create_timerfd()),
@@ -113,12 +113,7 @@ void reactor::run(int timeout, std::list<operation>& op_list)
 
 void reactor::post_to_scheduler(operation op)
 {
-	scheduler_->post(std::move(op));
-}
-
-inline std::size_t reactor::concurrency_hint() const
-{
-	return scheduler_->concurrency_hint_;
+	sch_->post(std::move(op));
 }
 
 /*********************************************************
@@ -128,7 +123,7 @@ inline std::size_t reactor::concurrency_hint() const
 reactor::internal_descriptor_state* reactor::alloc_internal_descriptor_state()
 {
 	std::lock_guard<conditionally_mutex> locker(ds_cond_mutex_);
-	return descriptor_state_datas_.alloc(scheduler_->concurrency_hint_ != 1);
+	return descriptor_state_datas_.alloc(sch_->concurrency_hint_ != 1);
 }
 
 void reactor::free_internal_descriptor_state(internal_descriptor_state* ds)
@@ -182,40 +177,40 @@ void reactor::start_op(int sockfd,
 
 		int is_ready = ::poll(&pfd, 1, 0);
 		if ( is_ready > 0 ) {
-			scheduler_->post(std::move(op));
+			sch_->post(std::move(op));
 			return;
 		}
 	}
 
 	std::lock_guard<conditionally_mutex> locker(ds->cond_mutex_);
-	
+
 	if ( et == event_type::write ) {
 		if ( !(ds->registered_events_ & EPOLLOUT) ) {
 			epoll_event ep_event;
 			ep_event.events = ds->registered_events_ | EPOLLOUT;
 			ep_event.data.ptr = ds;
-			
+
 			if ( ::epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, sockfd, &ep_event) == -1 ) {
 				lcy::system::error_code ec(errno);
 				op.set_errorc(ec);
-				scheduler_->post(std::move(op));
+				sch_->post(std::move(op));
 
 				return;
 			}
-			
+
 			ds->registered_events_ |= EPOLLOUT;
 		}
-		
-		scheduler_->operation_increase();
+
+		sch_->operation_increase();
 		ds->write_op_ = std::move(op);
 		ds->events_ |= event_type::write;
 	}
 
 	if ( et == event_type::read ) {
-		scheduler_->operation_increase();
+		sch_->operation_increase();
 		ds->read_op_ = std::move(op);
 		ds->events_ |= event_type::read;
-	}	
+	}
 }
 
 void reactor::cancel_ops(int, internal_descriptor_state* ds, int ets)
@@ -229,7 +224,7 @@ void reactor::cancel_ops(int, internal_descriptor_state* ds, int ets)
 		if ( ds->events_ & event_type::read ) {
 			ds->events_ &= ~event_type::read;
 			ds->read_op_.set_errorc(ec);
-			scheduler_->submit(std::move(ds->read_op_));
+			sch_->submit(std::move(ds->read_op_));
 		}
 	}
 
@@ -237,7 +232,7 @@ void reactor::cancel_ops(int, internal_descriptor_state* ds, int ets)
 		if ( ds->events_ & event_type::write ) {
 			ds->events_ &= ~event_type::write;
 			ds->write_op_.set_errorc(ec);
-			scheduler_->submit(std::move(ds->write_op_));
+			sch_->submit(std::move(ds->write_op_));
 		}
 	}
 }
@@ -275,7 +270,7 @@ void reactor::schedule_timer(timer_set_base* ts,
 {
 	std::lock_guard<conditionally_mutex> locker(tsq_cond_mutex_);
 
-	scheduler_->operation_increase();
+	sch_->operation_increase();
 	bool need_update = ts->insert_internal_timer(t, expiry, std::move(timer_op));
 	if ( need_update ) {
 		long long wait_ms = ts_queue_.get_wait_ms();
@@ -286,7 +281,7 @@ void reactor::schedule_timer(timer_set_base* ts,
 void reactor::cancel_timer(timer_set_base* ts, internal_timer* t)
 {
 	std::lock_guard<conditionally_mutex> locker(tsq_cond_mutex_);
-	
+
 	if ( ts->has_internal_timer(t) ) {
 		bool need_update = ts->remove_internal_timer(t);
 		if ( need_update ) {
@@ -297,7 +292,7 @@ void reactor::cancel_timer(timer_set_base* ts, internal_timer* t)
 		lcy::system::error_code ec =
 			make_asio_error_code(lcy::asio::error::operation_abort);
 		t->timer_op_.set_errorc(ec);
-		scheduler_->submit(std::move(t->timer_op_));
+		sch_->submit(std::move(t->timer_op_));
 	}
 }
 
@@ -321,8 +316,8 @@ void reactor::capture_signal_set(internal_signal_set* s,
    uint64_t sigmask, operation signal_op)
 {
 	std::lock_guard<conditionally_mutex> locker(ssq_cond_mutex_);
-	
-	scheduler_->operation_increase();	
+
+	sch_->operation_increase();	
 	bool need_update = ss_queue_.add_internal_signal_set(s,
 		sigmask, std::move(signal_op));
 		
@@ -343,7 +338,7 @@ void reactor::cancel_signal_set(internal_signal_set* s)
 		lcy::system::error_code ec =
 			make_asio_error_code(lcy::asio::error::operation_abort);
 		s->signal_op_.set_errorc(ec);
-		scheduler_->submit(std::move(s->signal_op_));
+		sch_->submit(std::move(s->signal_op_));
 	}
 }
 
@@ -380,7 +375,7 @@ int reactor::create_timerfd()
 		lcy::system::error_code ec(errno);
 		throw_asio_exception(ec, "reactor::create_timerfd::timerfd_create");
 	}
-	
+
 	return fd;
 }
 
@@ -394,7 +389,7 @@ int reactor::create_signalfd()
 		lcy::system::error_code ec(errno);
 		throw_asio_exception(ec, "reactor::create_signalfd::signalfd");
 	}
-	
+
 	return fd;
 }
 
@@ -450,7 +445,7 @@ void reactor::handle_timer_events(std::list<operation>& op_list)
 void reactor::handle_signal_events(std::list<operation>& op_list)
 {
 	std::lock_guard<conditionally_mutex> locker(ssq_cond_mutex_);
-	
+
 	signalfd_siginfo siginfo;
 	while ( ::read(signal_fd_, &siginfo, sizeof(siginfo)) == sizeof(siginfo) ) {
 		ss_queue_.get_ready_internal_signal_set_ops(siginfo.ssi_signo, op_list);
@@ -523,7 +518,7 @@ void reactor::cleanup()
 		ds->events_ = event_type::null;
 	}
 
-	scheduler_->abandon_operations(abandon_ops);
+	sch_->abandon_operations(abandon_ops);
 }
 
 }	// namespace detail
