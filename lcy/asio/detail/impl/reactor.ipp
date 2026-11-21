@@ -116,6 +116,11 @@ void reactor::post_to_scheduler(operation op)
 	scheduler_->post(std::move(op));
 }
 
+inline std::size_t reactor::concurrency_hint() const
+{
+	return scheduler_->concurrency_hint_;
+}
+
 /*********************************************************
  *	About Socket Events
  *********************************************************/
