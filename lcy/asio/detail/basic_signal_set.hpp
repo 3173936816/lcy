@@ -18,8 +18,10 @@ class basic_signal_set :
 	private noncopyable
 {
 public:
+	typedef Executor executor_type;
 	typedef signal_set_service::signal_func_type signal_func_type;
 
+public:
 	basic_signal_set(Executor& executor, std::initializer_list<int> signums) :
 		executor_(executor), service_(use_service<signal_set_service>(executor))
 	{
@@ -45,7 +47,7 @@ public:
 		service_.cancel(impl_);
 	}
 
-	Executor& get_executor()
+	executor_type& get_executor()
 	{
 		return executor_;
 	}
@@ -53,7 +55,7 @@ public:
 private:
 	typedef signal_set_service::signal_set_impl signal_set_impl;
 	
-	Executor& executor_;
+	executor_type& executor_;
 	signal_set_impl impl_;
 	signal_set_service& service_;
 };
