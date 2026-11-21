@@ -65,7 +65,7 @@ private:
 	inline void submit_private_op_queue(std::list<operation> op_list);
 
 private:
-	std::atomic<std::size_t> stopped_;
+	std::atomic<bool> stopped_;
 	std::atomic<bool> block_on_reactor_;
 	std::atomic<std::size_t> pending_operations_;
 

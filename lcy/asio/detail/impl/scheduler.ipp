@@ -34,9 +34,9 @@ std::size_t scheduler::run()
 		return n;
 	}
 
-	while ( !stopped_ ) {
-		op_queue_mutex_.lock();
+	std::lock_guard<conditionally_mutex> locker(op_queue_mutex_);
 
+	for ( ; !stopped_; op_queue_mutex_.lock() ) {
 		if ( !op_queue_.empty() ) {
 			scheduler_operation scheduler_op = std::move(op_queue_.front());
 			op_queue_.pop_front();
@@ -54,7 +54,7 @@ std::size_t scheduler::run()
 				if ( timeout == -1 ) {
 					block_on_reactor_ = true;
 				}
-				
+
 				std::list<operation> private_op_queue;
 				reactor_->run(timeout, private_op_queue);
 
@@ -66,7 +66,7 @@ std::size_t scheduler::run()
 				operation_decrease();
 			}
 		} else {
-			condvar_.wait(op_queue_mutex_, [this](){
+			condvar_.wait(op_queue_mutex_, [this]() {
 				return !op_queue_.empty() || stopped_;
 			});
 		}
@@ -92,8 +92,10 @@ void scheduler::submit(operation op)
 {
 	scheduler_operation scheduler_op(std::move(op));
 
-	std::lock_guard<conditionally_mutex> locker(op_queue_mutex_);
-	op_queue_.push_back(std::move(scheduler_op));
+	{
+		std::lock_guard<conditionally_mutex> locker(op_queue_mutex_);
+		op_queue_.push_back(std::move(scheduler_op));
+	}
 
 	wake_up_one_thread();
 }
@@ -132,11 +134,12 @@ void scheduler::init_reactor()
 
 void scheduler::wake_up_one_thread()
 {
+	std::lock_guard<conditionally_mutex> opq_locker(op_queue_mutex_);
 	if ( condvar_.notify_one() ) {
 		return;
 	}
-	
-	std::lock_guard<conditionally_mutex> locker(reactor_mutex_);
+
+	std::lock_guard<conditionally_mutex> rea_locker(reactor_mutex_);
 	if ( reactor_ && block_on_reactor_ ) {
 		reactor_->wake_up();
 		block_on_reactor_ = false;
@@ -147,8 +150,10 @@ void scheduler::stop_all_threads()
 {
 	stopped_ = true;
 
+	std::lock_guard<conditionally_mutex> opq_locker(op_queue_mutex_);
 	condvar_.notify_all();
-	std::lock_guard<conditionally_mutex> locker(reactor_mutex_);
+
+	std::lock_guard<conditionally_mutex> rea_locker(reactor_mutex_);
 	if ( reactor_ ) {
 		reactor_->wake_up();
 	}
