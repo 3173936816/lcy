@@ -12,7 +12,6 @@ scheduler::scheduler(std::size_t concurrency_hint) :
 	stopped_(false),
 	block_on_reactor_(false),
 	pending_operations_(0),
-	condvar_block_threads_(0),
 	reactor_mutex_(concurrency_hint_ != 1),	
 	reactor_(0),
 	op_queue_mutex_(concurrency_hint_ != 1)

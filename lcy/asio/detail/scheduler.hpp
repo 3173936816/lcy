@@ -68,7 +68,6 @@ private:
 	std::atomic<std::size_t> stopped_;
 	std::atomic<bool> block_on_reactor_;
 	std::atomic<std::size_t> pending_operations_;
-	std::atomic<std::size_t> condvar_block_threads_;
 
 	conditionally_mutex reactor_mutex_;
 	reactor* reactor_;
