@@ -46,27 +46,24 @@ public:
 
 	template <typename MutableBufferView>
 	std::size_t receive_from(endpoint_type& endpoint,
-		MutableBufferView buffer_view, lcy::system::error_code& ec)
+		MutableBufferView view, lcy::system::error_code& ec)
 	{
-		return base_type::service_.receive_from(base_type::impl_,
-			endpoint, buffer_view, ec);
+		return base_type::service_.receive_from(base_type::impl_, endpoint, view, ec);
 	}
 
 	template <typename ConstBufferView>
 	std::size_t send_to(endpoint_type endpoint,
-		ConstBufferView buffer_view, lcy::system::error_code& ec)
+		ConstBufferView view, lcy::system::error_code& ec)
 	{
-		return base_type::service_.send_to(base_type::impl_,
-			endpoint, buffer_view, ec);
+		return base_type::service_.send_to(base_type::impl_, endpoint, view, ec);
 	}
 	
 	template <typename MutableBufferView>
-	std::size_t receive_from(endpoint_type& endpoint, MutableBufferView buffer_view)
+	std::size_t receive_from(endpoint_type& endpoint, MutableBufferView view)
 	{
 		lcy::system::error_code ec;
 		std::size_t transferred_bytes =
-			base_type::service_.receive_from(base_type::impl_,
-				endpoint, buffer_view, ec);
+			base_type::service_.receive_from(base_type::impl_, endpoint, view, ec);
 		if ( ec ) {
 			throw_asio_exception(ec, "basic_datagram_socket::receive_from");
 		}
@@ -75,12 +72,11 @@ public:
 	}
 
 	template <typename ConstBufferView>
-	std::size_t send_to(endpoint_type endpoint, ConstBufferView buffer_view)
+	std::size_t send_to(endpoint_type endpoint, ConstBufferView view)
 	{
 		lcy::system::error_code ec;
 		std::size_t transferred_bytes =
-			base_type::service_.send_to(base_type::impl_,
-				endpoint, buffer_view, ec);
+			base_type::service_.send_to(base_type::impl_, endpoint, view, ec);
 		if ( ec ) {
 			throw_asio_exception(ec, "basic_datagram_socket::send_to");
 		}
@@ -90,18 +86,18 @@ public:
 
 	template <typename MutableBufferView>
 	void async_receive_from(endpoint_type& endpoint,
-		MutableBufferView buffer_view, read_func_type func)
+		MutableBufferView view, read_func_type func)
 	{
 		base_type::service_.async_receive_from(base_type::impl_,
-			endpoint, buffer_view, std::move(func));
+			endpoint, view, std::move(func));
 	}
 	
 	template <typename ConstBufferView>
 	void async_send_to(endpoint_type endpoint,
-		ConstBufferView buffer_view, write_func_type func)
+		ConstBufferView view, write_func_type func)
 	{
 		base_type::service_.async_send_to(base_type::impl_,
-			endpoint, buffer_view, std::move(func));
+			endpoint, view, std::move(func));
 	}
 };
 

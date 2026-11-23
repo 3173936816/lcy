@@ -30,10 +30,10 @@ class async_read_state :
 {
 public:
 	async_read_state(StreamSocket& stream_socket,
-					 MutableBufferView buffer_view,
+					 MutableBufferView view,
 					 Function func) :
 		stream_socket_(&stream_socket),
-		buffer_view_(buffer_view),
+		view_(view),
 		func_(std::move(func)),
 		total_bytes_transferred_(0) {}
 
@@ -50,21 +50,21 @@ public:
 
 			total_bytes_transferred_ +=  bytes_transferred;
 
-			if ( bytes_transferred >= buffer_view_.length() ) {
+			if ( bytes_transferred >= view_.length() ) {
 				func_(ec, total_bytes_transferred_);
 				return;
 			}
 
-			buffer_view_ += bytes_transferred;
+			view_ += bytes_transferred;
 			do_read();
 		};
 
-		stream_socket_->async_read_some(buffer_view_, std::move(on_read_func));
+		stream_socket_->async_read_some(view_, std::move(on_read_func));
 	}
 
 private:
 	StreamSocket* stream_socket_;
-	MutableBufferView buffer_view_;
+	MutableBufferView view_;
 	Function func_;
 	std::size_t total_bytes_transferred_;
 };
@@ -76,23 +76,23 @@ template <
     typename MutableBufferView
 >
 std::size_t read(StreamSocket& stream_socket,
-    MutableBufferView buffer_view, lcy::system::error_code& ec)
+    MutableBufferView view, lcy::system::error_code& ec)
 {
     std::size_t total = 0;
 
     for ( ;; ) {
-        std::size_t n = stream_socket.read_some(buffer_view, ec);
+        std::size_t n = stream_socket.read_some(view, ec);
 
         if ( ec ) {
 			break;
         }
 
         total += n;
-        if ( n == buffer_view.length() ) {
+        if ( n == view.length() ) {
             break;
         }
 
-        buffer_view += n;
+        view += n;
     }
 
 	return total;
@@ -102,10 +102,10 @@ template <
     typename StreamSocket,
     typename MutableBufferView
 >
-std::size_t read(StreamSocket& stream_socket, MutableBufferView buffer_view)
+std::size_t read(StreamSocket& stream_socket, MutableBufferView view)
 {
     lcy::system::error_code ec;
-    std::size_t n = read(stream_socket, buffer_view, ec);
+    std::size_t n = read(stream_socket, view, ec);
     if ( ec ) {
         detail::throw_asio_exception(ec, "lcy::asio::read");
     }
@@ -119,13 +119,13 @@ template <
 	typename Function
 >
 void async_read(StreamSocket& stream_socket,
-	MutableBufferView buffer_view, Function func)
+	MutableBufferView view, Function func)
 {
 	std::make_shared<detail::async_read_state<
 		StreamSocket,
 		MutableBufferView,
 		Function
-	> >(stream_socket, buffer_view, std::move(func))->do_read();
+	> >(stream_socket, view, std::move(func))->do_read();
 }
 
 }   // namespace asio

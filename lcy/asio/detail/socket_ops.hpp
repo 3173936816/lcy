@@ -130,10 +130,10 @@ bool is_stream_socket(int sockfd, lcy::system::error_code& ec)
 
 template <typename MutableBufferView>
 ssize_t recv(int sockfd,
-	MutableBufferView buffer_view, lcy::system::error_code& ec)
+	MutableBufferView view, lcy::system::error_code& ec)
 {
 	ssize_t transferred_bytes = ::recv(sockfd,
-		buffer_view.data(), buffer_view.length(), MSG_CMSG_CLOEXEC);
+		view.data(), view.length(), MSG_CMSG_CLOEXEC);
 	if ( transferred_bytes == -1 ) {
 		ec = lcy::system::error_code(errno);
 	} else if ( transferred_bytes == 0 && is_stream_socket(sockfd, ec) ) {
@@ -147,10 +147,10 @@ ssize_t recv(int sockfd,
 
 template <typename ConstBufferView>
 ssize_t send(int sockfd,
-	ConstBufferView buffer_view, lcy::system::error_code& ec)
+	ConstBufferView view, lcy::system::error_code& ec)
 {
 	ssize_t transferred_bytes = ::send(sockfd,
-		buffer_view.data(), buffer_view.length(), MSG_NOSIGNAL);
+		view.data(), view.length(), MSG_NOSIGNAL);
 	if ( transferred_bytes == -1 ) {
 		ec = lcy::system::error_code(errno);
 	} else {
@@ -165,13 +165,13 @@ template <
 	typename MutableBufferView
 >
 ssize_t recvfrom(int sockfd,
-	Endpoint& endpoint, MutableBufferView buffer_view,
+	Endpoint& endpoint, MutableBufferView view,
 	lcy::system::error_code& ec)
 {
 	socklen_t len = sizeof(endpoint);
 
 	ssize_t transferred_bytes = ::recvfrom(sockfd,
-		buffer_view.data(), buffer_view.length(), MSG_CMSG_CLOEXEC,
+		view.data(), view.length(), MSG_CMSG_CLOEXEC,
 			static_cast<sockaddr*>(endpoint.data()), &len);
 	if ( transferred_bytes == -1 ) {
 		ec = lcy::system::error_code(errno);
@@ -187,11 +187,11 @@ template <
 	typename ConstBufferView
 >
 ssize_t sendto(int sockfd,
-	Endpoint endpoint, ConstBufferView buffer_view,
+	Endpoint endpoint, ConstBufferView view,
 	lcy::system::error_code& ec)
 {
 	ssize_t transferred_bytes = ::sendto(sockfd,
-		buffer_view.data(), buffer_view.length(), MSG_NOSIGNAL,
+		view.data(), view.length(), MSG_NOSIGNAL,
 			static_cast<sockaddr*>(endpoint.data()), endpoint.size());
 	if ( transferred_bytes == -1 ) {
 		ec = lcy::system::error_code(errno);

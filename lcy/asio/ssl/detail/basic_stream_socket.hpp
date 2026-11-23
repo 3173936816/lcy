@@ -81,15 +81,15 @@ public:
     }
 
     template <typename MutableBufferView>
-    std::size_t read_some(MutableBufferView buffer_view, lcy::system::error_code& ec)
+    std::size_t read_some(MutableBufferView view, lcy::system::error_code& ec)
     {
-        return ssl_stream_socket_core_.read_some(impl_, stream_socket_, buffer_view, ec);
+        return ssl_stream_socket_core_.read_some(impl_, stream_socket_, view, ec);
     }
 
     template <typename ConstBufferView>
-    std::size_t write_some(ConstBufferView buffer_view, lcy::system::error_code& ec)
+    std::size_t write_some(ConstBufferView view, lcy::system::error_code& ec)
     {
-        return ssl_stream_socket_core_.write_some(impl_, stream_socket_, buffer_view, ec);
+        return ssl_stream_socket_core_.write_some(impl_, stream_socket_, view, ec);
     }
 
     void set_hostname(const std::string& hostname)
@@ -138,10 +138,10 @@ public:
     }
 
     template <typename MutableBufferView>
-    std::size_t read_some(MutableBufferView buffer_view)
+    std::size_t read_some(MutableBufferView view)
     {
         lcy::system::error_code ec;
-        std::size_t n = read_some(buffer_view, ec);
+        std::size_t n = read_some(view, ec);
         if ( ec ) {
             throw_ssl_exception(ec, "basic_ssl_stream_socket::read_some");
         }
@@ -149,10 +149,10 @@ public:
     }
 
     template <typename ConstBufferView>
-    std::size_t write_some(ConstBufferView buffer_view)
+    std::size_t write_some(ConstBufferView view)
     {
         lcy::system::error_code ec;
-        std::size_t n = write_some(buffer_view, ec);
+        std::size_t n = write_some(view, ec);
         if ( ec ) {
             throw_ssl_exception(ec, "basic_ssl_stream_socket::write_some");
         }
@@ -170,15 +170,15 @@ public:
     }
 
     template <typename MutableBufferView>
-    void async_read_some(MutableBufferView buffer_view, read_func_type func)
+    void async_read_some(MutableBufferView view, read_func_type func)
     {
-        ssl_stream_socket_core_.async_read_some(impl_, stream_socket_, buffer_view, std::move(func));
+        ssl_stream_socket_core_.async_read_some(impl_, stream_socket_, view, std::move(func));
     }
 
     template <typename ConstBufferView>
-    void async_write_some(ConstBufferView buffer_view, write_func_type func)
+    void async_write_some(ConstBufferView view, write_func_type func)
     {
-        ssl_stream_socket_core_.async_write_some(impl_, stream_socket_, buffer_view, std::move(func));
+        ssl_stream_socket_core_.async_write_some(impl_, stream_socket_, view, std::move(func));
     }
 
     context_type& get_context()

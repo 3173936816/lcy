@@ -165,7 +165,7 @@ public:
 
 	template <typename MutableBufferView>
 	std::size_t receive(socket_impl& impl,
-		MutableBufferView buffer_view, lcy::system::error_code& ec)
+		MutableBufferView view, lcy::system::error_code& ec)
 	{
 		if ( !is_open(impl) ) {
             ec = lcy::system::error_code(
@@ -176,7 +176,7 @@ public:
 		ssize_t transferred_bytes = 0;
 
 		for ( ;; ) {
-			transferred_bytes = socket_ops::recv(impl.sockfd_, buffer_view, ec);
+			transferred_bytes = socket_ops::recv(impl.sockfd_, view, ec);
 
 			if ( transferred_bytes >= 0 ) {
 				break;
@@ -197,7 +197,7 @@ public:
 
 	template <typename ConstBufferView>
 	std::size_t send(socket_impl& impl,
-		ConstBufferView buffer_view, lcy::system::error_code& ec)
+		ConstBufferView view, lcy::system::error_code& ec)
 	{
 		if ( !is_open(impl) ) {
             ec = lcy::system::error_code(
@@ -208,7 +208,7 @@ public:
 		ssize_t transferred_bytes = 0;
 
 		for ( ;; ) {
-			transferred_bytes = socket_ops::send(impl.sockfd_, buffer_view, ec);
+			transferred_bytes = socket_ops::send(impl.sockfd_, view, ec);
 
 			if ( transferred_bytes >= 0 ) {
 				break;
@@ -344,7 +344,7 @@ public:
 
 	template <typename MutableBufferView>
 	void async_receive(socket_impl& impl,
-		MutableBufferView buffer_view, read_func_type func)
+		MutableBufferView view, read_func_type func)
 	{
 		if ( !is_open(impl) ) {
             lcy::system::error_code ec = lcy::system::error_code(
@@ -354,7 +354,7 @@ public:
         }
 
 		receive_operation<MutableBufferView> receive_op(this,
-			impl, buffer_view, std::move(func));
+			impl, view, std::move(func));
 
 		reactor_->start_op(impl.sockfd_,
 			impl.data_, reactor::event_type::read,
@@ -363,7 +363,7 @@ public:
 
 	template <typename ConstBufferView>
 	void async_send(socket_impl& impl,
-		ConstBufferView buffer_view, write_func_type func)
+		ConstBufferView view, write_func_type func)
 	{
 		if ( !is_open(impl) ) {
             lcy::system::error_code ec = lcy::system::error_code(
@@ -373,7 +373,7 @@ public:
         }
 
 		send_operation<ConstBufferView> send_op(this,
-			impl, buffer_view, std::move(func));
+			impl, view, std::move(func));
 
 		reactor_->start_op(impl.sockfd_,
 			impl.data_, reactor::event_type::write,

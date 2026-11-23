@@ -15,12 +15,12 @@ public:
 	send_to_operation(socket_service_base* self,
 					  socket_impl& impl,
 					  Endpoint endpoint,
-					  ConstBufferView buffer_view,
+					  ConstBufferView view,
 					  write_func_type func) :
 		self_(self),
 		impl_(&impl),
 		endpoint_(endpoint),
-		buffer_view_(buffer_view),
+		view_(view),
 		func_(std::move(func)) {}
 
 	void operator()(lcy::system::error_code ec, int) const
@@ -29,7 +29,7 @@ public:
 
 		if ( !ec ) {
 			transferred_bytes = socket_ops::sendto(impl_->sockfd_,
-				endpoint_, buffer_view_, ec);
+				endpoint_, view_, ec);
 			if ( transferred_bytes == -1 ) {
 				transferred_bytes = 0; 
 			}
@@ -42,7 +42,7 @@ private:
 	socket_service_base* self_;
 	socket_impl* impl_;
 	Endpoint endpoint_;
-	ConstBufferView buffer_view_;
+	ConstBufferView view_;
 	write_func_type func_;
 };
 

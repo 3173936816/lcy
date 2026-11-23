@@ -28,9 +28,9 @@ std::size_t write_header(StreamSocket& stream_socket,
     Message& message, lcy::system::error_code& ec)
 {
     auto header = message.header_to_string();
-    auto buffer_view = lcy::asio::buffer_view(header.c_str(), header.size());
+    auto view = lcy::asio::buffer_view(header.c_str(), header.size());
 
-    return lcy::asio::write(stream_socket, buffer_view, ec);
+    return lcy::asio::write(stream_socket, view, ec);
 }
 
 template <
@@ -41,10 +41,10 @@ std::size_t write_body(StreamSocket& stream_socket,
     Message& message, lcy::system::error_code& ec)
 {
     auto& buffer = message.body_container();
-    auto buffer_view = lcy::asio::buffer_view(
+    auto view = lcy::asio::buffer_view(
         static_cast<const char*>(buffer.data()), buffer.size());
 
-    return lcy::asio::write(stream_socket, buffer_view, ec);
+    return lcy::asio::write(stream_socket, view, ec);
 }
 
 template <
@@ -120,14 +120,14 @@ void async_write_header(StreamSocket& stream_socket,
     Message& message, Function func)
 {
     auto header_sptr = std::make_shared<std::string>(message.header_to_string());
-    auto buffer_view = lcy::asio::buffer_view(header_sptr->c_str(), header_sptr->size());
+    auto view = lcy::asio::buffer_view(header_sptr->c_str(), header_sptr->size());
     auto on_write_func = [header_sptr, func](
         lcy::system::error_code ec, std::size_t bytes_transferred)
     {
         func(ec, bytes_transferred);
     };
 
-    lcy::asio::async_write(stream_socket, buffer_view, std::move(on_write_func));
+    lcy::asio::async_write(stream_socket, view, std::move(on_write_func));
 }
 
 template <
@@ -139,10 +139,10 @@ void async_write_body(StreamSocket& stream_socket,
     Message& message, Function func)
 {
     auto& buffer = message.body_container();
-    auto buffer_view = lcy::asio::buffer_view(
+    auto view = lcy::asio::buffer_view(
         static_cast<const char*>(buffer.data()), buffer.size());
 
-    lcy::asio::async_write(stream_socket, buffer_view, std::move(func));
+    lcy::asio::async_write(stream_socket, view, std::move(func));
 }
 
 template <

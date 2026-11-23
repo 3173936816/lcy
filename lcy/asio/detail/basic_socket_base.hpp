@@ -79,15 +79,15 @@ public:
 	}
 
 	template <typename MutableBufferView>
-	std::size_t receive(MutableBufferView buffer_view, lcy::system::error_code& ec)
+	std::size_t receive(MutableBufferView view, lcy::system::error_code& ec)
 	{
-		return service_.receive(impl_, buffer_view, ec);
+		return service_.receive(impl_, view, ec);
 	}
 
 	template <typename ConstBufferView>
-	std::size_t send(ConstBufferView buffer_view, lcy::system::error_code& ec)
+	std::size_t send(ConstBufferView view, lcy::system::error_code& ec)
 	{
-		return service_.send(impl_, buffer_view, ec);
+		return service_.send(impl_, view, ec);
 	}
 
 	template <typename SocketOption>
@@ -151,10 +151,10 @@ public:
 	}
 
 	template <typename MutableBufferView>
-	std::size_t receive(MutableBufferView buffer_view)
+	std::size_t receive(MutableBufferView view)
 	{
 		lcy::system::error_code ec;
-		std::size_t transferred_bytes = service_.receive(impl_, buffer_view, ec);
+		std::size_t transferred_bytes = service_.receive(impl_, view, ec);
 		if ( ec ) {
 			throw_asio_exception(ec, "basic_socket_base::receive");
 		}
@@ -163,10 +163,10 @@ public:
 	}
 
 	template <typename ConstBufferView>
-	std::size_t send(ConstBufferView buffer_view)
+	std::size_t send(ConstBufferView view)
 	{
 		lcy::system::error_code ec;
-		std::size_t transferred_bytes = service_.send(impl_, buffer_view, ec);
+		std::size_t transferred_bytes = service_.send(impl_, view, ec);
 		if ( ec ) {
 			throw_asio_exception(ec, "basic_socket_base::send");
 		}
@@ -230,15 +230,15 @@ public:
 	}
 
 	template <typename MutableBufferView>
-	void async_receive(MutableBufferView buffer_view, read_func_type func)
+	void async_receive(MutableBufferView view, read_func_type func)
 	{
-		service_.async_receive(impl_, buffer_view, std::move(func));
+		service_.async_receive(impl_, view, std::move(func));
 	}
 
 	template <typename ConstBufferView>
-	void async_send(ConstBufferView buffer_view, write_func_type func)
+	void async_send(ConstBufferView view, write_func_type func)
 	{
-		service_.async_send(impl_, buffer_view, std::move(func));
+		service_.async_send(impl_, view, std::move(func));
 	}
 
 	executor_type& get_executor()

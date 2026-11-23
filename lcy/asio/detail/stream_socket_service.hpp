@@ -75,16 +75,16 @@ public:
 
 	template <typename MutableBufferView>
 	std::size_t read_some(socket_impl& impl,
-		MutableBufferView buffer_view, lcy::system::error_code& ec)
+		MutableBufferView view, lcy::system::error_code& ec)
 	{
-		return receive(impl, buffer_view, ec);
+		return receive(impl, view, ec);
 	}
 
 	template <typename ConstBufferView>
 	std::size_t write_some(socket_impl& impl,
-		ConstBufferView buffer_view, lcy::system::error_code& ec)
+		ConstBufferView view, lcy::system::error_code& ec)
 	{
-		return send(impl, buffer_view, ec);
+		return send(impl, view, ec);
 	}
 
 	template <typename Endpoint>
@@ -116,16 +116,16 @@ public:
 
 	template <typename MutableBufferView>
 	void async_read_some(socket_impl& impl,
-		MutableBufferView buffer_view, read_func_type func)
+		MutableBufferView view, read_func_type func)
 	{
-		async_receive(impl, buffer_view, std::move(func));
+		async_receive(impl, view, std::move(func));
 	}
 
 	template <typename ConstBufferView>
 	void async_write_some(socket_impl& impl,
-		ConstBufferView buffer_view, write_func_type func)
+		ConstBufferView view, write_func_type func)
 	{
-		async_send(impl, buffer_view, std::move(func));
+		async_send(impl, view, std::move(func));
 	}
 
 	void cleanup() override

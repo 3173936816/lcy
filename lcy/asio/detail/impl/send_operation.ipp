@@ -11,11 +11,11 @@ class socket_service_base::send_operation
 public:
 	send_operation(socket_service_base* self,
 				   socket_impl& impl,
-				   ConstBufferView buffer_view,
+				   ConstBufferView view,
 				   write_func_type func) :
 		self_(self),
 		impl_(&impl),
-		buffer_view_(buffer_view),
+		view_(view),
 		func_(std::move(func)) {}
 
 	void operator()(lcy::system::error_code ec, int) const
@@ -23,7 +23,7 @@ public:
 		int transferred_bytes = 0;
 
 		if ( !ec ) {
-			transferred_bytes = socket_ops::send(impl_->sockfd_, buffer_view_, ec);
+			transferred_bytes = socket_ops::send(impl_->sockfd_, view_, ec);
 			if ( transferred_bytes == -1 ) {
 				transferred_bytes = 0;
 			}
@@ -35,7 +35,7 @@ public:
 private:
 	socket_service_base* self_;
 	socket_impl* impl_;
-	ConstBufferView buffer_view_;
+	ConstBufferView view_;
 	write_func_type func_;
 };
 

@@ -158,7 +158,7 @@ public:
     template <typename MutableBufferView>
     std::size_t read_some(ssl_socket_impl& impl,
         lcy::asio::ip::tcp::socket& stream_socket,
-        MutableBufferView buffer_view, lcy::system::error_code& ec)
+        MutableBufferView view, lcy::system::error_code& ec)
     {
         if ( !stream_socket.is_open() ) {
             ec = lcy::system::error_code(
@@ -167,8 +167,8 @@ public:
         }
 
         for ( ;; ) {
-            int ret = ::SSL_read(impl.ssl_, buffer_view.data(),
-                static_cast<int>(buffer_view.length()));
+            int ret = ::SSL_read(impl.ssl_, view.data(),
+                static_cast<int>(view.length()));
 
             if ( ret > 0 ) {
                 ec = lcy::system::error_code();
@@ -200,7 +200,7 @@ public:
     template <typename ConstBufferView>
     std::size_t write_some(ssl_socket_impl& impl,
         lcy::asio::ip::tcp::socket& stream_socket,
-        ConstBufferView buffer_view, lcy::system::error_code& ec)
+        ConstBufferView view, lcy::system::error_code& ec)
     {
         if ( !stream_socket.is_open() ) {
             ec = lcy::system::error_code(
@@ -209,8 +209,8 @@ public:
         }
 
         for ( ;; ) {
-            int ret = ::SSL_write(impl.ssl_, buffer_view.data(),
-                static_cast<int>(buffer_view.length()));
+            int ret = ::SSL_write(impl.ssl_, view.data(),
+                static_cast<int>(view.length()));
 
             if ( ret > 0 ) {
                 if ( !flush_write_bio(impl, stream_socket, ec) ) {
@@ -258,7 +258,7 @@ public:
     template <typename MutableBufferView>
     void async_read_some(ssl_socket_impl& impl,
         lcy::asio::ip::tcp::socket& stream_socket,
-        MutableBufferView buffer_view, read_func_type func)
+        MutableBufferView view, read_func_type func)
     {
         if ( !stream_socket.is_open() ) {
             lcy::system::error_code ec(
@@ -271,8 +271,8 @@ public:
             return;
         }
 
-        int ret = ::SSL_read(impl.ssl_, buffer_view.data(),
-            static_cast<int>(buffer_view.length()));
+        int ret = ::SSL_read(impl.ssl_, view.data(),
+            static_cast<int>(view.length()));
 
         if ( ret > 0 ) {
             lcy::asio::post(stream_socket.get_executor(),
@@ -290,8 +290,8 @@ public:
                 [func](lcy::system::error_code ec) {
                     func(ec, 0);
                 },
-                [&impl, &stream_socket, buffer_view, func, this]() {
-                    async_read_some(impl, stream_socket, buffer_view, func);
+                [&impl, &stream_socket, view, func, this]() {
+                    async_read_some(impl, stream_socket, view, func);
                 });
 
             return;
@@ -306,7 +306,7 @@ public:
     template <typename ConstBufferView>
     void async_write_some(ssl_socket_impl& impl,
         lcy::asio::ip::tcp::socket& stream_socket,
-        ConstBufferView buffer_view, write_func_type func)
+        ConstBufferView view, write_func_type func)
     {
         if ( !stream_socket.is_open() ) {
             lcy::system::error_code ec(
@@ -319,8 +319,8 @@ public:
             return;
         }
 
-        int ret = ::SSL_write(impl.ssl_, buffer_view.data(),
-            static_cast<int>(buffer_view.length()));
+        int ret = ::SSL_write(impl.ssl_, view.data(),
+            static_cast<int>(view.length()));
 
         if ( ret > 0 ) {
             async_flush_write_bio(impl, stream_socket,
@@ -342,8 +342,8 @@ public:
                 [func](lcy::system::error_code ec) {
                     func(ec, 0);
                 },
-                [&impl, &stream_socket, buffer_view, func, this]() {
-                    async_write_some(impl, stream_socket, buffer_view, func);
+                [&impl, &stream_socket, view, func, this]() {
+                    async_write_some(impl, stream_socket, view, func);
                 });
 
             return;
@@ -515,7 +515,7 @@ private:
             return;
         }
 
-        auto part = lcy::asio::const_buffer_view(
+        auto part = lcy::asio::buffer_view(
             static_cast<const char*>(view.data()) + written, total - written);
 
         stream_socket.async_write_some(part,

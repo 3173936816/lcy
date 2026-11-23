@@ -58,15 +58,15 @@ public:
 	}
 
 	template <typename MutableBufferView>
-	std::size_t read_some(MutableBufferView buffer_view, lcy::system::error_code& ec)
+	std::size_t read_some(MutableBufferView view, lcy::system::error_code& ec)
 	{
-		return base_type::service_.read_some(base_type::impl_, buffer_view, ec);
+		return base_type::service_.read_some(base_type::impl_, view, ec);
 	}
 
 	template <typename ConstBufferView>
-	std::size_t write_some(ConstBufferView buffer_view, lcy::system::error_code& ec)
+	std::size_t write_some(ConstBufferView view, lcy::system::error_code& ec)
 	{
-		return base_type::service_.write_some(base_type::impl_, buffer_view, ec);
+		return base_type::service_.write_some(base_type::impl_, view, ec);
 	}
 
 	void listen(int backlog)
@@ -88,11 +88,11 @@ public:
 	}
 
 	template <typename MutableBufferView>
-	std::size_t read_some(MutableBufferView buffer_view)
+	std::size_t read_some(MutableBufferView view)
 	{
 		lcy::system::error_code ec;
 		std::size_t transferred_bytes =
-			base_type::service_.read_some(base_type::impl_, buffer_view, ec);
+			base_type::service_.read_some(base_type::impl_, view, ec);
 		if ( ec ) {
 			throw_asio_exception(ec, "basic_stream_socket::read_some");
 		}
@@ -101,11 +101,11 @@ public:
 	}
 
 	template <typename ConstBufferView>
-	std::size_t write_some(ConstBufferView buffer_view)
+	std::size_t write_some(ConstBufferView view)
 	{
 		lcy::system::error_code ec;
 		std::size_t transferred_bytes =
-			base_type::service_.write_some(base_type::impl_, buffer_view, ec);
+			base_type::service_.write_some(base_type::impl_, view, ec);
 		if ( ec ) {
 			throw_asio_exception(ec, "basic_stream_socket::write_some");
 		}
@@ -121,17 +121,15 @@ public:
 	}
 
 	template <typename MutableBufferView>
-	void async_read_some(MutableBufferView buffer_view, read_func_type func)
+	void async_read_some(MutableBufferView view, read_func_type func)
 	{
-		base_type::service_.async_read_some(base_type::impl_,
-			buffer_view, std::move(func));
+		base_type::service_.async_read_some(base_type::impl_, view, std::move(func));
 	}
 
 	template <typename ConstBufferView>
-	void async_write_some(ConstBufferView buffer_view, write_func_type func)
+	void async_write_some(ConstBufferView view, write_func_type func)
 	{
-		base_type::service_.async_write_some(base_type::impl_,
-			buffer_view, std::move(func));
+		base_type::service_.async_write_some(base_type::impl_, view, std::move(func));
 	}
 };
 

@@ -28,7 +28,7 @@ public:
 		typename MutableBufferView
 	>
 	std::size_t receive_from(socket_impl& impl,
-		Endpoint& endpoint, MutableBufferView buffer_view,
+		Endpoint& endpoint, MutableBufferView view,
 		lcy::system::error_code& ec)
 	{
 		if ( !is_open(impl) ) {
@@ -41,7 +41,7 @@ public:
 
 		for ( ;; ) {
 			transferred_bytes = socket_ops::recvfrom(impl.sockfd_,
-				endpoint, buffer_view, ec);
+				endpoint, view, ec);
 
 			if ( transferred_bytes >= 0 ) {
 				break;
@@ -65,7 +65,7 @@ public:
 		typename ConstBufferView
 	>
 	std::size_t send_to(socket_impl& impl,
-		Endpoint endpoint, ConstBufferView buffer_view,
+		Endpoint endpoint, ConstBufferView view,
 		lcy::system::error_code& ec)
 	{
 		if ( !is_open(impl) ) {
@@ -78,7 +78,7 @@ public:
 
 		for ( ;; ) {
 			transferred_bytes = socket_ops::sendto(impl.sockfd_,
-				endpoint, buffer_view, ec);
+				endpoint, view, ec);
 
 			if ( transferred_bytes >= 0 ) {
 				break;
@@ -102,7 +102,7 @@ public:
 		typename MutableBufferView
 	>
 	void async_receive_from(socket_impl& impl,
-		Endpoint& endpoint, MutableBufferView buffer_view,
+		Endpoint& endpoint, MutableBufferView view,
 		read_func_type func)
 	{
 		if ( !is_open(impl) ) {
@@ -113,7 +113,7 @@ public:
         }
 
 		receive_from_operation<Endpoint, MutableBufferView> receive_from_op(this,
-			impl, endpoint, buffer_view, std::move(func));
+			impl, endpoint, view, std::move(func));
 
 		reactor_->start_op(impl.sockfd_,
 			impl.data_, reactor::event_type::read,
@@ -125,7 +125,7 @@ public:
 		typename ConstBufferView
 	>
 	void async_send_to(socket_impl& impl,
-		Endpoint endpoint, ConstBufferView buffer_view,
+		Endpoint endpoint, ConstBufferView view,
 		write_func_type func)
 	{
 		if ( !is_open(impl) ) {
@@ -136,7 +136,7 @@ public:
         }
 
 		send_to_operation<Endpoint, ConstBufferView> send_to_op(this,
-			impl, endpoint, buffer_view, std::move(func));
+			impl, endpoint, view, std::move(func));
 
 		reactor_->start_op(impl.sockfd_,
 			impl.data_, reactor::event_type::write,
