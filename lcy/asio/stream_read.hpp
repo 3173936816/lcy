@@ -84,16 +84,18 @@ std::size_t read(StreamSocket& stream_socket,
         std::size_t n = stream_socket.read_some(buffer_view, ec);
 
         if ( ec ) {
-            return total;
+			break;
         }
 
         total += n;
         if ( n == buffer_view.length() ) {
-            return total;
+            break;
         }
 
         buffer_view += n;
     }
+
+	return total;
 }
 
 template <
