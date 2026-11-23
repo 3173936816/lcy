@@ -149,8 +149,8 @@ public:
             ::SSL_shutdown(impl.ssl_);
         }
 
-        lcy::system::error_code ignore_ec;
-        flush_write_bio(impl, stream_socket, ignore_ec);
+        lcy::system::error_code ignored_ec;
+        flush_write_bio(impl, stream_socket, ignored_ec);
 
         stream_socket.close(ec);
     }

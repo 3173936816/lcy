@@ -118,8 +118,8 @@ public:
 
     void close()
     {
-        lcy::system::error_code ignore_ec;
-        stream_socket_.close(ignore_ec);
+        lcy::system::error_code ignored_ec;
+        stream_socket_.close(ignored_ec);
     }
 
     void bind(endpoint_type endpoint)
@@ -180,8 +180,8 @@ public:
 
     void cancel()
     {
-        lcy::system::error_code ignore_ec;
-        stream_socket_.cancel(ignore_ec);
+        lcy::system::error_code ignored_ec;
+        stream_socket_.cancel(ignored_ec);
     }
 
     void async_accept(stream_socket_type& target_socket,

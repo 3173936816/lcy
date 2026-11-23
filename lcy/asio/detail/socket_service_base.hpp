@@ -86,8 +86,8 @@ public:
 
 	void destroy(socket_impl& impl)
 	{
-		lcy::system::error_code ignore_ec;
-		this->close(impl, ignore_ec);
+		lcy::system::error_code ignored_ec;
+		this->close(impl, ignored_ec);
 	}
 
 	bool is_open(const socket_impl& impl) const
