@@ -7,7 +7,8 @@
 #include "lcy/asio/socket_option.hpp"
 #include "lcy/asio/strand.hpp"
 #include "lcy/asio/work_guard.hpp"
-#include "lcy/asio/async_stream.hpp"
+#include "lcy/asio/stream_read.hpp"
+#include "lcy/asio/stream_write.hpp"
 
 #include "lcy/asio/ip/tcp.hpp"
 #include "lcy/asio/ip/udp.hpp"

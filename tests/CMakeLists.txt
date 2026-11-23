@@ -49,13 +49,15 @@ target_include_directories(strand_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 add_executable(work_guard_test asio/work_guard.cc)
 target_include_directories(work_guard_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-add_executable(async_stream_test asio/async_stream.cc)
-target_include_directories(async_stream_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+add_executable(stream_transferred_test asio/stream_transferred.cc)
+target_include_directories(stream_transferred_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 add_executable(func_type_test asio/func_type.cc)
 target_include_directories(func_type_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 ####### asio ssl
+
+find_package(OpenSSL REQUIRED)
 
 add_executable(ssl_stream_socket asio/ssl/stream_socket.cc)
 target_include_directories(ssl_stream_socket PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
