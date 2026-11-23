@@ -60,7 +60,6 @@ struct tcp_pair
     }
 };
 
-// ---------- 同步 read ----------
 static void test_sync_read_full()
 {
     std::cout << "[test_sync_read_full]\n";
@@ -155,7 +154,6 @@ static void test_sync_read_exception()
     std::cout << "  sync read throws on eof ok\n";
 }
 
-// ---------- 同步 write ----------
 static void test_sync_write_full()
 {
     std::cout << "[test_sync_write_full]\n";
