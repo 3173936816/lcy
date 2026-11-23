@@ -20,7 +20,7 @@ public:
 	const_buffer_view(const void* data, std::size_t length) :
 		data_(data), length_(length) {}
 
-	const_buffer_view operator+(std::size_t offset)
+	const_buffer_view operator+(std::size_t offset) const
 	{
 		if ( offset > length_ ) {
 			offset = length_;
@@ -76,7 +76,7 @@ public:
 		return const_buffer_view(data_, length_);
 	}
 
-	mutable_buffer_view operator+(std::size_t offset)
+	mutable_buffer_view operator+(std::size_t offset) const
 	{
 		if ( offset > length_ ) {
 			offset = length_;
@@ -99,6 +99,11 @@ public:
 	}
 
 	void* data()
+	{
+		return data_;
+	}
+
+	const void* data() const
 	{
 		return data_;
 	}
