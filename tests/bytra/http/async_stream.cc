@@ -590,7 +590,8 @@ static void test_write_full()
 
     expect_size(calls, 1, "callback once");
     expect_true(!got_ec, "ec");
-    expect_size(got_n, 5, "n == body size");
+    expect_size(got_n, expect_header.size() + 5,
+        "n == header and body size");
     expect_str(sock.written(), expect_header + "hello", "written == header+body");
 }
 
@@ -633,7 +634,8 @@ static void test_write_full_empty_body()
     });
 
     expect_size(calls, 1, "callback once");
-    expect_size(got_n, 0, "n == 0");
+    expect_size(got_n, req.header_to_string().size(),
+        "n == header size");
     expect_str(sock.written(), req.header_to_string(), "only header");
 }
 

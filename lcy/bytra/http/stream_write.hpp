@@ -25,7 +25,7 @@ template <
     typename Message
 >
 std::size_t write_header(StreamSocket& stream_socket,
-    Message& message, lcy::system::error_code ec)
+    Message& message, lcy::system::error_code& ec)
 {
     auto header = message.header_to_string();
     auto buffer_view = lcy::asio::buffer_view(header.c_str(), header.size());
@@ -38,7 +38,7 @@ template <
     typename Message
 >
 std::size_t write_body(StreamSocket& stream_socket,
-    Message& message, lcy::system::error_code ec)
+    Message& message, lcy::system::error_code& ec)
 {
     auto& buffer = message.body_container();
     auto buffer_view = lcy::asio::buffer_view(
@@ -52,7 +52,7 @@ template <
     typename Message
 >
 std::size_t write(StreamSocket& stream_socket,
-    Message& message, lcy::system::error_code ec)
+    Message& message, lcy::system::error_code& ec)
 {
     std::size_t transferred_bytes = 0;
 
@@ -153,18 +153,24 @@ template <
 void async_write(StreamSocket& stream_socket,
     Message& message, Function func)
 {
-    auto on_write_func = [&stream_socket, &message, func](
-        lcy::system::error_code ec, std::size_t bytes_transferred)
+    auto on_header_write_func = [&stream_socket, &message, func](
+        lcy::system::error_code header_ec, std::size_t header_bytes_transferred)
     {
-        if ( ec ) {
-            func(ec, bytes_transferred);
+        if ( header_ec ) {
+            func(header_ec, header_bytes_transferred);
             return;
         }
 
-        async_write_body(stream_socket, message, std::move(func));
+        auto on_body_write_func = [func, header_bytes_transferred](
+            lcy::system::error_code body_ec, std::size_t body_bytes_transferred)
+        {
+            func(body_ec, header_bytes_transferred + body_bytes_transferred);
+        };
+
+        async_write_body(stream_socket, message, std::move(on_body_write_func));
     };
 
-    async_write_header(stream_socket, message, std::move(on_write_func));
+    async_write_header(stream_socket, message, std::move(on_header_write_func));
 }
 
 }   // namespace http

@@ -125,14 +125,12 @@ template <
 >
 std::size_t read_header(StreamSocket& stream_socket,
     DynamicBuffer& buffer, HttpParser& parser,
-    Message& message, lcy::system::error_code ec)
+    Message& message, lcy::system::error_code& ec)
 {
     std::size_t parsed_bytes = 0;
 
     for ( ;; ) {
-        buffer.prepare(4096);
-        auto view = lcy::asio::buffer_view(buffer.data(), buffer.length());
-
+        auto view = buffer.prepare(4096);
         std::size_t n = stream_socket.read_some(view, ec);
         if ( ec ) {
             break;
@@ -140,7 +138,7 @@ std::size_t read_header(StreamSocket& stream_socket,
 
         buffer.commit(n);
 
-        n = parser.parse_header(buffer.data(), buffer.length(), message, ec);
+        n = parser.parse_header(buffer.data(), buffer.size(), message, ec);
 
         parsed_bytes += n;
         buffer.consume(n);
@@ -161,14 +159,12 @@ template <
 >
 std::size_t read_body(StreamSocket& stream_socket,
     DynamicBuffer& buffer, HttpParser& parser,
-    Message& message, lcy::system::error_code ec)
+    Message& message, lcy::system::error_code& ec)
 {
     std::size_t parsed_bytes = 0;
 
     for ( ;; ) {
-        buffer.prepare(4096);
-        auto view = lcy::asio::buffer_view(buffer.data(), buffer.length());
-
+        auto view = buffer.prepare(4096);
         std::size_t n = stream_socket.read_some(view, ec);
         if ( ec ) {
             break;
@@ -176,7 +172,7 @@ std::size_t read_body(StreamSocket& stream_socket,
 
         buffer.commit(n);
 
-        n = parser.parse_body(buffer.data(), buffer.length(), message, ec);
+        n = parser.parse_body(buffer.data(), buffer.size(), message, ec);
 
         parsed_bytes += n;
         buffer.consume(n);
@@ -197,14 +193,12 @@ template <
 >
 std::size_t read(StreamSocket& stream_socket,
     DynamicBuffer& buffer, HttpParser& parser,
-    Message& message, lcy::system::error_code ec)
+    Message& message, lcy::system::error_code& ec)
 {
     std::size_t parsed_bytes = 0;
 
     for ( ;; ) {
-        buffer.prepare(4096);
-        auto view = lcy::asio::buffer_view(buffer.data(), buffer.length());
-
+        auto view = buffer.prepare(4096);
         std::size_t n = stream_socket.read_some(view, ec);
         if ( ec ) {
             break;
@@ -212,7 +206,7 @@ std::size_t read(StreamSocket& stream_socket,
 
         buffer.commit(n);
 
-        n = parser.parse(buffer.data(), buffer.length(), message, ec);
+        n = parser.parse(buffer.data(), buffer.size(), message, ec);
 
         parsed_bytes += n;
         buffer.consume(n);
@@ -235,7 +229,7 @@ std::size_t read_header(StreamSocket& stream_socket,
     DynamicBuffer& buffer, HttpParser& parser, Message& message)
 {
     lcy::system::error_code ec;
-    std::size_t n = read_header(stream_socket, message, ec);
+    std::size_t n = read_header(stream_socket, buffer, parser, message, ec);
     if ( ec ) {
         detail::throw_http_exception(ec, "lcy::bytra::http::read_header");
     }
@@ -253,7 +247,7 @@ std::size_t read_body(StreamSocket& stream_socket,
     DynamicBuffer& buffer, HttpParser& parser, Message& message)
 {
     lcy::system::error_code ec;
-    std::size_t n = read_body(stream_socket, message, ec);
+    std::size_t n = read_body(stream_socket, buffer, parser, message, ec);
     if ( ec ) {
         detail::throw_http_exception(ec, "lcy::bytra::http::read_body");
     }
@@ -271,7 +265,7 @@ std::size_t read(StreamSocket& stream_socket,
     DynamicBuffer& buffer, HttpParser& parser, Message& message)
 {
     lcy::system::error_code ec;
-    std::size_t n = read(stream_socket, message, ec);
+    std::size_t n = read(stream_socket, buffer, parser, message, ec);
     if ( ec ) {
         detail::throw_http_exception(ec, "lcy::bytra::http::read");
     }
