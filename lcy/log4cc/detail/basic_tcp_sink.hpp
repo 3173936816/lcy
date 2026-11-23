@@ -80,7 +80,9 @@ public:
         if ( base_type::formatter_ ) {
             auto do_start_send_func = [this, rsptr]() {
                 if ( message_deque_.size() >= max_deque_length_ ) {
-                    lcy::system::error_code ec(lcy::system::error::no_buffer_space);
+                    lcy::system::error_code ec(
+                        lcy::system::error::no_buffer_space);
+
                     if ( error_func_ ) {
                         error_func_(ec);
                     }
