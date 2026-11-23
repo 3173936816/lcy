@@ -124,11 +124,8 @@ public:
 
     void close()
     {
-        lcy::system::error_code ec;
-        close(ec);
-        if ( ec ) {
-            throw_ssl_exception(ec, "basic_ssl_stream_socket::close");
-        }
+        lcy::system::error_code ignored_ec;
+        close(ignored_ec);
     }
 
     template <typename MutableBufferView>
