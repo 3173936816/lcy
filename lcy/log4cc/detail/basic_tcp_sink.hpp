@@ -164,8 +164,9 @@ private:
                 return;
             }
 
-            tcp_socket_.set_option(lcy::asio::socket_option::keep_alive(1));
-            tcp_socket_.set_option(lcy::asio::socket_option::tcp_nodelay(1));
+            lcy::system::error_code ignore_ec;
+            tcp_socket_.set_option(lcy::asio::socket_option::keep_alive(1), ignore_ec);
+            tcp_socket_.set_option(lcy::asio::socket_option::tcp_nodelay(1), ignore_ec);
 
             state_ = state::connecting;
             execute_state_machine();
