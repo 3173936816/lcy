@@ -365,6 +365,7 @@ std::size_t basic_parser<Message>::parse_header(const char* data,
             return parsed_bytes_ - begin;
         }
     }
+
     ec = make_http_error_code(lcy::bytra::http::error::success);
     return parsed_bytes_ - begin;
 }
@@ -389,6 +390,7 @@ std::size_t basic_parser<Message>::parse_body(const char* data,
     } else {
         parse_fixed_body(message, ec);
     }
+
     return parsed_bytes_ - begin;
 }
 
@@ -402,26 +404,34 @@ std::size_t basic_parser<Message>::parse(const char* data,
 
     const std::size_t begin = parsed_bytes_;
 
-    while ( true ) {
+    for ( ;; ) {
         if ( phase_ == phase::header_line ) {
             parse_first_line(message, ec);
-        } else if ( phase_ == phase::header_fields ) {
+        }
+        
+        else if ( phase_ == phase::header_fields ) {
             parse_fields(message, ec);
-        } else if ( phase_ == phase::body ) {
+        }
+        
+        else if ( phase_ == phase::body ) {
             if ( is_chunk_ ) {
                 parse_chunked_body(message, ec);
             } else {
                 parse_fixed_body(message, ec);
             }
-        } else {
+        }
+        
+        else {
             ec = make_http_error_code(lcy::bytra::http::error::success);
-            return parsed_bytes_ - begin;
+            break;
         }
 
         if ( ec ) {
-            return parsed_bytes_ - begin;
+            break;
         }
     }
+
+    return parsed_bytes_ - begin;
 }
 
 template <typename Message>
@@ -430,11 +440,11 @@ void basic_parser<Message>::parse_first_line(message_type& message,
 {
     const char* crlf = CRLF();
     if ( !crlf ) {
-        if ( header_limit_ &&
-             parsed_bytes_ + (buf_size_ - buf_pos_) > header_limit_ ) {
+        if ( header_limit_ && parsed_bytes_ + (buf_size_ - buf_pos_) > header_limit_ ) {
             ec = make_http_error_code(lcy::bytra::http::error::header_too_large);
             return;
         }
+
         ec = make_http_error_code(lcy::bytra::http::error::wait_more);
         return;
     }
