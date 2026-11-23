@@ -12,7 +12,8 @@
 #include "lcy/bytra/http/request_parser.hpp"
 #include "lcy/bytra/http/response_parser.hpp"
 #include "lcy/bytra/http/detail/error.hpp"
-#include "lcy/bytra/http/async_stream.hpp"
+#include "lcy/bytra/http/stream_read.hpp"
+#include "lcy/bytra/http/stream_write.hpp"
 
 using namespace lcy::bytra;
 using namespace lcy::bytra::http;

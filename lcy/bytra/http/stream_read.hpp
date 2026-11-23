@@ -1,16 +1,17 @@
-#ifndef __LCY_BYTRA_HTTP_ASYNC_STREAM_HPP__
-#define __LCY_BYTRA_HTTP_ASYNC_STREAM_HPP__
+#ifndef __LCY_BYTRA_HTTP_STREAM_READ_HPP__
+#define __LCY_BYTRA_HTTP_STREAM_READ_HPP__
 
 #include <cstddef>
 #include <memory>
 #include <utility>
 
 #include "lcy/system/error.hpp"
-#include "lcy/asio/stream_write.hpp"
+#include "lcy/asio/stream_read.hpp"
 #include "lcy/bytra/flat_buffer.hpp"
 #include "lcy/bytra/http/error.hpp"
 #include "lcy/bytra/http/request_parser.hpp"
 #include "lcy/bytra/http/response_parser.hpp"
+#include "lcy/bytra/http/detail/throw_http_exception.hpp"
 
 namespace lcy
 {
@@ -55,7 +56,7 @@ public:
         message_(&message),
         func_(std::move(func)),
         mode_(m),
-        parse_bytes_(0) {}
+        parsed_bytes_(0) {}
 
     void do_parse()
     {
@@ -65,7 +66,7 @@ public:
             std::size_t bytes_transferred)
         {
             if ( ec ) {
-                func_(ec, parse_bytes_);
+                func_(ec, parsed_bytes_);
                 return;
             }
 
@@ -87,18 +88,18 @@ public:
             if ( consumed > 0 ) {
                 buffer_->consume(consumed);
             }
-            parse_bytes_ += consumed;
+            parsed_bytes_ += consumed;
 
             if ( pec ) {
                 if ( pec == lcy::bytra::http::error::wait_more ) {
                     do_parse();
                     return;
                 }
-                func_(pec, parse_bytes_);
+                func_(pec, parsed_bytes_);
                 return;
             }
 
-            func_(pec, parse_bytes_);
+            func_(pec, parsed_bytes_);
         };
 
         stream_socket_->async_read_some(view, std::move(on_read_func));
@@ -111,10 +112,172 @@ private:
     Message* message_;
     Function func_;
     mode mode_;
-    std::size_t parse_bytes_;
+    std::size_t parsed_bytes_;
 };
 
 }   // namespace detail
+
+template <
+    typename StreamSocket,
+    typename DynamicBuffer,
+    typename HttpParser,
+    typename Message
+>
+std::size_t read_header(StreamSocket& stream_socket,
+    DynamicBuffer& buffer, HttpParser& parser,
+    Message& message, lcy::system::error_code ec)
+{
+    std::size_t parsed_bytes = 0;
+
+    for ( ;; ) {
+        buffer.prepare(4096);
+        auto view = lcy::asio::buffer_view(buffer.data(), buffer.length());
+
+        std::size_t n = stream_socket.read_some(view, ec);
+        if ( ec ) {
+            break;
+        }
+
+        buffer.commit(n);
+
+        n = parser.parse_header(buffer.data(), buffer.length(), message, ec);
+
+        parsed_bytes += n;
+        buffer.consume(n);
+
+        if ( ec != lcy::bytra::http::error::wait_more ) {
+            break;
+        }
+    }
+
+    return parsed_bytes;
+}
+
+template <
+    typename StreamSocket,
+    typename DynamicBuffer,
+    typename HttpParser,
+    typename Message
+>
+std::size_t read_body(StreamSocket& stream_socket,
+    DynamicBuffer& buffer, HttpParser& parser,
+    Message& message, lcy::system::error_code ec)
+{
+    std::size_t parsed_bytes = 0;
+
+    for ( ;; ) {
+        buffer.prepare(4096);
+        auto view = lcy::asio::buffer_view(buffer.data(), buffer.length());
+
+        std::size_t n = stream_socket.read_some(view, ec);
+        if ( ec ) {
+            break;
+        }
+
+        buffer.commit(n);
+
+        n = parser.parse_body(buffer.data(), buffer.length(), message, ec);
+
+        parsed_bytes += n;
+        buffer.consume(n);
+
+        if ( ec != lcy::bytra::http::error::wait_more ) {
+            break;
+        }
+    }
+
+    return parsed_bytes;
+}
+
+template <
+    typename StreamSocket,
+    typename DynamicBuffer,
+    typename HttpParser,
+    typename Message
+>
+std::size_t read(StreamSocket& stream_socket,
+    DynamicBuffer& buffer, HttpParser& parser,
+    Message& message, lcy::system::error_code ec)
+{
+    std::size_t parsed_bytes = 0;
+
+    for ( ;; ) {
+        buffer.prepare(4096);
+        auto view = lcy::asio::buffer_view(buffer.data(), buffer.length());
+
+        std::size_t n = stream_socket.read_some(view, ec);
+        if ( ec ) {
+            break;
+        }
+
+        buffer.commit(n);
+
+        n = parser.parse(buffer.data(), buffer.length(), message, ec);
+
+        parsed_bytes += n;
+        buffer.consume(n);
+
+        if ( ec != lcy::bytra::http::error::wait_more ) {
+            break;
+        }
+    }
+
+    return parsed_bytes;
+}
+
+template <
+    typename StreamSocket,
+    typename DynamicBuffer,
+    typename HttpParser,
+    typename Message
+>
+std::size_t read_header(StreamSocket& stream_socket,
+    DynamicBuffer& buffer, HttpParser& parser, Message& message)
+{
+    lcy::system::error_code ec;
+    std::size_t n = read_header(stream_socket, message, ec);
+    if ( ec ) {
+        detail::throw_http_exception(ec, "lcy::bytra::http::read_header");
+    }
+
+    return n;
+}
+
+template <
+    typename StreamSocket,
+    typename DynamicBuffer,
+    typename HttpParser,
+    typename Message
+>
+std::size_t read_body(StreamSocket& stream_socket,
+    DynamicBuffer& buffer, HttpParser& parser, Message& message)
+{
+    lcy::system::error_code ec;
+    std::size_t n = read_body(stream_socket, message, ec);
+    if ( ec ) {
+        detail::throw_http_exception(ec, "lcy::bytra::http::read_body");
+    }
+
+     return n;
+}
+
+template <
+    typename StreamSocket,
+    typename DynamicBuffer,
+    typename HttpParser,
+    typename Message
+>
+std::size_t read(StreamSocket& stream_socket,
+    DynamicBuffer& buffer, HttpParser& parser, Message& message)
+{
+    lcy::system::error_code ec;
+    std::size_t n = read(stream_socket, message, ec);
+    if ( ec ) {
+        detail::throw_http_exception(ec, "lcy::bytra::http::read");
+    }
+
+     return n;
+}
 
 template <
     typename StreamSocket,
@@ -197,60 +360,8 @@ void async_read(StreamSocket& stream_socket,
         >::mode::full)->do_parse();
 }
 
-template <
-    typename StreamSocket,
-    typename Message,
-    typename Function
->
-void async_write_header(StreamSocket& stream_socket, Message& message, Function func)
-{
-    auto header_sptr = std::make_shared<std::string>(message.header_to_string());
-    auto buffer_view = lcy::asio::buffer_view(header_sptr->c_str(), header_sptr->size());
-    auto on_write_func = [header_sptr, func](
-        lcy::system::error_code ec, std::size_t bytes_transferred)
-    {
-        func(ec, bytes_transferred);
-    };
-
-    lcy::asio::async_write(stream_socket, buffer_view, std::move(on_write_func));
-}
-
-template <
-    typename StreamSocket,
-    typename Message,
-    typename Function
->
-void async_write_body(StreamSocket& stream_socket, Message& message, Function func)
-{
-    auto& buffer = message.body_container();
-    auto buffer_view = lcy::asio::buffer_view(static_cast<const char*>(buffer.data()), buffer.size());
-
-    lcy::asio::async_write(stream_socket, buffer_view, std::move(func));
-}
-
-template <
-    typename StreamSocket,
-    typename Message,
-    typename Function
->
-void async_write(StreamSocket& stream_socket, Message& message, Function func)
-{
-    auto on_write_func = [&stream_socket, &message, func](
-        lcy::system::error_code ec, std::size_t bytes_transferred)
-    {
-        if ( ec ) {
-            func(ec, bytes_transferred);
-            return;
-        }
-
-        async_write_body(stream_socket, message, std::move(func));
-    };
-
-    async_write_header(stream_socket, message, std::move(on_write_func));
-}
-
 }   // namespace http
 }   // namespace bytra
 }   // namespace lcy
 
-#endif  // __LCY_BYTRA_HTTP_ASYNC_STREAM_HPP__
+#endif  // __LCY_BYTRA_HTTP_STREAM_READ_HPP__

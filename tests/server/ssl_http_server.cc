@@ -11,7 +11,8 @@
 #include "lcy/asio/socket_option.hpp"
 
 #include "lcy/bytra/flat_buffer.hpp"
-#include "lcy/bytra/http/async_stream.hpp"
+#include "lcy/bytra/http/stream_read.hpp"
+#include "lcy/bytra/http/stream_write.hpp"
 
 namespace {
 
