@@ -407,21 +407,15 @@ std::size_t basic_parser<Message>::parse(const char* data,
     for ( ;; ) {
         if ( phase_ == phase::header_line ) {
             parse_first_line(message, ec);
-        }
-        
-        else if ( phase_ == phase::header_fields ) {
+        } else if ( phase_ == phase::header_fields ) {
             parse_fields(message, ec);
-        }
-        
-        else if ( phase_ == phase::body ) {
+        } else if ( phase_ == phase::body ) {
             if ( is_chunk_ ) {
                 parse_chunked_body(message, ec);
             } else {
                 parse_fixed_body(message, ec);
             }
-        }
-        
-        else {
+        } else {
             ec = make_http_error_code(lcy::bytra::http::error::success);
             break;
         }
