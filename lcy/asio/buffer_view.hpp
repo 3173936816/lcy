@@ -31,6 +31,17 @@ public:
 			length_ - offset);
 	}
 
+	const_buffer_view& operator+=(std::size_t offset)
+	{
+	    if ( offset > length_ ) {
+	        offset = length_;
+	    }
+	    data_ = static_cast<const char*>(data_) + offset;
+	    length_ -= offset;
+
+	    return *this;
+	}
+
 	const void* data() const
 	{
 		return data_;
@@ -74,6 +85,17 @@ public:
 		return mutable_buffer_view(
 			static_cast<char*>(data_) + offset,
 			length_ - offset);
+	}
+
+	mutable_buffer_view& operator+=(std::size_t offset)
+	{
+	    if ( offset > length_ ) {
+	        offset = length_;
+	    }
+	    data_ = static_cast<char*>(data_) + offset;
+	    length_ -= offset;
+
+	    return *this;
 	}
 
 	void* data()
