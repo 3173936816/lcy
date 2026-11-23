@@ -29,15 +29,9 @@ class basic_stream_socket :
 public:
     typedef Context context_type;
 
-    typedef stream_socket_core::handshake_func_type handshake_func_type;
     typedef stream_socket_core::read_func_type read_func_type;
     typedef stream_socket_core::write_func_type write_func_type;
-
-    enum handshake_type
-    {
-        client,
-        server
-    };
+    typedef stream_socket_core::handshake_func_type handshake_func_type;
 
 public:
     basic_stream_socket(lcy::asio::io_context& ioc, context_type& context) :
