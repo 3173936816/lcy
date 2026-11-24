@@ -138,7 +138,8 @@ std::size_t read_header(StreamSocket& stream_socket,
 
         buffer.commit(n);
 
-        n = parser.parse_header(buffer.data(), buffer.size(), message, ec);
+        n = parser.parse_header(static_cast<const char*>(
+            buffer.data()), buffer.size(), message, ec);
 
         parsed_bytes += n;
         buffer.consume(n);
@@ -172,7 +173,8 @@ std::size_t read_body(StreamSocket& stream_socket,
 
         buffer.commit(n);
 
-        n = parser.parse_body(buffer.data(), buffer.size(), message, ec);
+        n = parser.parse_body(static_cast<const char*>(
+            buffer.data()), buffer.size(), message, ec);
 
         parsed_bytes += n;
         buffer.consume(n);
@@ -206,7 +208,8 @@ std::size_t read(StreamSocket& stream_socket,
 
         buffer.commit(n);
 
-        n = parser.parse(buffer.data(), buffer.size(), message, ec);
+        n = parser.parse(static_cast<const char*>(
+            buffer.data()), buffer.size(), message, ec);
 
         parsed_bytes += n;
         buffer.consume(n);
