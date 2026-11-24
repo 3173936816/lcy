@@ -120,5 +120,5 @@ target_include_directories(log4cc_formatter_test PRIVATE ${CMAKE_CURRENT_SOURCE_
 add_executable(log4cc_logger_test log4cc/logger.cc)
 target_include_directories(log4cc_logger_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-add_executable(log4cc_tcp_sink_test log4cc/tcp_sink.cc)
-target_include_directories(log4cc_tcp_sink_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+add_executable(log4cc_async_tcp_sink_test log4cc/async_tcp_sink.cc)
+target_include_directories(log4cc_async_tcp_sink_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)

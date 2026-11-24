@@ -1,5 +1,5 @@
-#ifndef __LCY_LOG4CC_DETAIL_BASIC_TCP_SINK_HPP__
-#define __LCY_LOG4CC_DETAIL_BASIC_TCP_SINK_HPP__
+#ifndef __LCY_LOG4CC_DETAIL_BASIC_ASYNC_TCP_SINK_HPP__
+#define __LCY_LOG4CC_DETAIL_BASIC_ASYNC_TCP_SINK_HPP__
 
 #include <list>
 #include <memory>
@@ -23,7 +23,7 @@ template <
     typename TcpSocket,
     typename SinkBase
 >
-class basic_tcp_sink :
+class basic_async_tcp_sink :
     public SinkBase
 {
 public:
@@ -42,15 +42,22 @@ public:
     typedef TcpSocket socket_type;
     typedef SinkBase base_type;
 
-    typedef std::shared_ptr<basic_tcp_sink> sptr_type;
+    typedef std::shared_ptr<basic_async_tcp_sink> sptr_type;
     typedef typename base_type::record_sptr_type record_sptr_type;
 
     typedef typename socket_type::endpoint_type endpoint_type;
 
 public:
-    basic_tcp_sink(lcy::asio::io_context& ioc, endpoint_type endpoint, std::size_t max_deque_length) :
-        state_(state::initstate), epoch_(0), ioc_(ioc), endpoint_(endpoint),
-        tcp_socket_(ioc), strand_(ioc), max_deque_length_(max_deque_length)
+    basic_async_tcp_sink(lcy::asio::io_context& ioc,
+                         endpoint_type endpoint,
+                         std::size_t max_deque_length) :
+        state_(state::initstate),
+        epoch_(0), 
+        ioc_(ioc), 
+        endpoint_(endpoint),
+        tcp_socket_(ioc),
+        strand_(ioc),
+        max_deque_length_(max_deque_length)
     {
         strand_.post([this]() {
             execute_state_machine();
@@ -272,4 +279,4 @@ private:
 }   // namespace log4cc
 }   // namespace lcy
 
-#endif // __LCY_LOG4CC_DETAIL_BASIC_TCP_SINK_HPP__
+#endif // __LCY_LOG4CC_DETAIL_BASIC_ASYNC_TCP_SINK_HPP__
