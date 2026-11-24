@@ -21,6 +21,7 @@ class item_base :
 public:
     typedef std::shared_ptr<item_base> sptr_type;
 
+public:
     virtual ~item_base() {}
     virtual void format(RecordSptr rsptr, std::ostringstream& oss) = 0;
 };
