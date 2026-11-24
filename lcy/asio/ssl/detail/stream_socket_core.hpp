@@ -275,24 +275,27 @@ public:
             static_cast<int>(view.length()));
 
         if ( ret > 0 ) {
-            lcy::asio::post(stream_socket.get_executor(),
-                [func, ret]() {
-                    lcy::system::error_code ec;
-                    func(ec, static_cast<std::size_t>(ret));
-                });
+            auto error_func = [func, ret]() {
+                lcy::system::error_code ec;
+                func(ec, static_cast<std::size_t>(ret));
+            };
+
+            lcy::asio::post(stream_socket.get_executor(), std::move(error_func));
             return;
         }
 
         int ssl_error = ::SSL_get_error(impl.ssl_, ret);
 
         if ( ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE ) {
-            async_drain(impl, stream_socket,
-                [func](lcy::system::error_code ec) {
-                    func(ec, 0);
-                },
-                [&impl, &stream_socket, view, func, this]() {
-                    async_read_some(impl, stream_socket, view, func);
-                });
+            auto error_func = [func](lcy::system::error_code ec) {
+                func(ec, 0);
+            };
+
+            auto next_func = [&impl, &stream_socket, view, func, this]() {
+                async_read_some(impl, stream_socket, view, std::move(func));
+            };
+
+            async_drain(impl, stream_socket, std::move(error_func), std::move(next_func));
 
             return;
         }
@@ -323,14 +326,17 @@ public:
             static_cast<int>(view.length()));
 
         if ( ret > 0 ) {
+            auto error_func = [func](lcy::system::error_code ec) {
+                func(ec, 0);
+            };
+
+            auto next_func = [func, ret]() {
+                lcy::system::error_code ec;
+                func(ec, static_cast<std::size_t>(ret));
+            };
+
             async_flush_write_bio(impl, stream_socket,
-                [func](lcy::system::error_code ec) {
-                    func(ec, 0);
-                },
-                [func, ret]() {
-                    lcy::system::error_code ec;
-                    func(ec, static_cast<std::size_t>(ret));
-                });
+                std::move(error_func), std::move(next_func));
 
             return;
         }
@@ -338,13 +344,17 @@ public:
         int ssl_error = ::SSL_get_error(impl.ssl_, ret);
 
         if ( ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE ) {
+            auto error_func = [func](lcy::system::error_code ec) {
+                func(ec, 0);
+            };
+
+            auto next_func = [&impl, &stream_socket, view, func, this]()
+            {
+                async_write_some(impl, stream_socket, view, std::move(func));
+            };
+
             async_drain(impl, stream_socket,
-                [func](lcy::system::error_code ec) {
-                    func(ec, 0);
-                },
-                [&impl, &stream_socket, view, func, this]() {
-                    async_write_some(impl, stream_socket, view, func);
-                });
+                std::move(error_func), std::move(next_func));
 
             return;
         }
@@ -374,7 +384,8 @@ private:
         }
 
         if ( n == 0 ) {
-            ec = make_ssl_error_code(lcy::asio::ssl::error::stream_truncated);
+            ec = make_ssl_error_code(
+                lcy::asio::ssl::error::stream_truncated);
             return false;
         }
 
@@ -400,7 +411,8 @@ private:
                 }
 
                 if ( nsend == 0 ) {
-                    ec = make_ssl_error_code(lcy::asio::ssl::error::stream_truncated);
+                    ec = make_ssl_error_code(
+                        lcy::asio::ssl::error::stream_truncated);
                     return false;
                 }
 
@@ -461,16 +473,19 @@ private:
         error_func_type error_func, next_func_type next_func)
     {
         auto view = lcy::asio::buffer_view(impl.buffer_, impl.length_);
-        stream_socket.async_read_some(view,
-            [&impl, &stream_socket, error_func, next_func](
-                lcy::system::error_code ec, std::size_t n) {
+
+        auto on_read_func = [&impl, &stream_socket,
+                error_func, next_func](
+            lcy::system::error_code ec, std::size_t n)
+        {
             if ( ec ) {
                 error_func(ec);
                 return;
             }
 
             if ( n == 0 ) {
-                ec = make_ssl_error_code(lcy::asio::ssl::error::stream_truncated);
+                ec = make_ssl_error_code(
+                    lcy::asio::ssl::error::stream_truncated);
                 error_func(ec);
                 return;
             }
@@ -478,7 +493,9 @@ private:
             ::BIO_write(impl.read_bio_, impl.buffer_, static_cast<int>(n));
 
             next_func();
-        });
+        };
+
+        stream_socket.async_read_some(view, std::move(on_read_func));
     }
 
     void async_flush_write_bio(ssl_socket_impl& impl,
@@ -495,10 +512,16 @@ private:
         }
 
         auto view = lcy::asio::buffer_view(impl.buffer_, static_cast<std::size_t>(n));
-        async_write_loop(impl, stream_socket, view, static_cast<std::size_t>(n), 0, error_func,
-            	[&impl, &stream_socket, error_func, next_func, this]() {
-        	async_flush_write_bio(impl, stream_socket, error_func, next_func);
-        });
+
+        auto loop_next_func = [&impl, &stream_socket,
+            error_func, next_func, this]()
+        {
+        	async_flush_write_bio(impl, stream_socket,
+                std::move(error_func), std::move(next_func));
+        };
+
+        async_write_loop(impl, stream_socket, view,
+            static_cast<std::size_t>(n), 0, std::move(error_func), std::move(loop_next_func));
     }
 
     template <typename ConstBufferView>
@@ -518,33 +541,42 @@ private:
         auto part = lcy::asio::buffer_view(
             static_cast<const char*>(view.data()) + written, total - written);
 
-        stream_socket.async_write_some(part,
-            [&impl, &stream_socket, view, total, written, error_func, next_func, this](
-                lcy::system::error_code ec, std::size_t nsend) {
+        auto on_write_func = [&impl, &stream_socket, view, total,
+                written, error_func, next_func, this](
+            lcy::system::error_code ec, std::size_t nsend)
+        {
             if ( ec ) {
                 error_func(ec);
                 return;
             }
 
             if ( nsend == 0 ) {
-                ec = make_ssl_error_code(lcy::asio::ssl::error::stream_truncated);
+                ec = make_ssl_error_code(
+                    lcy::asio::ssl::error::stream_truncated);
                 error_func(ec);
                 return;
             }
 
             async_write_loop(impl, stream_socket, view,
-                total, written + nsend, error_func, next_func);
-        });
+                total, written + nsend, std::move(error_func), std::move(next_func));
+        };
+
+        stream_socket.async_write_some(part, std::move(on_write_func));
     }
 
     void async_drain_flush(ssl_socket_impl& impl,
         lcy::asio::ip::tcp::socket& stream_socket,
         error_func_type error_func, next_func_type next_func)
     {
-        async_flush_write_bio(impl, stream_socket, error_func,
-            	[&impl, &stream_socket, error_func, next_func, this]() {
-            async_fill_read_bio(impl, stream_socket, error_func, next_func);
-        });
+        auto bio_wirte_next_func = [&impl, &stream_socket,
+            error_func, next_func, this]()
+        {
+            async_fill_read_bio(impl, stream_socket,
+                std::move(error_func), std::move(next_func));
+        };
+
+        async_flush_write_bio(impl, stream_socket,
+            std::move(error_func), std::move(bio_wirte_next_func));
     }
 
     void async_drain(ssl_socket_impl& impl,
@@ -553,11 +585,14 @@ private:
     {
         int pending = ::BIO_ctrl_pending(impl.write_bio_);
         if ( pending > 0 ) {
-            async_drain_flush(impl, stream_socket, error_func, next_func);
+            async_drain_flush(impl, stream_socket,
+                std::move(error_func), std::move(next_func));
+
             return;
         }
 
-        async_fill_read_bio(impl, stream_socket, error_func, next_func);
+        async_fill_read_bio(impl, stream_socket,
+            std::move(error_func), std::move(next_func));
     }
 
     void async_handshake(ssl_socket_impl& impl,
@@ -590,10 +625,15 @@ private:
         int ssl_error = ::SSL_get_error(impl.ssl_, ret);
 
         if ( ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE ) {
-            async_drain(impl, stream_socket, func,
-                    [&impl, &stream_socket, is_client, func, this]() {
-                async_handshake(impl, stream_socket, is_client, func);
-            });
+            auto next_func = [&impl, &stream_socket,
+                is_client, func, this]()
+            {
+                async_handshake(impl, stream_socket, is_client, std::move(func));
+            };
+
+            async_drain(impl, stream_socket,
+                std::move(func), std::move(next_func));
+
             return;
         }
 
