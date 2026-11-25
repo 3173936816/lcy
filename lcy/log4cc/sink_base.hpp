@@ -20,6 +20,8 @@ public:
     typedef std::shared_ptr<sink_base> sptr_type;
 
 public:
+    virtual ~sink_base() {}
+
     formatter::sptr_type get_formatter()
     {
         return formatter_;
