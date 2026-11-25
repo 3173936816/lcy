@@ -12,7 +12,6 @@
 
 #include "lcy/noncopyable.hpp"
 #include "lcy/log4cc/level.hpp"
-#include "lcy/log4cc/detail/thread_cache.hpp"
 
 namespace lcy
 {
@@ -31,8 +30,8 @@ public:
            std::size_t file_line,
            std::string logger_name) :
         level_(l),
-        pid_(detail::thread_cache::pid()),
-        thread_id_(detail::thread_cache::tid()),
+        pid_(::getpid()),
+        thread_id_(::syscall(SYS_gettid)),
         timestamp_(std::time(0)),
         file_name_(std::move(file_name)),
         file_line_(file_line),
