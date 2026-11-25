@@ -18,7 +18,7 @@ int main()
     lcy::asio::ip::tcp::endpoint endpoint("0.0.0.0", 9950);
     auto tcp_sink = std::make_shared<lcy::log4cc::async_tcp_sink_mt>(ioc, endpoint, 2);
 
-    auto error_func = [tcp_sink](lcy::system::error_code ec) {
+    auto error_func = [&tcp_sink](lcy::system::error_code ec) {
         if ( ec == lcy::system::error::no_buffer_space ) {
             std::cout << "no_buffer" << std::endl;
         } else {
