@@ -40,7 +40,6 @@ static void test_run_empty()
     std::cout << "[test_run_empty]\n";
     scheduler sch(1);
 
-    // pending_operations_ == 0，run() 开头直接 stop + return 0
     std::size_t n = sch.run();
     assert(n == 0);
     std::cout << "  run() on empty returned 0\n";
@@ -115,7 +114,7 @@ static void test_stop_idempotent()
     sch.stop();
     sch.stop();
 
-    std::size_t n = sch.run();   // stopped_ 已 true
+    std::size_t n = sch.run();
     assert(n == 0);
     std::cout << "  repeated stop ok\n";
 }

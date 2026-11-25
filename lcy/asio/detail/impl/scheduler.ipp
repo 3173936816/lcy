@@ -42,6 +42,9 @@ std::size_t scheduler::run()
 			op_queue_.pop_front();
 
 			bool has_more_op = !op_queue_.empty();
+			if ( scheduler_op.event_token_ && !has_more_op ) {
+    			block_on_reactor_ = true;
+			}
 
 			op_queue_mutex_.unlock();
 
@@ -51,9 +54,6 @@ std::size_t scheduler::run()
 			
 			if ( scheduler_op.event_token_ ) {
 				int timeout = has_more_op ? 0 : -1;
-				if ( timeout == -1 ) {
-					block_on_reactor_ = true;
-				}
 
 				std::list<operation> private_op_queue;
 				reactor_->run(timeout, private_op_queue);
@@ -130,6 +130,8 @@ void scheduler::init_reactor()
 	
 	std::lock_guard<conditionally_mutex> locker(op_queue_mutex_);
 	op_queue_.push_back(scheduler_operation());
+
+	condvar_.notify_one();
 }
 
 void scheduler::wake_up_one_thread()
