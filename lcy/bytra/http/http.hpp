@@ -11,6 +11,7 @@
 #include "lcy/bytra/http/request_parser.hpp"
 #include "lcy/bytra/http/response_parser.hpp"
 
-#include "lcy/bytra/http/async_stream.hpp"
+#include "lcy/bytra/http/stream_read.hpp"
+#include "lcy/bytra/http/stream_write.hpp"
 
 #endif  // __LCY_BYTRA_HTTP_HTTP_HPP__

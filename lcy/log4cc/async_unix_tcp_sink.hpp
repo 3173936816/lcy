@@ -18,7 +18,7 @@ typedef detail::basic_async_tcp_sink<
 typedef detail::basic_async_tcp_sink<
     lcy::asio::local::stream::socket,
     sink_base
-> async_unix_tcp_sink_mt;
+> async_unix_tcp_sink_st;
 
 }   // namespace log4cc
 }   // namespace lcy
