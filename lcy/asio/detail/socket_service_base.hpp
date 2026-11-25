@@ -403,13 +403,13 @@ protected:
 	{
 		impl.sockfd_ = sockfd;
 		impl.data_ = reactor_->alloc_internal_descriptor_state();
-		int error = reactor_->register_internal_descriptor_state(impl.sockfd_, impl.data_);
-		if ( error ) {
+		int errorc = reactor_->register_internal_descriptor_state(impl.sockfd_, impl.data_);
+		if ( errorc ) {
 			lcy::system::error_code ignored_ec;
 			close(impl, ignored_ec);
 		}
 
-		ec = lcy::system::error_code(error);
+		ec = lcy::system::error_code(errorc);
 	}
 	
 protected:

@@ -325,15 +325,15 @@ int poll_connect(int sockfd, lcy::system::error_code& ec)
 		return -1;
 	}
 
-	int error = 0;
-	socklen_t len = sizeof(error);
+	int errorc = 0;
+	socklen_t len = sizeof(errorc);
 	
-	if ( getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &error, &len, ec) ) {
+	if ( getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &errorc, &len, ec) ) {
 		return -1;
 	}
 
-	if ( error ) {
-		ec = lcy::system::error_code(error);
+	if ( errorc ) {
+		ec = lcy::system::error_code(errorc);
 		return -1;
 	}
 
@@ -360,10 +360,10 @@ int getaddrinfo(const std::string& host,
     hints.ai_flags = AI_PASSIVE;
 
 	addrinfo* res = 0;
-	int error = ::getaddrinfo(host.c_str(), service.c_str(), &hints, &res);
-	if ( error ) {
-		ec = make_asio_resolver_error_code(error);
-		return error;
+	int errorc = ::getaddrinfo(host.c_str(), service.c_str(), &hints, &res);
+	if ( errorc ) {
+		ec = make_asio_resolver_error_code(errorc);
+		return errorc;
 	}
 
 	for ( addrinfo* ptr = res; ptr; ptr = ptr->ai_next ) {
