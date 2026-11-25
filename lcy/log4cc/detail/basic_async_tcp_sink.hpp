@@ -123,6 +123,11 @@ public:
         per_record_func_ = std::move(per_record_func);
     }
 
+    lcy::asio::strand& get_strand()
+    {
+        return strand_;
+    }
+
 private:
     enum state
     {
