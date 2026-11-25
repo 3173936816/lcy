@@ -1,8 +1,9 @@
 #ifndef __LCY_ASIO_SSL_DETAIL_STREAM_SOCKET_CORE_HPP__
 #define __LCY_ASIO_SSL_DETAIL_STREAM_SOCKET_CORE_HPP__
 
-#include <cstddef>
+#include <list>
 #include <memory>
+#include <cstddef>
 #include <functional>
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
@@ -37,12 +38,15 @@ public:
     typedef lcy::asio::ip::tcp::socket::write_func_type write_func_type;
 
 public:
+    stream_socket_core() : flushing_(false) {}
+
     struct ssl_socket_impl
     {
         SSL* ssl_;
         BIO* read_bio_;
         BIO* write_bio_;
-        char* buffer_;
+        char* read_buffer_;
+        char* write_buffer_;
         std::size_t length_;
     };
 
@@ -54,7 +58,8 @@ public:
         impl.ssl_ = ::SSL_new(ssl_ctx);
         impl.read_bio_ = ::BIO_new(BIO_s_mem());
         impl.write_bio_ = ::BIO_new(BIO_s_mem());
-        impl.buffer_ = new char[buffer_length]{ 0 };
+        impl.read_buffer_ = new char[buffer_length]{ 0 };
+        impl.write_buffer_ = new char[buffer_length]{ 0 };
         impl.length_ = buffer_length;
 
         if ( !impl.ssl_ || !impl.read_bio_ || !impl.write_bio_ ) {
@@ -67,14 +72,18 @@ public:
             if ( impl.write_bio_ ) {
                 ::BIO_free(impl.write_bio_);
             }
-            if ( impl.buffer_ ) {
-                delete[] impl.buffer_;
+            if ( impl.read_buffer_ ) {
+                delete[] impl.read_buffer_;
+            }
+            if ( impl.write_buffer_ ) {
+                delete[] impl.write_buffer_;
             }
 
             impl.ssl_ = 0;
             impl.read_bio_ = 0;
             impl.write_bio_ = 0;
-            impl.buffer_ = 0;
+            impl.read_buffer_ = 0;
+            impl.write_buffer_ = 0;
             impl.length_ = 0;
 
             ec = make_ssl_error_code(lcy::asio::ssl::error::openssl_error);
@@ -95,15 +104,22 @@ public:
         if ( impl.ssl_ ) {
             ::SSL_free(impl.ssl_);
         }
-        if ( impl.buffer_ ) {
-            delete[] impl.buffer_;
+        if ( impl.read_buffer_ ) {
+            delete[] impl.read_buffer_;
+        }
+        if ( impl.write_buffer_ ) {
+            delete[] impl.write_buffer_;
         }
 
         impl.ssl_ = 0;
         impl.read_bio_ = 0;
         impl.write_bio_ = 0;
-        impl.buffer_ = 0;
+        impl.read_buffer_ = 0;
+        impl.write_buffer_ = 0;
         impl.length_ = 0;
+
+        flushing_ = false;
+        flush_waiters_.clear();
     }
 
     void set_hostname(ssl_socket_impl& impl,
@@ -374,10 +390,16 @@ private:
 
     typedef std::function<void()> next_func_type;
 
+    struct flush_waiter
+    {
+        error_func_type error_func;
+        next_func_type next_func;
+    };
+
     bool fill_read_bio(ssl_socket_impl& impl,
         lcy::asio::ip::tcp::socket& stream_socket, lcy::system::error_code& ec)
     {
-        auto view = lcy::asio::buffer_view(impl.buffer_, impl.length_);
+        auto view = lcy::asio::buffer_view(impl.read_buffer_, impl.length_);
         std::size_t n = stream_socket.read_some(view, ec);
         if ( ec ) {
             return false;
@@ -389,7 +411,7 @@ private:
             return false;
         }
 
-        ::BIO_write(impl.read_bio_, impl.buffer_, static_cast<int>(n));
+        ::BIO_write(impl.read_bio_, impl.read_buffer_, static_cast<int>(n));
 
         return true;
     }
@@ -398,12 +420,14 @@ private:
         lcy::asio::ip::tcp::socket& stream_socket, lcy::system::error_code& ec)
     {
         for ( ;; ) {
-            int n = ::BIO_read(impl.write_bio_, impl.buffer_, impl.length_);
+            int n = ::BIO_read(impl.write_bio_, impl.write_buffer_,
+                static_cast<int>(impl.length_));
             if ( n <= 0 ) {
                 break;
             }
 
-            auto view = lcy::asio::buffer_view(impl.buffer_, static_cast<std::size_t>(n));
+            auto view = lcy::asio::buffer_view(
+                impl.write_buffer_, static_cast<std::size_t>(n));
             for ( ;; ) {
                 std::size_t nsend = stream_socket.write_some(view, ec);
                 if ( ec ) {
@@ -472,7 +496,7 @@ private:
         lcy::asio::ip::tcp::socket& stream_socket,
         error_func_type error_func, next_func_type next_func)
     {
-        auto view = lcy::asio::buffer_view(impl.buffer_, impl.length_);
+        auto view = lcy::asio::buffer_view(impl.read_buffer_, impl.length_);
 
         auto on_read_func = [&impl, &stream_socket,
                 error_func, next_func](
@@ -490,7 +514,7 @@ private:
                 return;
             }
 
-            ::BIO_write(impl.read_bio_, impl.buffer_, static_cast<int>(n));
+            ::BIO_write(impl.read_bio_, impl.read_buffer_, static_cast<int>(n));
 
             next_func();
         };
@@ -502,26 +526,67 @@ private:
         lcy::asio::ip::tcp::socket& stream_socket,
         error_func_type error_func, next_func_type next_func)
     {
-        int n = ::BIO_read(impl.write_bio_, impl.buffer_, impl.length_);
-        if ( n <= 0 ) {
-            lcy::asio::post(stream_socket.get_executor(), [next_func]() {
-            	next_func();
-            });
+        flush_waiters_.push_back(
+            flush_waiter{ std::move(error_func), std::move(next_func) });
 
+        if ( flushing_ ) {
             return;
         }
 
-        auto view = lcy::asio::buffer_view(impl.buffer_, static_cast<std::size_t>(n));
+        flushing_ = true;
+        async_flush_write_bio_step(impl, stream_socket);
+    }
 
-        auto loop_next_func = [&impl, &stream_socket,
-            error_func, next_func, this]()
-        {
-        	async_flush_write_bio(impl, stream_socket,
-                std::move(error_func), std::move(next_func));
+    void async_flush_write_bio_step(ssl_socket_impl& impl,
+        lcy::asio::ip::tcp::socket& stream_socket)
+    {
+        int n = ::BIO_read(impl.write_bio_, impl.write_buffer_,
+            static_cast<int>(impl.length_));
+        if ( n <= 0 ) {
+            complete_flush_waiters(stream_socket);
+            return;
+        }
+
+        auto view = lcy::asio::buffer_view(
+            impl.write_buffer_, static_cast<std::size_t>(n));
+
+        auto error_func = [this](lcy::system::error_code ec) {
+            fail_flush_waiters(ec);
+        };
+
+        auto next_func = [&impl, &stream_socket, this]() {
+            async_flush_write_bio_step(impl, stream_socket);
         };
 
         async_write_loop(impl, stream_socket, view,
-            static_cast<std::size_t>(n), 0, std::move(error_func), std::move(loop_next_func));
+            static_cast<std::size_t>(n), 0,
+            std::move(error_func), std::move(next_func));
+    }
+
+    void complete_flush_waiters(lcy::asio::ip::tcp::socket& stream_socket)
+    {
+        std::list<flush_waiter> waiters;
+        waiters.swap(flush_waiters_);
+        flushing_ = false;
+
+        for ( auto& waiter : waiters ) {
+            auto next_func = std::move(waiter.next_func);
+            lcy::asio::post(stream_socket.get_executor(), [next_func]() {
+                next_func();
+            });
+        }
+    }
+
+    void fail_flush_waiters(lcy::system::error_code ec)
+    {
+        std::list<flush_waiter> waiters;
+        waiters.swap(flush_waiters_);
+        flushing_ = false;
+
+        for ( auto& waiter : waiters ) {
+            auto error_func = std::move(waiter.error_func);
+            error_func(ec);
+        }
     }
 
     template <typename ConstBufferView>
@@ -642,6 +707,10 @@ private:
         	func(ec);
         });
     }
+
+private:
+    bool flushing_;
+    std::list<flush_waiter> flush_waiters_;
 };
 
 }   // namespace detail
