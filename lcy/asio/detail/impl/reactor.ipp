@@ -163,26 +163,26 @@ void reactor::start_op(int sockfd,
    internal_descriptor_state* ds, event_type et,
    operation op, bool try_speculative)
 {
+	pollfd pfd;
+	pfd.fd = sockfd;
+	pfd.events = 0;
+	pfd.revents = 0;
+
+	if ( et == event_type::read ) {
+	    pfd.events = POLLIN;
+	} else if ( et == event_type::write ) {
+	    pfd.events = POLLOUT;
+	}
+
+	std::lock_guard<conditionally_mutex> locker(ds->cond_mutex_);
+
 	if ( try_speculative ) {
-		pollfd pfd;
-		pfd.fd = sockfd;
-		pfd.events = 0;
-		pfd.revents = 0;
-
-		if ( et == event_type::read ) {
-		    pfd.events = POLLIN;
-		} else if ( et == event_type::write ) {
-		    pfd.events = POLLOUT;
-		}
-
 		int is_ready = ::poll(&pfd, 1, 0);
 		if ( is_ready > 0 ) {
 			sch_->post(std::move(op));
 			return;
 		}
 	}
-
-	std::lock_guard<conditionally_mutex> locker(ds->cond_mutex_);
 
 	if ( et == event_type::write ) {
 		if ( !(ds->registered_events_ & EPOLLOUT) ) {
