@@ -1202,6 +1202,108 @@ static void test_async_write_response()
     expect_str(sock.written(), res.header_to_string() + "hi", "written");
 }
 
+static void test_sync_read_body_same_segment()
+{
+    std::cout << "[sync_read_body: header and body in one segment]\n";
+    mock_socket sock;
+    sock.push("POST / HTTP/1.1\r\nContent-Length: 5\r\n\r\nhello");
+
+    req_parser_t p; req_t r;
+    flat_buf buf;
+    error_code ec;
+
+    read_header(sock, buf, p, r, ec);
+    expect_true(!ec, "header ok");
+    expect_str(buf_str(buf), "hello", "body left in buffer");
+
+    std::size_t n = read_body(sock, buf, p, r, ec);
+    expect_true(!ec, "body ok");
+    expect_size(n, 5, "n==5");
+    expect_str(buf_str(r.body_container()), "hello", "body");
+    expect_str(buf_str(buf), "", "buffer empty");
+    expect_size(sock.read_calls(), 1, "no extra read for buffered body");
+}
+
+static void test_sync_read_header_pipelined()
+{
+    std::cout << "[sync_read_header: pipelined requests]\n";
+    mock_socket sock;
+    sock.push(
+        "GET /a HTTP/1.1\r\nHost: a\r\n\r\n"
+        "GET /b HTTP/1.1\r\nHost: b\r\n\r\n");
+
+    req_parser_t p; req_t r1;
+    flat_buf buf;
+    error_code ec;
+
+    read_header(sock, buf, p, r1, ec);
+    expect_true(!ec, "first header ok");
+    expect_str(r1.get_target(), "/a", "first target");
+
+    p.reset();
+    req_t r2;
+    read_header(sock, buf, p, r2, ec);
+    expect_true(!ec, "second header ok");
+    expect_str(r2.get_target(), "/b", "second target");
+    expect_str(buf_str(buf), "", "buffer empty");
+    expect_size(sock.read_calls(), 1, "second header parsed from buffer");
+}
+
+static void test_async_read_body_same_segment()
+{
+    std::cout << "[async_read_body: header and body in one segment]\n";
+    mock_socket sock;
+    sock.push("POST / HTTP/1.1\r\nContent-Length: 5\r\n\r\nhello");
+
+    req_parser_t p; req_t r;
+    flat_buf buf;
+
+    async_read_header(sock, buf, p, r, [&](error_code ec, std::size_t) {
+        expect_true(!ec, "header ok");
+        expect_str(buf_str(buf), "hello", "body left in buffer");
+
+        int calls = 0;
+        async_read_body(sock, buf, p, r, [&](error_code ec2, std::size_t n) {
+            ++calls;
+            expect_true(!ec2, "body ok");
+            expect_size(n, 5, "body n==5");
+        });
+        expect_size(calls, 1, "body callback once");
+        expect_str(buf_str(r.body_container()), "hello", "body");
+        expect_str(buf_str(buf), "", "buffer empty");
+        expect_size(sock.read_calls(), 1, "no extra read for buffered body");
+    });
+}
+
+static void test_async_read_header_pipelined()
+{
+    std::cout << "[async_read_header: pipelined requests]\n";
+    mock_socket sock;
+    sock.push(
+        "GET /a HTTP/1.1\r\nHost: a\r\n\r\n"
+        "GET /b HTTP/1.1\r\nHost: b\r\n\r\n");
+
+    req_parser_t p; req_t r1;
+    flat_buf buf;
+
+    async_read_header(sock, buf, p, r1, [&](error_code ec, std::size_t) {
+        expect_true(!ec, "first header ok");
+        expect_str(r1.get_target(), "/a", "first target");
+
+        p.reset();
+        req_t r2;
+        int calls = 0;
+        async_read_header(sock, buf, p, r2, [&](error_code ec2, std::size_t) {
+            ++calls;
+            expect_true(!ec2, "second header ok");
+            expect_str(r2.get_target(), "/b", "second target");
+        });
+        expect_size(calls, 1, "second callback once");
+        expect_str(buf_str(buf), "", "buffer empty");
+        expect_size(sock.read_calls(), 1, "second header parsed from buffer");
+    });
+}
+
 int main()
 {
     test_sync_read_header_once_no_body();
@@ -1211,9 +1313,11 @@ int main()
     test_sync_read_header_socket_error();
     test_sync_read_header_limit();
     test_sync_read_header_exception();
+    test_sync_read_header_pipelined();
 
     test_sync_read_body_once();
     test_sync_read_body_byte_by_byte();
+    test_sync_read_body_same_segment();
     test_sync_read_body_invalid_state();
     test_sync_read_body_chunked();
     test_sync_read_body_limit();
@@ -1242,9 +1346,11 @@ int main()
     test_async_read_header_socket_error();
     test_async_read_header_limit();
     test_async_read_header_byte_by_byte();
+    test_async_read_header_pipelined();
 
     test_async_read_body_once();
     test_async_read_body_byte_by_byte();
+    test_async_read_body_same_segment();
     test_async_read_body_invalid_state();
     test_async_read_body_chunked();
     test_async_read_body_limit();

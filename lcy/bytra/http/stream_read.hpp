@@ -60,17 +60,10 @@ public:
 
     void do_parse()
     {
-        auto self = this->shared_from_this();
-        auto view = buffer_->prepare(4096);
-        auto on_read_func = [this, self](lcy::system::error_code ec,
-            std::size_t bytes_transferred)
-        {
-            if ( ec ) {
-                func_(ec, parsed_bytes_);
-                return;
+        for ( ;; ) {
+            if ( !buffer_->size() ) {
+                break;
             }
-
-            buffer_->commit(bytes_transferred);
 
             std::size_t consumed = 0;
             lcy::system::error_code pec;
@@ -90,16 +83,28 @@ public:
             }
             parsed_bytes_ += consumed;
 
-            if ( pec ) {
-                if ( pec == lcy::bytra::http::error::wait_more ) {
-                    do_parse();
-                    return;
-                }
+            if ( pec != lcy::bytra::http::error::wait_more ) {
                 func_(pec, parsed_bytes_);
                 return;
             }
 
-            func_(pec, parsed_bytes_);
+            if ( consumed == 0 ) {
+                break;
+            }
+        }
+
+        auto self = this->shared_from_this();
+        auto view = buffer_->prepare(4096);
+        auto on_read_func = [this, self](lcy::system::error_code ec,
+            std::size_t bytes_transferred)
+        {
+            if ( ec ) {
+                func_(ec, parsed_bytes_);
+                return;
+            }
+
+            buffer_->commit(bytes_transferred);
+            do_parse();
         };
 
         stream_socket_->async_read_some(view, std::move(on_read_func));
@@ -130,15 +135,7 @@ std::size_t read_header(StreamSocket& stream_socket,
     std::size_t parsed_bytes = 0;
 
     for ( ;; ) {
-        auto view = buffer.prepare(4096);
-        std::size_t n = stream_socket.read_some(view, ec);
-        if ( ec ) {
-            break;
-        }
-
-        buffer.commit(n);
-
-        n = parser.parse_header(static_cast<const char*>(
+        std::size_t n = parser.parse_header(static_cast<const char*>(
             buffer.data()), buffer.size(), message, ec);
 
         parsed_bytes += n;
@@ -147,6 +144,14 @@ std::size_t read_header(StreamSocket& stream_socket,
         if ( ec != lcy::bytra::http::error::wait_more ) {
             break;
         }
+
+        auto view = buffer.prepare(4096);
+        n = stream_socket.read_some(view, ec);
+        if ( ec ) {
+            break;
+        }
+
+        buffer.commit(n);
     }
 
     return parsed_bytes;
@@ -165,15 +170,7 @@ std::size_t read_body(StreamSocket& stream_socket,
     std::size_t parsed_bytes = 0;
 
     for ( ;; ) {
-        auto view = buffer.prepare(4096);
-        std::size_t n = stream_socket.read_some(view, ec);
-        if ( ec ) {
-            break;
-        }
-
-        buffer.commit(n);
-
-        n = parser.parse_body(static_cast<const char*>(
+        std::size_t n = parser.parse_body(static_cast<const char*>(
             buffer.data()), buffer.size(), message, ec);
 
         parsed_bytes += n;
@@ -182,6 +179,14 @@ std::size_t read_body(StreamSocket& stream_socket,
         if ( ec != lcy::bytra::http::error::wait_more ) {
             break;
         }
+
+        auto view = buffer.prepare(4096);
+        n = stream_socket.read_some(view, ec);
+        if ( ec ) {
+            break;
+        }
+
+        buffer.commit(n);
     }
 
     return parsed_bytes;
@@ -200,15 +205,7 @@ std::size_t read(StreamSocket& stream_socket,
     std::size_t parsed_bytes = 0;
 
     for ( ;; ) {
-        auto view = buffer.prepare(4096);
-        std::size_t n = stream_socket.read_some(view, ec);
-        if ( ec ) {
-            break;
-        }
-
-        buffer.commit(n);
-
-        n = parser.parse(static_cast<const char*>(
+        std::size_t n = parser.parse(static_cast<const char*>(
             buffer.data()), buffer.size(), message, ec);
 
         parsed_bytes += n;
@@ -217,6 +214,14 @@ std::size_t read(StreamSocket& stream_socket,
         if ( ec != lcy::bytra::http::error::wait_more ) {
             break;
         }
+
+        auto view = buffer.prepare(4096);
+        n = stream_socket.read_some(view, ec);
+        if ( ec ) {
+            break;
+        }
+
+        buffer.commit(n);
     }
 
     return parsed_bytes;
