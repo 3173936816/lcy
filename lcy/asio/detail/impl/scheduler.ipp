@@ -134,9 +134,11 @@ void scheduler::init_reactor()
 
 void scheduler::wake_up_one_thread()
 {
-	std::lock_guard<conditionally_mutex> opq_locker(op_queue_mutex_);
-	if ( condvar_.notify_one() ) {
-		return;
+	{
+		std::lock_guard<conditionally_mutex> opq_locker(op_queue_mutex_);
+		if ( condvar_.notify_one() ) {
+			return;
+		}
 	}
 
 	std::lock_guard<conditionally_mutex> rea_locker(reactor_mutex_);
@@ -150,8 +152,10 @@ void scheduler::stop_all_threads()
 {
 	stopped_ = true;
 
-	std::lock_guard<conditionally_mutex> opq_locker(op_queue_mutex_);
-	condvar_.notify_all();
+	{
+		std::lock_guard<conditionally_mutex> opq_locker(op_queue_mutex_);
+		condvar_.notify_all();
+	}
 
 	std::lock_guard<conditionally_mutex> rea_locker(reactor_mutex_);
 	if ( reactor_ ) {
