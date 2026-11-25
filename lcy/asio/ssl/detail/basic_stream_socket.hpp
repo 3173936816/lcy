@@ -8,6 +8,7 @@
 
 #include "lcy/noncopyable.hpp"
 #include "lcy/asio/ip/tcp.hpp"
+#include "lcy/asio/strand.hpp"
 #include "lcy/asio/buffer_view.hpp"
 #include "lcy/asio/ssl/detail/error.hpp"
 #include "lcy/asio/ssl/detail/throw_ssl_exception.hpp"
@@ -35,7 +36,7 @@ public:
 
 public:
     basic_stream_socket(lcy::asio::io_context& ioc, context_type& context) :
-        context_(context), impl_(), stream_socket_(ioc)
+        context_(context), strand_(ioc), stream_socket_(ioc)
     {
         lcy::system::error_code ec;
         ssl_stream_socket_core_.construct(impl_, context.native_handle(), ec);
@@ -152,24 +153,28 @@ public:
 
     void async_client_handshake(handshake_func_type func)
     {
-        ssl_stream_socket_core_.async_client_handshake(impl_, stream_socket_, std::move(func));
+        ssl_stream_socket_core_.async_client_handshake(
+            impl_, stream_socket_, strand_, std::move(func));
     }
 
     void async_server_handshake(handshake_func_type func)
     {
-        ssl_stream_socket_core_.async_server_handshake(impl_, stream_socket_, std::move(func));
+        ssl_stream_socket_core_.async_server_handshake(
+            impl_, stream_socket_, strand_, std::move(func));
     }
 
     template <typename MutableBufferView>
     void async_read_some(MutableBufferView view, read_func_type func)
     {
-        ssl_stream_socket_core_.async_read_some(impl_, stream_socket_, view, std::move(func));
+        ssl_stream_socket_core_.async_read_some(
+            impl_, stream_socket_, strand_, view, std::move(func));
     }
 
     template <typename ConstBufferView>
     void async_write_some(ConstBufferView view, write_func_type func)
     {
-        ssl_stream_socket_core_.async_write_some(impl_, stream_socket_, view, std::move(func));
+        ssl_stream_socket_core_.async_write_some(
+            impl_, stream_socket_, strand_, view, std::move(func));
     }
 
     context_type& get_context()
@@ -182,11 +187,17 @@ public:
         return stream_socket_;
     }
 
+    lcy::asio::strand& get_strand()
+    {
+        return strand_;
+    }
+
 private:
     typedef stream_socket_core::ssl_socket_impl ssl_socket_impl;
 
     context_type& context_;
     ssl_socket_impl impl_;
+    lcy::asio::strand strand_;
     lcy::asio::ip::tcp::socket stream_socket_;
     stream_socket_core ssl_stream_socket_core_;
 };
