@@ -28,10 +28,11 @@ public:
 		ssize_t transferred_bytes = 0;
 
 		if ( !ec ) {
-			transferred_bytes = socket_ops::recvfrom(impl_->sockfd_,
-				*endpoint_, view_, ec);
+			transferred_bytes = socket_ops::recvfrom(
+				impl_->sockfd_, *endpoint_, view_, ec);
+
 			if ( transferred_bytes == -1 ) {
-				transferred_bytes = 0; 
+				transferred_bytes = 0;
 			}
 		}
 

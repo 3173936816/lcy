@@ -18,13 +18,14 @@ public:
 
 	void operator()(lcy::system::error_code ec, int) const
 	{
-		int error = 0;
-		socklen_t len = sizeof(error);
+		if ( !ec ) {
+			int error = 0;
+			socklen_t len = sizeof(error);
 
-		if ( !socket_ops::getsockopt(impl_->sockfd_,
-			SOL_SOCKET, SO_ERROR, &error, &len, ec) )
-		{
-			ec = lcy::system::error_code(error);
+			if ( !socket_ops::getsockopt(impl_->sockfd_, 
+					SOL_SOCKET, SO_ERROR, &error, &len, ec) ) {
+				ec = lcy::system::error_code(error);
+			}
 		}
 
 		func_(ec);

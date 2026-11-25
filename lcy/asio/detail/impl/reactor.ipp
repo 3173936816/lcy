@@ -458,17 +458,13 @@ void reactor::handle_descriptor_events(internal_descriptor_state* ds,
 	std::lock_guard<conditionally_mutex> locker(ds->cond_mutex_);
 
 	if ( happened_events & event_type::error ) {
-		lcy::system::error_code ec(lcy::system::error::bad_file_descriptor);
-
 		if ( ds->events_ & event_type::read ) {
 			ds->events_ &= ~event_type::read;
-			ds->read_op_.set_errorc(ec);
 			op_list.push_back(std::move(ds->read_op_));
 		}
 
 		if ( ds->events_ & event_type::write ) {
 			ds->events_ &= ~event_type::write;
-			ds->write_op_.set_errorc(ec);
 			op_list.push_back(std::move(ds->write_op_));
 		}
 	} else {

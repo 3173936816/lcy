@@ -24,6 +24,7 @@ public:
 
 		if ( !ec ) {
 			transferred_bytes = socket_ops::send(impl_->sockfd_, view_, ec);
+
 			if ( transferred_bytes == -1 ) {
 				transferred_bytes = 0;
 			}

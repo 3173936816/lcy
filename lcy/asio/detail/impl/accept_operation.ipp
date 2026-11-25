@@ -23,8 +23,9 @@ public:
 	void operator()(lcy::system::error_code ec, int) const
 	{
 		if ( !ec ) {
-			int new_sockfd =
-				socket_ops::accept(source_impl_->sockfd_, *endpoint_, ec);
+			int new_sockfd = socket_ops::accept(
+				source_impl_->sockfd_, *endpoint_, ec);
+
 			if ( new_sockfd != -1 ) {
 				self_->assign(*target_impl_, new_sockfd, ec);
 			}
