@@ -13,10 +13,8 @@ class socket_service_base::send_to_operation
 {
 public:
 	send_to_operation(socket_service_base* self,
-					  socket_impl& impl,
-					  Endpoint endpoint,
-					  ConstBufferView view,
-					  write_func_type func) :
+		socket_impl& impl, Endpoint endpoint,
+		ConstBufferView view, write_func_type func) :
 		self_(self),
 		impl_(&impl),
 		endpoint_(endpoint),

@@ -13,10 +13,8 @@ class socket_service_base::receive_from_operation
 {
 public:
 	receive_from_operation(socket_service_base* self,
-						   socket_impl& impl,
-						   Endpoint& endpoint,
-						   MutableBufferView view,
-						   read_func_type func) :
+		socket_impl& impl, Endpoint& endpoint,
+		MutableBufferView view, read_func_type func) :
 		self_(self),
 		impl_(&impl),
 		endpoint_(&endpoint),

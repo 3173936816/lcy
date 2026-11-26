@@ -10,10 +10,8 @@ class socket_service_base::accept_operation
 {
 public:
 	accept_operation(socket_service_base* self,
-					 socket_impl& source_impl,
-					 socket_impl& target_impl,
-					 Endpoint& endpoint,
-					 accept_func_type func) :
+		socket_impl& source_impl, socket_impl& target_impl,
+		Endpoint& endpoint, accept_func_type func) :
 		self_(self),
 		source_impl_(&source_impl),
 		target_impl_(&target_impl),

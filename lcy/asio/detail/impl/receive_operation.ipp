@@ -10,9 +10,8 @@ class socket_service_base::receive_operation
 {
 public:
 	receive_operation(socket_service_base* self,
-				   	  socket_impl& impl,
-				   	  MutableBufferView view,
-				   	  read_func_type func) :
+		socket_impl& impl, MutableBufferView view,
+		read_func_type func) :
 		self_(self),
 		impl_(&impl),
 		view_(view),

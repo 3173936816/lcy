@@ -10,9 +10,8 @@ class socket_service_base::send_operation
 {
 public:
 	send_operation(socket_service_base* self,
-				   socket_impl& impl,
-				   ConstBufferView view,
-				   write_func_type func) :
+		socket_impl& impl, ConstBufferView view,
+		write_func_type func) :
 		self_(self),
 		impl_(&impl),
 		view_(view),
