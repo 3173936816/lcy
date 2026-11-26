@@ -2,6 +2,7 @@
 #define __LCY_ASIO_STREAM_READ_HPP__
 
 #include <memory>
+#include <functional>
 
 #include "lcy/system/error.hpp"
 #include "lcy/asio/detail/throw_asio_exception.hpp"
@@ -40,26 +41,30 @@ public:
 	void do_read()
 	{
 		auto self = this->shared_from_this();
-		auto on_read_func = [this, self](lcy::system::error_code ec,
-			std::size_t bytes_transferred)
-		{
-			if ( ec ) {
-				func_(ec, total_bytes_transferred_);
-				return;
-			}
 
-			total_bytes_transferred_ +=  bytes_transferred;
+		stream_socket_->async_read_some(view_, std::bind(
+			&async_read_state::on_read_func, self,
+				std::placeholders::_1, std::placeholders::_2));
+	}
 
-			if ( bytes_transferred >= view_.length() ) {
-				func_(ec, total_bytes_transferred_);
-				return;
-			}
+private:
+	void on_read_func(lcy::system::error_code ec,
+		std::size_t bytes_transferred)
+	{
+		if ( ec ) {
+			func_(ec, total_bytes_transferred_);
+			return;
+		}
 
-			view_ += bytes_transferred;
-			do_read();
-		};
+		total_bytes_transferred_ +=  bytes_transferred;
 
-		stream_socket_->async_read_some(view_, std::move(on_read_func));
+		if ( bytes_transferred >= view_.length() ) {
+			func_(ec, total_bytes_transferred_);
+			return;
+		}
+
+		view_ += bytes_transferred;
+		do_read();
 	}
 
 private:
@@ -88,7 +93,7 @@ std::size_t read(StreamSocket& stream_socket,
         }
 
         total += n;
-        if ( n == view.length() ) {
+        if ( n >= view.length() ) {
             break;
         }
 

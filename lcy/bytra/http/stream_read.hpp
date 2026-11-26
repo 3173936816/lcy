@@ -2,6 +2,7 @@
 #define __LCY_BYTRA_HTTP_STREAM_READ_HPP__
 
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <utility>
 
@@ -45,11 +46,8 @@ public:
     enum mode { header, body, full };
 
     async_parse_state(StreamSocket& stream_socket,
-                      DynamicBuffer& buffer,
-                      HttpParser& parser,
-                      Message& message,
-                      Function func,
-                      mode m) :
+        DynamicBuffer& buffer, HttpParser& parser,
+        Message& message, Function func, mode m) :
         stream_socket_(&stream_socket),
         buffer_(&buffer),
         parser_(&parser),
@@ -95,19 +93,23 @@ public:
 
         auto self = this->shared_from_this();
         auto view = buffer_->prepare(4096);
-        auto on_read_func = [this, self](lcy::system::error_code ec,
-            std::size_t bytes_transferred)
-        {
-            if ( ec ) {
-                func_(ec, parsed_bytes_);
-                return;
-            }
 
-            buffer_->commit(bytes_transferred);
-            do_parse();
-        };
+        stream_socket_->async_read_some(view, std::bind(
+            &async_parse_state::on_read_func, self,
+                std::placeholders::_1, std::placeholders::_2));
+    }
 
-        stream_socket_->async_read_some(view, std::move(on_read_func));
+private:
+    void on_read_func(lcy::system::error_code ec,
+        std::size_t bytes_transferred)
+    {
+        if ( ec ) {
+            func_(ec, parsed_bytes_);
+            return;
+        }
+
+        buffer_->commit(bytes_transferred);
+        do_parse();
     }
 
 private:
