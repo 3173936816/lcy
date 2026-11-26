@@ -20,17 +20,6 @@ target_include_directories(lcy INTERFACE
 
 target_compile_features(lcy INTERFACE cxx_std_11)
 
-add_library(lcy_ssl INTERFACE)
-add_library(lcy::ssl ALIAS lcy_ssl)
-
-target_link_libraries(lcy_ssl INTERFACE lcy)
-
-find_package(OpenSSL REQUIRED)
-target_link_libraries(lcy_ssl INTERFACE
-    OpenSSL::SSL
-    OpenSSL::Crypto
-)
-
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
@@ -45,7 +34,7 @@ install(
 )
 
 install(
-    TARGETS lcy lcy_ssl
+    TARGETS lcy
     EXPORT lcy-targets
 )
 
