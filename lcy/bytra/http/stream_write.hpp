@@ -233,9 +233,8 @@ void async_write_header(StreamSocket& stream_socket,
     Message& message, Function func)
 {
     std::make_shared<
-        detail::async_write_header_state<
-            Function
-    > >(message.header_to_string(), std::move(func))->do_write(stream_socket);
+        detail::async_write_header_state<Function>
+    >(message.header_to_string(), std::move(func))->do_write(stream_socket);
 }
 
 template <
