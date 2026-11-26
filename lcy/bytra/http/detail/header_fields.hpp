@@ -29,7 +29,8 @@ public:
         auto key_scope_iter = key_scope_index_.find(key_lower);
         if ( key_scope_iter != key_scope_index_.end() ) {
             auto key_scope_last = key_scope_iter->second.second;
-            auto key_scope_new_last = fields_.insert(++key_scope_last, { std::move(key), std::move(value) });
+            auto key_scope_new_last = fields_.insert(
+				++key_scope_last, { std::move(key), std::move(value) });
             key_scope_iter->second.second = key_scope_new_last;
 
             return key_scope_new_last;
