@@ -836,6 +836,26 @@ static void test_limit_header_within()
     std::cout << "  ok\n";
 }
 
+static void test_limit_header_many_lines()
+{
+    std::cout << "[test_limit_header_many_lines]\n";
+    request_parser<lcy::bytra::flat_buffer> parser;
+    parser.set_header_limit(100);
+    request<lcy::bytra::flat_buffer> req;
+
+    std::vector<std::string> pieces;
+    pieces.push_back("GET / HTTP/1.1\r\n");
+    for ( int i = 0; i < 40; ++i ) {
+        pieces.push_back("X: y\r\n");
+    }
+    pieces.push_back("\r\n");
+
+    auto ec = feed_pieces(parser, req, pieces);
+    expect_ec(ec, lcy::bytra::http::error::header_too_large,
+        "many complete header lines exceed limit");
+    std::cout << "  ok\n";
+}
+
 static void test_limit_body_fixed()
 {
     std::cout << "[test_limit_body_fixed]\n";
@@ -885,6 +905,89 @@ static void test_limit_header_not_triggered_by_body()
     auto ec = feed_all(parser, req, s);
     expect_true(!ec, "body doesn't trigger header limit");
     expect_size(req.body_container().size(), 1000, "body 1000");
+    std::cout << "  ok\n";
+}
+
+static void test_limit_chunk_size_line_no_crlf()
+{
+    std::cout << "[test_limit_chunk_size_line_no_crlf]\n";
+    request_parser<lcy::bytra::flat_buffer> parser;
+    parser.set_header_limit(100);
+    request<lcy::bytra::flat_buffer> req;
+    std::string s =
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n";
+    s.append(200, 'a');
+    auto ec = feed_all(parser, req, s);
+    expect_ec(ec, lcy::bytra::http::error::header_too_large,
+        "unterminated chunk-size line exceeds limit");
+    std::cout << "  ok\n";
+}
+
+static void test_limit_chunk_meta_many_chunks()
+{
+    std::cout << "[test_limit_chunk_meta_many_chunks]\n";
+    request_parser<lcy::bytra::flat_buffer> parser;
+    parser.set_header_limit(100);
+    request<lcy::bytra::flat_buffer> req;
+
+    std::string s =
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n";
+    for ( int i = 0; i < 40; ++i ) {
+        s += "1\r\na\r\n";
+    }
+    s += "0\r\n\r\n";
+
+    auto ec = feed_all(parser, req, s);
+    expect_ec(ec, lcy::bytra::http::error::header_too_large,
+        "chunk framing exceeds limit");
+    std::cout << "  ok\n";
+}
+
+static void test_limit_trailer_meta_many_fields()
+{
+    std::cout << "[test_limit_trailer_meta_many_fields]\n";
+    request_parser<lcy::bytra::flat_buffer> parser;
+    parser.set_header_limit(100);
+    request<lcy::bytra::flat_buffer> req;
+
+    std::string s =
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
+        "5\r\nhello\r\n0\r\n";
+    for ( int i = 0; i < 40; ++i ) {
+        s += "X: y\r\n";
+    }
+    s += "\r\n";
+
+    auto ec = feed_all(parser, req, s);
+    expect_ec(ec, lcy::bytra::http::error::header_too_large,
+        "trailer exceeds limit");
+    std::cout << "  ok\n";
+}
+
+static void test_limit_chunk_meta_within()
+{
+    std::cout << "[test_limit_chunk_meta_within]\n";
+    request_parser<lcy::bytra::flat_buffer> parser;
+    parser.set_header_limit(100);
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
+        "5\r\nhello\r\n0\r\nX-T: v\r\n\r\n");
+    expect_true(!ec, "small chunk framing within limit");
+    expect_str(buf_to_string(req.body_container()), "hello", "body hello");
+    std::cout << "  ok\n";
+}
+
+static void test_chunk_size_overflow_rejected()
+{
+    std::cout << "[test_chunk_size_overflow_rejected]\n";
+    request_parser<lcy::bytra::flat_buffer> parser;
+    request<lcy::bytra::flat_buffer> req;
+    auto ec = feed_all(parser, req,
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"
+        "1\r\na\r\nFFFFFFFFFFFFFFFF\r\n");
+    expect_ec(ec, lcy::bytra::http::error::body_too_large,
+        "body_parsed_ + SIZE_MAX must not wrap");
     std::cout << "  ok\n";
 }
 
@@ -1242,10 +1345,16 @@ int main()
 
     test_limit_header_too_large();
     test_limit_header_within();
+    test_limit_header_many_lines();
     test_limit_body_fixed();
     test_limit_body_chunked();
     test_limit_body_exact();
     test_limit_header_not_triggered_by_body();
+    test_limit_chunk_size_line_no_crlf();
+    test_limit_chunk_meta_many_chunks();
+    test_limit_trailer_meta_many_fields();
+    test_limit_chunk_meta_within();
+    test_chunk_size_overflow_rejected();
 
     test_reset_after_complete();
     test_reset_after_error();

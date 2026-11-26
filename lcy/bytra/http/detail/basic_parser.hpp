@@ -51,6 +51,9 @@ private:
     inline void parse_fixed_body(message_type& message, lcy::system::error_code& ec);
 
     inline const char* CRLF() const;
+    inline bool limit_exceeded(std::size_t used, std::size_t size) const;
+    inline bool header_limit_exceeded(std::size_t size) const;
+    inline bool chunk_meta_limit_exceeded(std::size_t size) const;
     inline bool split_first_line(const char* data, std::size_t size, message_type& message) const;
 
 private:
@@ -86,6 +89,7 @@ private:
     chunk_phase chunk_phase_;
     std::size_t chunk_size_;
     std::size_t body_parsed_;
+    std::size_t chunk_meta_bytes_;
 };
 
 }   // namespace detail

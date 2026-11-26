@@ -291,7 +291,8 @@ basic_parser<Message>::basic_parser() :
     buf_pos_(0),
     chunk_phase_(chunk_phase::size),
     chunk_size_(0),
-    body_parsed_(0) {}
+    body_parsed_(0),
+    chunk_meta_bytes_(0) {}
 
 template <typename Message>
 void basic_parser<Message>::set_header_limit(std::size_t limit)
@@ -338,6 +339,7 @@ void basic_parser<Message>::reset()
     chunk_phase_ = chunk_phase::size;
     chunk_size_ = 0;
     body_parsed_ = 0;
+    chunk_meta_bytes_ = 0;
 }
 
 template <typename Message>
@@ -434,7 +436,7 @@ void basic_parser<Message>::parse_first_line(message_type& message,
 {
     const char* crlf = CRLF();
     if ( !crlf ) {
-        if ( header_limit_ && parsed_bytes_ + (buf_size_ - buf_pos_) > header_limit_ ) {
+        if ( header_limit_exceeded(buf_size_ - buf_pos_) ) {
             ec = make_http_error_code(lcy::bytra::http::error::header_too_large);
             return;
         }
@@ -445,13 +447,20 @@ void basic_parser<Message>::parse_first_line(message_type& message,
 
     const char* start = buf_ + buf_pos_;
     const std::size_t line_len = static_cast<std::size_t>(crlf - start);
+    const std::size_t consumed = line_len + 2;
+
+    if ( header_limit_exceeded(consumed) ) {
+        ec = make_http_error_code(lcy::bytra::http::error::header_too_large);
+        return;
+    }
+
     if ( !split_first_line(start, line_len, message) ) {
         ec = make_http_error_code(lcy::bytra::http::error::invalid_header);
         return;
     }
 
-    buf_pos_ += line_len + 2;
-    parsed_bytes_ += line_len + 2;
+    buf_pos_ += consumed;
+    parsed_bytes_ += consumed;
 
     phase_ = phase::header_fields;
     ec = make_http_error_code(lcy::bytra::http::error::success);
@@ -465,8 +474,7 @@ void basic_parser<Message>::parse_fields(message_type& message,
         const char* start = buf_ + buf_pos_;
         const char* crlf = CRLF();
         if ( !crlf ) {
-            if ( header_limit_ &&
-                 parsed_bytes_ + (buf_size_ - buf_pos_) > header_limit_ ) {
+            if ( header_limit_exceeded(buf_size_ - buf_pos_) ) {
                 ec = make_http_error_code(lcy::bytra::http::error::header_too_large);
                 return;
             }
@@ -476,6 +484,11 @@ void basic_parser<Message>::parse_fields(message_type& message,
 
         const std::size_t line_len = static_cast<std::size_t>(crlf - start);
         const std::size_t consumed = line_len + 2;
+
+        if ( header_limit_exceeded(consumed) ) {
+            ec = make_http_error_code(lcy::bytra::http::error::header_too_large);
+            return;
+        }
 
         if ( line_len == 0 ) {
             buf_pos_ += consumed;
@@ -501,6 +514,7 @@ void basic_parser<Message>::parse_fields(message_type& message,
 
             if ( chunked ) {
                 is_chunk_ = true;
+                chunk_meta_bytes_ = 0;
                 phase_ = phase::body;
             } else if ( content_length > 0 ) {
                 is_chunk_ = false;
@@ -543,6 +557,10 @@ void basic_parser<Message>::parse_chunked_body(message_type& message,
                 const char* start = buf_ + buf_pos_;
                 const char* crlf = CRLF();
                 if ( !crlf ) {
+                    if ( chunk_meta_limit_exceeded(buf_size_ - buf_pos_) ) {
+                        ec = make_http_error_code(lcy::bytra::http::error::header_too_large);
+                        return;
+                    }
                     ec = make_http_error_code(lcy::bytra::http::error::wait_more);
                     return;
                 }
@@ -557,13 +575,18 @@ void basic_parser<Message>::parse_chunked_body(message_type& message,
                 }
 
                 const std::size_t consumed = static_cast<std::size_t>(crlf - start) + 2;
+                if ( chunk_meta_limit_exceeded(consumed) ) {
+                    ec = make_http_error_code(lcy::bytra::http::error::header_too_large);
+                    return;
+                }
                 buf_pos_ += consumed;
                 parsed_bytes_ += consumed;
+                chunk_meta_bytes_ += consumed;
 
                 if ( sz == 0 ) {
                     chunk_phase_ = chunk_phase::trailer;
                 } else {
-                    if ( body_limit_ && body_parsed_ + sz > body_limit_ ) {
+                    if ( body_limit_ && sz > body_limit_ - body_parsed_ ) {
                         ec = make_http_error_code(lcy::bytra::http::error::body_too_large);
                         return;
                     }
@@ -605,8 +628,13 @@ void basic_parser<Message>::parse_chunked_body(message_type& message,
                     ec = make_http_error_code(lcy::bytra::http::error::invalid_body);
                     return;
                 }
+                if ( chunk_meta_limit_exceeded(2) ) {
+                    ec = make_http_error_code(lcy::bytra::http::error::header_too_large);
+                    return;
+                }
                 buf_pos_ += 2;
                 parsed_bytes_ += 2;
+                chunk_meta_bytes_ += 2;
                 chunk_phase_ = chunk_phase::size;
                 break;
             }
@@ -615,6 +643,10 @@ void basic_parser<Message>::parse_chunked_body(message_type& message,
                 const char* start = buf_ + buf_pos_;
                 const char* crlf = CRLF();
                 if ( !crlf ) {
+                    if ( chunk_meta_limit_exceeded(buf_size_ - buf_pos_) ) {
+                        ec = make_http_error_code(lcy::bytra::http::error::header_too_large);
+                        return;
+                    }
                     ec = make_http_error_code(lcy::bytra::http::error::wait_more);
                     return;
                 }
@@ -622,9 +654,15 @@ void basic_parser<Message>::parse_chunked_body(message_type& message,
                 const std::size_t line_len = static_cast<std::size_t>(crlf - start);
                 const std::size_t consumed = line_len + 2;
 
+                if ( chunk_meta_limit_exceeded(consumed) ) {
+                    ec = make_http_error_code(lcy::bytra::http::error::header_too_large);
+                    return;
+                }
+
                 if ( line_len == 0 ) {
                     buf_pos_ += consumed;
                     parsed_bytes_ += consumed;
+                    chunk_meta_bytes_ += consumed;
                     chunk_phase_ = chunk_phase::done;
                     phase_ = phase::done;
                     ec = make_http_error_code(lcy::bytra::http::error::success);
@@ -641,6 +679,7 @@ void basic_parser<Message>::parse_chunked_body(message_type& message,
 
                 buf_pos_ += consumed;
                 parsed_bytes_ += consumed;
+                chunk_meta_bytes_ += consumed;
                 break;
             }
 
@@ -677,6 +716,31 @@ void basic_parser<Message>::parse_fixed_body(message_type& message,
     } else {
         ec = make_http_error_code(lcy::bytra::http::error::wait_more);
     }
+}
+
+template <typename Message>
+bool basic_parser<Message>::limit_exceeded(std::size_t used,
+        std::size_t size) const
+{
+    if ( header_limit_ == 0 ) {
+        return false;
+    }
+    if ( used > header_limit_ ) {
+        return true;
+    }
+    return size > header_limit_ - used;
+}
+
+template <typename Message>
+bool basic_parser<Message>::header_limit_exceeded(std::size_t size) const
+{
+    return limit_exceeded(parsed_bytes_, size);
+}
+
+template <typename Message>
+bool basic_parser<Message>::chunk_meta_limit_exceeded(std::size_t size) const
+{
+    return limit_exceeded(chunk_meta_bytes_, size);
 }
 
 template <typename Message>
