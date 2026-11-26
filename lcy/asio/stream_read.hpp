@@ -31,8 +31,7 @@ class async_read_state :
 {
 public:
 	async_read_state(StreamSocket& stream_socket,
-					 MutableBufferView view,
-					 Function func) :
+		MutableBufferView view, Function func) :
 		stream_socket_(&stream_socket),
 		view_(view),
 		func_(std::move(func)),

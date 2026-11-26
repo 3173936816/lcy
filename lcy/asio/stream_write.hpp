@@ -31,8 +31,7 @@ class async_write_state :
 {
 public:
 	async_write_state(StreamSocket& stream_socket,
-					  ConstBufferView view,
-					  Function func) :
+		ConstBufferView view, Function func) :
 		stream_socket_(&stream_socket),
 		view_(view),
 		func_(std::move(func)),
