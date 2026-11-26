@@ -55,24 +55,6 @@ target_include_directories(stream_transferred_test PRIVATE ${CMAKE_CURRENT_SOURC
 add_executable(func_type_test asio/func_type.cc)
 target_include_directories(func_type_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-####### asio ssl
-
-find_package(OpenSSL REQUIRED)
-
-add_executable(ssl_stream_socket asio/ssl/stream_socket.cc)
-target_include_directories(ssl_stream_socket PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
-target_link_libraries(ssl_stream_socket PRIVATE
-    OpenSSL::SSL
-    OpenSSL::Crypto
-)
-
-add_executable(ssl_c_client asio/ssl/ssl_c_client.cc)
-target_include_directories(ssl_c_client PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
-target_link_libraries(ssl_c_client PRIVATE
-    OpenSSL::SSL
-    OpenSSL::Crypto
-)
-
 ####### bytra
 
 add_executable(flat_buffer_test bytra/flat_buffer.cc)
@@ -101,24 +83,6 @@ target_include_directories(http_stream_transferred_test PRIVATE ${CMAKE_CURRENT_
 add_executable(http_server_test server/http_server.cc)
 target_include_directories(http_server_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-add_executable(ssl_http_server_test server/ssl_http_server.cc)
-target_include_directories(ssl_http_server_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
-target_link_libraries(ssl_http_server_test PRIVATE
-    OpenSSL::SSL
-    OpenSSL::Crypto
-)
-
 ####### epoll
 add_executable(epoll_behavior_test epoll/epoll_behavior.cc)
 target_include_directories(epoll_behavior_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
-
-
-###### log4cc
-add_executable(log4cc_formatter_test log4cc/formatter.cc)
-target_include_directories(log4cc_formatter_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
-
-add_executable(log4cc_logger_test log4cc/logger.cc)
-target_include_directories(log4cc_logger_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
-
-add_executable(log4cc_async_tcp_sink_test log4cc/async_tcp_sink.cc)
-target_include_directories(log4cc_async_tcp_sink_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
