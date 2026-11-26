@@ -36,7 +36,8 @@ public:
             return key_scope_new_last;
         }
 
-        auto iter = fields_.insert(fields_.end(), { std::move(key), std::move(value) });
+        auto iter = fields_.insert(fields_.end(),
+			{ std::move(key), std::move(value) });
         key_scope_index_[std::move(key_lower)] = { iter, iter };
 
         return iter;
@@ -82,7 +83,8 @@ public:
 
 		auto key_scope_iter = key_scope_index_.find(key_lower);
 		if ( key_scope_iter != key_scope_index_.end() ) {
-			fields_.erase(key_scope_iter->second.first, ++key_scope_iter->second.second);
+			fields_.erase(key_scope_iter->second.first,
+				++key_scope_iter->second.second);
 			key_scope_index_.erase(key_scope_iter);
 		}
 	}
