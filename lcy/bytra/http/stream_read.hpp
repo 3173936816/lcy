@@ -280,7 +280,7 @@ std::size_t read(StreamSocket& stream_socket,
         detail::throw_http_exception(ec, "lcy::bytra::http::read");
     }
 
-     return n;
+    return n;
 }
 
 template <
